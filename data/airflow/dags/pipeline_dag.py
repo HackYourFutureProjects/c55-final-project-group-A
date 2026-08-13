@@ -118,11 +118,20 @@ def databricks_environment() -> dict[str, str]:
     laptop with "TEAM is not set", which is the documented way to try the
     publish step locally.
     """
+    catalog = setting("DATABRICKS_CATALOG")
     where = {
         "DATABRICKS_HOST": setting("DATABRICKS_HOST"),
         "DATABRICKS_HTTP_PATH": setting("DATABRICKS_HTTP_PATH"),
-        "DATABRICKS_CATALOG": setting("DATABRICKS_CATALOG"),
+        "DATABRICKS_CATALOG": catalog,
         "DBT_SCHEMA": setting("DBT_SCHEMA"),
+        # dbt_project.yml reads this to decide which files staging parses, and
+        # it was missing here. Without it the scheduled build fell back to the
+        # placeholder in that file and failed on a catalog called CHANGE_ME,
+        # while every local run worked, because a laptop has it in .env.
+        "LANDING_PATH": setting(
+            "LANDING_PATH",
+            f"/Volumes/{catalog}/landing/prod/{setting('SOURCE_NAME', 'postings')}",
+        ),
     }
     if os.environ.get("DATABRICKS_TOKEN"):
         return where
@@ -168,8 +177,26 @@ def start_job(job_name: str) -> str:
 def final_project_pipeline():
     @task
     def ingest() -> str:
-        """Fetch the source and land raw files in the team's storage account."""
-        return start_job(setting("ACA_INGEST_JOB"))
+        """Fetch the source and land raw files in the team's storage account.
+
+        The container's own output is printed into this task's log. Without it
+        the task shows only "execution succeeded", and every question worth
+        asking (how many records, which file, what the API returned) needs a
+        second tool and the container's execution name, which by then nobody
+        has. The job runs elsewhere; the log should not.
+        """
+        from src.common.aca import job_logs
+
+        job_name = setting("ACA_INGEST_JOB")
+        execution = start_job(job_name)
+        for line in job_logs(
+            setting("AZURE_SUBSCRIPTION"),
+            setting("AZURE_RESOURCE_GROUP"),
+            job_name,
+            execution,
+        ):
+            print(line)
+        return execution
 
     @task
     def dbt_build() -> str:

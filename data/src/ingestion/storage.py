@@ -14,10 +14,14 @@ from azure.storage.blob import BlobServiceClient
 logger = logging.getLogger(__name__)
 
 # Two containers, and the split is a permission boundary rather than tidiness.
-# The scheduled pipeline writes `landing`, which you can read and cannot write.
+# The scheduled pipeline writes `prod`, which you can read and cannot write.
 # Your own runs write `dev`, which is yours. Nothing you do while developing
 # can overwrite the file the team's models read, even by accident.
-PRODUCTION_CONTAINER = "landing"
+#
+# Named for the environment, not the purpose: both containers are landing
+# zones, so calling one of them `landing` said nothing about which you may
+# write, which is the only thing that distinguishes them.
+PRODUCTION_CONTAINER = "prod"
 PRODUCTION_PREFIX = "raw"
 DEVELOPMENT_CONTAINER = "dev"
 

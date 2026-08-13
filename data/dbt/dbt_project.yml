@@ -16,7 +16,7 @@ macro-paths: ["macros"]
 # reads a half-written file somebody else is producing. See the README,
 # "Developing locally".
 vars:
-  landing_path: "{{ env_var('LANDING_PATH', '/Volumes/CHANGE_ME/landing/raw/postings') }}"
+  landing_path: "{{ env_var('LANDING_PATH', '/Volumes/CHANGE_ME/landing/prod/postings') }}"
 
 clean-targets:
   - "target"
