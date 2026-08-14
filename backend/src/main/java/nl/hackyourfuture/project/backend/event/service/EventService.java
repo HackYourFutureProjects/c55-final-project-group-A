@@ -13,9 +13,12 @@ public class EventService {
 
     private final EventRepository eventRepository;
 
-    public List<EventResponse> getAllEvents() {
+    public List<EventResponse> getAllEvents(String search) {
+        String normalizedSearch =
+                search == null || search.isBlank() ? null : search.trim();
+
         return eventRepository
-                .getAllEvents()
+                .getAllEvents(normalizedSearch)
                 .stream()
                 .map(EventResponse::from)
                 .toList();

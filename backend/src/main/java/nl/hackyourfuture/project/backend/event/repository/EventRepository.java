@@ -1,7 +1,6 @@
 package nl.hackyourfuture.project.backend.event.repository;
 
 import lombok.RequiredArgsConstructor;
-import nl.hackyourfuture.project.backend.event.dto.EventResponse;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -36,7 +35,7 @@ public class EventRepository {
                     rs.getBoolean("is_cancelled")
             );
 
-    public List<EventSummary> getAllEvents() {
+    public List<EventSummary> getAllEvents(String search) {
         String sql = """
                 SELECT e.id,
                        e.title,
@@ -67,11 +66,13 @@ public class EventRepository {
                 JOIN categories c ON c.id = e.category_id
                 JOIN addresses a ON a.id = e.address_id
                 JOIN cities ci ON ci.id = a.city_id
+                WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
                 ORDER BY e.start_at
                 """;
 
         return jdbcClient
                 .sql(sql)
+                .param("search", search)
                 .query(EVENT_SUMMARY_ROW_MAPPER)
                 .list();
     }
