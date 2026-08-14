@@ -1,4 +1,4 @@
-package nl.hackyourfuture.project.backend.event;
+package nl.hackyourfuture.project.backend.event.model;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
