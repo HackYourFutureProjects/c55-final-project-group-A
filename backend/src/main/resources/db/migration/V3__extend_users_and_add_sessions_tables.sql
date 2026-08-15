@@ -8,6 +8,9 @@ ALTER TABLE users
     ADD CONSTRAINT users_email_unique UNIQUE (email);
 
 ALTER TABLE users
+    ALTER COLUMN id SET DEFAULT gen_random_uuid();
+
+ALTER TABLE users
     ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'admin'));
 
 CREATE TABLE sessions
