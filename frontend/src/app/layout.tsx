@@ -1,30 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
-import styles from "./page.module.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { Navbar } from "@/components/layout/Navbar";
 
 export const metadata: Metadata = {
-  title: "HYF Final Project",
-  description: "HackYourFuture final project",
+  title: "Loc",
+  description: "Find local events",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
-        <div className={styles.page}>
-          <main className={styles.main}>{children}</main>
-        </div>
+    <html lang="en">
+      <body className="flex h-screen flex-col overflow-hidden antialiased">
+        <Navbar />
+        <main className="min-h-0 flex-1">{children}</main>
       </body>
     </html>
   );
