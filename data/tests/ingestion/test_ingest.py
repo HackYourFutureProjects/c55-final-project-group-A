@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from src.ingestion.ingest import parse_records
+from src.ingestion.ingest import REQUEST_TIMEOUT_SECONDS, fetch_raw, parse_records
 from src.ingestion.models import Posting
 
 GOOD = {
@@ -17,6 +17,62 @@ GOOD = {
     "tags": ["sql", "python"],
     "created_at": 1786481729,
 }
+
+
+def test_fetch_raw_authenticates_and_extracts_ticketmaster_events(monkeypatch):
+    expected_events = [{"id": "event-1", "name": "Example Event"}]
+    captured = {}
+
+    class FakeResponse:
+        ok = True
+        status_code = 200
+
+        def json(self):
+            return {"_embedded": {"events": expected_events}}
+
+    def fake_get(url, params, timeout):
+        captured["url"] = url
+        captured["params"] = params
+        captured["timeout"] = timeout
+        return FakeResponse()
+
+    monkeypatch.setattr("src.ingestion.ingest.requests.get", fake_get)
+
+    records = fetch_raw(
+        url="https://example.test/events.json",
+        api_key="test-api-key",
+    )
+
+    assert records == expected_events
+    assert captured == {
+        "url": "https://example.test/events.json",
+        "params": {"apikey": "test-api-key"},
+        "timeout": REQUEST_TIMEOUT_SECONDS,
+    }
+
+
+def test_fetch_raw_http_error_does_not_expose_api_key(monkeypatch):
+    class FakeResponse:
+        ok = False
+        status_code = 401
+
+    def fake_get(url, params, timeout):
+        return FakeResponse()
+
+    monkeypatch.setattr("src.ingestion.ingest.requests.get", fake_get)
+
+    secret_key = "do-not-expose-this-key"
+
+    with pytest.raises(RuntimeError) as exc_info:
+        fetch_raw(
+            url="https://example.test/events.json",
+            api_key=secret_key,
+        )
+
+    message = str(exc_info.value)
+
+    assert "401" in message
+    assert secret_key not in message
 
 
 def test_good_record_survives():

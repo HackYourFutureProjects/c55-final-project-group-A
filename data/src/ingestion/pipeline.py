@@ -2,9 +2,9 @@
 
     uv run python -m src.ingestion.pipeline [--run-date YYYY-MM-DD]
 
-Settings come from the environment: .env on your machine, the job definition in
-Azure. Every one is a name or a URL. There is no secret here, because the job
-authenticates as itself. See the README, "Settings".
+Settings come from the environment: .env on your machine and the job definition
+in Azure. The Ticketmaster API key is supplied as a secret environment variable
+and must never be logged or committed. See the README, "Settings".
 """
 
 import argparse
@@ -40,10 +40,11 @@ class MissingSetting(RuntimeError):
 
 @dataclass(frozen=True)
 class Config:
-    """What the ingestion job needs. Names only, no credentials."""
+    """Configuration required by the ingestion job."""
 
     source_api_url: str
     source_name: str
+    ticketmaster_api_key: str
     # Empty only for a --local run, which never opens a connection to Azure.
     storage_account: str
     databricks_catalog: str
@@ -69,6 +70,7 @@ def load_config(local: bool = False) -> Config:
     return Config(
         source_api_url=required("SOURCE_API_URL"),
         source_name=os.getenv("SOURCE_NAME", "source"),
+        ticketmaster_api_key=required("TICKETMASTER_API_KEY"),
         storage_account="" if local else required("STORAGE_ACCOUNT"),
         databricks_catalog=os.getenv("DATABRICKS_CATALOG", "team_a"),
         # The scheduled run writes `prod/raw`. Your own runs write
@@ -87,7 +89,7 @@ def run(run_date: str | None = None, local_dir: Path | None = None) -> int:
     config = load_config(local=local_dir is not None)
     run_date = run_date or datetime.now(tz=UTC).date().isoformat()
 
-    records = fetch_raw(config.source_api_url)
+    records = fetch_raw(config.source_api_url, api_key=config.ticketmaster_api_key)
     parsed, rejected = parse_records(records)
 
     # An empty batch is a failed extraction, not a quiet success: it would

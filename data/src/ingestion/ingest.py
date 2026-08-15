@@ -1,7 +1,6 @@
-"""Fetch records from the source API and validate them.
+"""Fetch raw Ticketmaster event records and validate them.
 
-The default source is the Arbeitnow job board, which needs no API key. Point
-SOURCE_API_URL at your team's source and rewrite `parse_records` to match it.
+Authentication uses TICKETMASTER_API_KEY without including it in log messages.
 """
 
 import logging
@@ -17,17 +16,36 @@ logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 30
 
 
-def fetch_raw(url: str) -> list[Any]:
-    """Call the source API and return its raw records. Non-2xx raises."""
-    logger.info("Fetching %s", url)
-    response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
-    response.raise_for_status()
+def fetch_raw(url: str, api_key: str) -> list[Any]:
+    """Call Ticketmaster and return its raw event records."""
+    logger.info("Fetching Ticketmaster events from %s", url)
+
+    try:
+        response = requests.get(
+            url,
+            params={"apikey": api_key},
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+    except requests.RequestException as exc:
+        # Do not include the request URL because it contains the API key.
+        raise RuntimeError(f"Ticketmaster API request failed: {type(exc).__name__}") from None
+
+    if not response.ok:
+        raise RuntimeError(f"Ticketmaster API returned HTTP {response.status_code}")
+
     payload = response.json()
-    # Some sources wrap their rows in {"data": [...]}, others return the list.
-    records = payload.get("data", payload) if isinstance(payload, dict) else payload
+    if not isinstance(payload, dict):
+        raise TypeError(f"Expected a Ticketmaster response object, got {type(payload).__name__}")
+
+    embedded = payload.get("_embedded", {})
+    if not isinstance(embedded, dict):
+        raise TypeError("Ticketmaster _embedded value is not an object")
+
+    records = embedded.get("events", [])
     if not isinstance(records, list):
-        raise TypeError(f"Expected a list of records, got {type(records).__name__}")
-    logger.info("Received %d record(s)", len(records))
+        raise TypeError("Ticketmaster events value is not a list")
+
+    logger.info("Received %d event(s)", len(records))
     return records
 
 
