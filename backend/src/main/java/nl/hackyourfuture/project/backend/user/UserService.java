@@ -1,10 +1,7 @@
 package nl.hackyourfuture.project.backend.user;
 
 import lombok.RequiredArgsConstructor;
-import nl.hackyourfuture.project.backend.user.dto.*;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

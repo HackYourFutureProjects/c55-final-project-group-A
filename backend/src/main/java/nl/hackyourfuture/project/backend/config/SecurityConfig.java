@@ -41,7 +41,6 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(sessionAuthFilter, UsernamePasswordAuthenticationFilter.class);
-        ;
 
         return http.build();
     }
