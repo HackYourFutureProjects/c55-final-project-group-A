@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,6 +31,7 @@ public class AuthController {
 
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
+  @SecurityRequirements
   @Operation(summary = "Register a new user", description = "Creates a new user account, starts a session, and returns the user's details.")
   @ApiResponse(responseCode = "201", description = "The user was created and is now logged in")
   @ApiResponse(
@@ -50,6 +52,7 @@ public class AuthController {
   }
 
   @PostMapping("/login")
+  @SecurityRequirements
   @Operation(summary = "Log in an existing user", description = "Verifies the user's credentials, starts a session, and returns the user's details.")
   @ApiResponse(responseCode = "200", description = "Login successful")
   @ApiResponse(
@@ -72,6 +75,11 @@ public class AuthController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(summary = "Log out the current user", description = "Invalidates the current session and clears the session cookie.")
   @ApiResponse(responseCode = "204", description = "Logout successful")
+  @ApiResponse(
+      responseCode = "401",
+      description = "No valid session found",
+      content = @Content(schema = @Schema(implementation = ProblemDetail.class))
+  )
   public void logout(HttpServletRequest request, HttpServletResponse response) {
     String rawAccessToken = cookieUtils.extractToken(request);
     if (rawAccessToken != null) {
