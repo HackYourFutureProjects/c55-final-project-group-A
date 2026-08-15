@@ -20,7 +20,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("api/auth")
 @AllArgsConstructor
 @Tag(name = "Auth", description = "Operations for user registration, login, and logout")
 public class AuthController {
