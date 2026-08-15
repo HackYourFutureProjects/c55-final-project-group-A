@@ -1,4 +1,4 @@
 package nl.hackyourfuture.project.backend.auth;
 
-public class SessionService {
+public class AuthService {
 }
