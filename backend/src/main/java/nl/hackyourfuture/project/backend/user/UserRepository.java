@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,7 +22,7 @@ public class UserRepository {
         .role(Role.fromDbValue(rs.getString("role")))
         .name(rs.getString("name"))
         .passwordHash(rs.getString("password_hash"))
-        .createdAt(rs.getObject("created_at", Instant.class))
+        .createdAt(rs.getObject("created_at", OffsetDateTime.class))
             .build();
 
 

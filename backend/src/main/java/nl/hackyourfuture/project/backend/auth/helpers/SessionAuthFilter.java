@@ -15,7 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Component
@@ -35,7 +36,7 @@ public class SessionAuthFilter extends OncePerRequestFilter {
     if (rawAccessToken != null) {
       String hashedAccessToken = tokenService.hashToken(rawAccessToken);
       sessionRepository.findSessionByAccessTokenHash(hashedAccessToken)
-          .filter(session -> session.getAccessExpiresAt().isAfter(Instant.now()))
+          .filter(session -> session.getAccessExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
           .flatMap(session -> userRepository.findUserById(session.getUserId()))
           .ifPresent(user -> {
                 var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));

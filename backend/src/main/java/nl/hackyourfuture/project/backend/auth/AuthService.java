@@ -12,8 +12,8 @@ import nl.hackyourfuture.project.backend.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Service
 @AllArgsConstructor
@@ -65,7 +65,7 @@ public class AuthService {
     Session newSession = Session.builder()
         .userId(user.getId())
         .accessTokenHash(hashedAccessToken)
-        .accessExpiresAt(Instant.now().plus(2, ChronoUnit.HOURS))
+        .accessExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusHours(2))
         .build();
 
     sessionRepository.createSession(newSession);

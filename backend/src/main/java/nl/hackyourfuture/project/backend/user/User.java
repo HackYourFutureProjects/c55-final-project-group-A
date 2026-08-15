@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -18,5 +19,5 @@ public class User {
   private Role role;
   private String name;
   private String passwordHash;
-  private Instant createdAt;
+  private OffsetDateTime createdAt;
 }

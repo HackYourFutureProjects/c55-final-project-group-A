@@ -5,7 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,8 +17,8 @@ public class SessionRepository {
       .id(rs.getObject("id", UUID.class))
       .userId(rs.getObject("user_id", UUID.class))
       .accessTokenHash(rs.getString("access_token_hash"))
-      .accessCreatedAt(rs.getObject("access_created_at", Instant.class))
-      .accessExpiresAt(rs.getObject("access_expires_at", Instant.class))
+      .accessCreatedAt(rs.getObject("access_created_at", OffsetDateTime.class))
+      .accessExpiresAt(rs.getObject("access_expires_at", OffsetDateTime.class))
       .build();
   private final JdbcClient jdbcClient;
 

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -16,6 +17,6 @@ public class Session {
   private UUID id;
   private UUID userId;
   private String accessTokenHash;
-  private Instant accessCreatedAt;
-  private Instant accessExpiresAt;
+  private OffsetDateTime accessCreatedAt;
+  private OffsetDateTime accessExpiresAt;
 }

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import nl.hackyourfuture.project.backend.user.Role;
 import nl.hackyourfuture.project.backend.user.User;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Schema(description = "User information returned after registration or login")
@@ -42,7 +42,7 @@ public record AuthResponse(
         example = "2026-08-15T09:30:00Z",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    Instant createdAt) {
+    OffsetDateTime createdAt) {
   public static AuthResponse from(User user) {
     return new AuthResponse(
         user.getId(),
