@@ -7,13 +7,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import nl.hackyourfuture.project.backend.event.dto.response.EventDetailResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.service.EventService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/events")
@@ -66,5 +69,37 @@ public class EventController {
             int size
     ) {
         return eventService.getEventPage(search, page, size);
+    }
+
+    @GetMapping("/{eventId}")
+    @Operation(
+            summary = "Get event details",
+            description = """
+                    Returns the public details of a single event, including its
+                    description, category, schedule, location, primary image,
+                    attendee count, and calculated status.
+                    """
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Event details returned successfully"
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "The supplied event ID is not a valid UUID"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "No event exists with the supplied ID"
+    )
+    public EventDetailResponse getEventDetail(
+            @PathVariable @Parameter(
+                    description = "Unique identifier of the event",
+                    example = "40000000-0000-0000-0000-000000000001",
+                    required = true
+            )
+            UUID eventId
+    ) {
+        return eventService.getEventDetail(eventId);
     }
 }
