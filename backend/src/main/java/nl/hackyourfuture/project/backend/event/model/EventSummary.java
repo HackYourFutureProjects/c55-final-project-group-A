@@ -7,7 +7,6 @@ import java.util.UUID;
 public record EventSummary(
         UUID id,
         String title,
-        String description,
         String categoryName,
         OffsetDateTime startAt,
         OffsetDateTime endAt,

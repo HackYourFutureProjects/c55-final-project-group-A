@@ -25,12 +25,6 @@ public record EventSummaryResponse(
         String title,
 
         @Schema(
-                description = "Detailed description of the event",
-                example = "A live music event in central Amsterdam"
-        )
-        String description,
-
-        @Schema(
                 description = "Name of the event category",
                 example = "Music",
                 requiredMode = Schema.RequiredMode.REQUIRED
@@ -119,7 +113,6 @@ public record EventSummaryResponse(
         return new EventSummaryResponse(
                 event.id(),
                 event.title(),
-                event.description(),
                 event.categoryName(),
                 event.startAt(),
                 event.endAt(),
