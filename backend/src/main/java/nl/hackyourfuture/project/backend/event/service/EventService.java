@@ -1,7 +1,8 @@
 package nl.hackyourfuture.project.backend.event.service;
 
 import lombok.RequiredArgsConstructor;
-import nl.hackyourfuture.project.backend.event.dto.EventResponse;
+import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
+import nl.hackyourfuture.project.backend.event.dto.response.EventSummaryResponse;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
 import org.springframework.stereotype.Service;
 
@@ -13,14 +14,33 @@ public class EventService {
 
     private final EventRepository eventRepository;
 
-    public List<EventResponse> getAllEvents(String search) {
+    public EventPageResponse getEventPage(
+            String search,
+            int page,
+            int size
+    ) {
         String normalizedSearch =
                 search == null || search.isBlank() ? null : search.trim();
 
-        return eventRepository
-                .getAllEvents(normalizedSearch)
+        int offset = page * size;
+
+        List<EventSummaryResponse> events = eventRepository
+                .findEventSummaries(normalizedSearch, size, offset)
                 .stream()
-                .map(EventResponse::from)
+                .map(EventSummaryResponse::from)
                 .toList();
+
+        long totalElements = eventRepository.countEvents(normalizedSearch);
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        boolean hasNext = page + 1 < totalPages;
+
+        return new EventPageResponse(
+                events,
+                page,
+                size,
+                totalElements,
+                totalPages,
+                hasNext
+        );
     }
 }

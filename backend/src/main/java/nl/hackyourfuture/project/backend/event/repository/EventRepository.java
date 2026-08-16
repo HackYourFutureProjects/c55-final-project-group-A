@@ -35,7 +35,8 @@ public class EventRepository {
                     rs.getBoolean("is_cancelled")
             );
 
-    public List<EventSummary> getAllEvents(String search) {
+    public List<EventSummary> findEventSummaries(String search, int limit,
+                                                 int offset) {
         String sql = """
                 SELECT e.id,
                        e.title,
@@ -67,13 +68,31 @@ public class EventRepository {
                 JOIN addresses a ON a.id = e.address_id
                 JOIN cities ci ON ci.id = a.city_id
                 WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
-                ORDER BY e.start_at
+                ORDER BY e.start_at, e.id
+                LIMIT :limit
+                OFFSET :offset
                 """;
 
         return jdbcClient
                 .sql(sql)
                 .param("search", search)
+                .param("limit", limit)
+                .param("offset", offset)
                 .query(EVENT_SUMMARY_ROW_MAPPER)
                 .list();
+    }
+
+    public long countEvents(String search) {
+        String sql = """
+                SELECT COUNT(*)
+                FROM events e
+                WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                """;
+
+        return jdbcClient
+                .sql(sql)
+                .param("search", search)
+                .query(Long.class)
+                .single();
     }
 }
