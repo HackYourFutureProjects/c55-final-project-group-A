@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -11,7 +13,10 @@ import java.util.UUID;
 @Getter
 @Builder
 public class User {
-    private UUID id;
-    private String email;
+  private UUID id;
+  private String email;
+  private Role role;
+  private String name;
+  private String passwordHash;
+  private OffsetDateTime createdAt;
 }
-
