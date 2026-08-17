@@ -1,4 +1,4 @@
-package nl.hackyourfuture.project.backend.event.dto;
+package nl.hackyourfuture.project.backend.event.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;

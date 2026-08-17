@@ -4,15 +4,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import nl.hackyourfuture.project.backend.event.dto.EventResponse;
+import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.service.EventService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 
 @RestController
@@ -27,24 +27,44 @@ public class EventController {
     @Operation(
             summary = "List events",
             description = """
-                    Returns all events. When search is provided,
-                    only events with matching titles are returned.
-                    The search is case-insensitive.
+                    Returns one page of events ordered by start date.
+                    When search is provided, only events with matching
+                    titles are returned. Search is case-insensitive.
                     """
     )
     @ApiResponse(
             responseCode = "200",
-            description = "The list of matching events"
+            description = "A page of matching events with pagination metadata"
     )
-    public List<EventResponse> getEvents(
+    @ApiResponse(
+            responseCode = "400",
+            description = "Page or size is outside the allowed range"
+    )
+    public EventPageResponse getEvents(
             @Parameter(
                     description = "Optional text to search for in event titles",
                     example = "music"
             )
             @RequestParam(required = false)
-            String search
+            String search,
+
+            @Parameter(
+                    description = "Zero-based page number",
+                    example = "0"
+            )
+            @RequestParam(defaultValue = "0")
+            @Min(0)
+            int page,
+
+            @Parameter(
+                    description = "Number of events per page, between 1 and 100",
+                    example = "9"
+            )
+            @RequestParam(defaultValue = "9")
+            @Min(1)
+            @Max(100)
+            int size
     ) {
-        return eventService.getAllEvents(search);
+        return eventService.getEventPage(search, page, size);
     }
 }
-

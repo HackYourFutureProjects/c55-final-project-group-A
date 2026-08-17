@@ -1,4 +1,4 @@
-package nl.hackyourfuture.project.backend.event.dto;
+package nl.hackyourfuture.project.backend.event.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Schema(description = "An event as returned by the API")
-public record EventResponse(
+public record EventSummaryResponse(
 
         @Schema(
                 description = "Unique identifier of the event",
@@ -115,8 +115,8 @@ public record EventResponse(
 
 ) {
 
-    public static EventResponse from(EventSummary event) {
-        return new EventResponse(
+    public static EventSummaryResponse from(EventSummary event) {
+        return new EventSummaryResponse(
                 event.id(),
                 event.title(),
                 event.description(),
