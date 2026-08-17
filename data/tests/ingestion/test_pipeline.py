@@ -37,7 +37,7 @@ def test_pipeline_lands_original_raw_events_including_rejected(monkeypatch):
         captured["container"] = container
         return len(records)
 
-    monkeypatch.setattr(pipeline, "load_config", lambda: config)
+    monkeypatch.setattr(pipeline, "load_config", lambda local=False: config)
     monkeypatch.setattr(pipeline, "fetch_raw", fake_fetch_raw)
     monkeypatch.setattr(pipeline, "land_raw_json", fake_land_raw_json)
 
@@ -46,7 +46,7 @@ def test_pipeline_lands_original_raw_events_including_rejected(monkeypatch):
     assert landed == 2
     assert captured == {
         "account": "teststorage",
-        "path": "mohammed/events/2026-08-16.json",
+        "path": "mohammed/events/ingest_date=2026-08-16/data.json",
         "records": RAW_EVENTS,
         "container": "dev",
     }
