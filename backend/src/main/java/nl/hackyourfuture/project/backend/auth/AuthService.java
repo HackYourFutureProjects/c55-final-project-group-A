@@ -11,6 +11,7 @@ import nl.hackyourfuture.project.backend.user.User;
 import nl.hackyourfuture.project.backend.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -24,6 +25,7 @@ public class AuthService {
   private PasswordEncoder passwordEncoder;
   private TokenService tokenService;
 
+  @Transactional
   public AuthResult register(RegisterRequest request){
     if(userRepository.findUserByEmail(request.email()).isPresent()){
       throw new EmailAlreadyExistsException("This email already exist");
