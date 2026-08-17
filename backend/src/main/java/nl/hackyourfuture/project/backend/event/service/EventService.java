@@ -54,7 +54,7 @@ public class EventService {
         if (event.cancelled()) {
             return EventStatus.CANCELLED;
         }
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
 
         if (now.isBefore(event.startAt())) {
             return EventStatus.UPCOMING;
