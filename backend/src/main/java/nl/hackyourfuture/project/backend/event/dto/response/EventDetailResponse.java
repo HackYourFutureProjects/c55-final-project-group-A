@@ -1,14 +1,15 @@
 package nl.hackyourfuture.project.backend.event.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import nl.hackyourfuture.project.backend.event.model.EventSummary;
+import nl.hackyourfuture.project.backend.event.model.EventDetail;
+import nl.hackyourfuture.project.backend.event.model.EventStatus;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Schema(description = "An event as returned by the API")
-public record EventSummaryResponse(
+@Schema(description = "Detailed public information about a single event")
+public record EventDetailResponse(
 
         @Schema(
                 description = "Unique identifier of the event",
@@ -23,6 +24,13 @@ public record EventSummaryResponse(
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         String title,
+
+        @Schema(
+                description = "Full description of the event",
+                example = "An evening of live music in central Amsterdam",
+                nullable = true
+        )
+        String description,
 
         @Schema(
                 description = "Name of the event category",
@@ -48,6 +56,7 @@ public record EventSummaryResponse(
         @Schema(
                 description = "Event price in euros",
                 example = "24.00",
+                minimum = "0",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         BigDecimal price,
@@ -88,31 +97,49 @@ public record EventSummaryResponse(
         String province,
 
         @Schema(
-                description = "URL of the event's primary image",
-                example = "https://example.com/images/music-night.jpg"
+                description = """
+                        Public URL of the event's primary image.
+                        Null when the event does not have an image.
+                        """,
+                example = "https://ik.imagekit.io/example/events/music-night.jpg",
+                nullable = true
         )
         String imageUrl,
 
         @Schema(
                 description = "Number of users attending the event",
                 example = "328",
+                minimum = "0",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         long goingCount,
 
         @Schema(
-                description = "Whether the event has been cancelled by admin",
-                example = "false",
+                description = """
+                        Current event status. Cancellation takes priority over
+                        statuses calculated from the event start and end times.
+                        """,
+                example = "UPCOMING",
+                allowableValues = {
+                        "UPCOMING",
+                        "ONGOING",
+                        "PAST",
+                        "CANCELLED"
+                },
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        boolean cancelled
+        EventStatus eventStatus
 
 ) {
 
-    public static EventSummaryResponse from(EventSummary event) {
-        return new EventSummaryResponse(
+    public static EventDetailResponse from(
+            EventDetail event,
+            EventStatus status
+    ) {
+        return new EventDetailResponse(
                 event.id(),
                 event.title(),
+                event.description(),
                 event.categoryName(),
                 event.startAt(),
                 event.endAt(),
@@ -124,7 +151,7 @@ public record EventSummaryResponse(
                 event.province(),
                 event.imageUrl(),
                 event.goingCount(),
-                event.cancelled()
+                status
         );
     }
 }
