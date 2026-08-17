@@ -1,6 +1,7 @@
 package nl.hackyourfuture.project.backend.event.repository;
 
 import lombok.RequiredArgsConstructor;
+import nl.hackyourfuture.project.backend.event.model.EventDetail;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -20,7 +22,6 @@ public class EventRepository {
             (rs, _) -> new EventSummary(
                     rs.getObject("id", UUID.class),
                     rs.getString("title"),
-                    rs.getString("description"),
                     rs.getString("category_name"),
                     rs.getObject("start_at", OffsetDateTime.class),
                     rs.getObject("end_at", OffsetDateTime.class),
@@ -35,12 +36,10 @@ public class EventRepository {
                     rs.getBoolean("is_cancelled")
             );
 
-    public List<EventSummary> findEventSummaries(String search, int limit,
-                                                 int offset) {
+    public List<EventSummary> findEventSummaries(String search, int limit, int offset) {
         String sql = """
                 SELECT e.id,
                        e.title,
-                       e.description,
                        c.name AS category_name,
                        e.start_at,
                        e.end_at,
@@ -54,7 +53,7 @@ public class EventRepository {
                            SELECT ei.image_key
                            FROM event_images ei
                            WHERE ei.event_id = e.id
-                           ORDER BY ei.created_at
+                           ORDER BY ei.created_at, ei.id
                            LIMIT 1
                        ) AS image_url,
                        (
@@ -94,5 +93,65 @@ public class EventRepository {
                 .param("search", search)
                 .query(Long.class)
                 .single();
+    }
+
+    private static final RowMapper<EventDetail> EVENT_DETAIL_ROW_MAPPER =
+            (rs, _) -> new EventDetail(
+                    rs.getObject("id", UUID.class),
+                    rs.getString("title"),
+                    rs.getString("description"),
+                    rs.getString("category_name"),
+                    rs.getObject("start_at", OffsetDateTime.class),
+                    rs.getObject("end_at", OffsetDateTime.class),
+                    rs.getBigDecimal("price"),
+                    rs.getString("street"),
+                    rs.getString("house_number"),
+                    rs.getString("postal_code"),
+                    rs.getString("city_name"),
+                    rs.getString("province"),
+                    rs.getString("image_url"),
+                    rs.getLong("going_count"),
+                    rs.getBoolean("is_cancelled")
+            );
+
+    public Optional<EventDetail> findEventDetailById(UUID eventId) {
+        String sql = """
+                SELECT e.id,
+                       e.title,
+                       e.description,
+                       c.name AS category_name,
+                       e.start_at,
+                       e.end_at,
+                       e.price,
+                       a.street,
+                       a.house_number,
+                       a.postal_code,
+                       ci.name AS city_name,
+                       ci.province,
+                       (
+                           SELECT ei.image_key
+                           FROM event_images ei
+                           WHERE ei.event_id = e.id
+                           ORDER BY ei.created_at, ei.id
+                           LIMIT 1
+                       ) AS image_url,
+                       (
+                           SELECT COUNT(*)
+                           FROM event_attendees ea
+                           WHERE ea.event_id = e.id
+                       ) AS going_count,
+                       e.is_cancelled
+                FROM events e
+                JOIN categories c ON c.id = e.category_id
+                JOIN addresses a ON a.id = e.address_id
+                JOIN cities ci ON ci.id = a.city_id
+                WHERE e.id = :eventId
+                """;
+
+        return jdbcClient
+                .sql(sql)
+                .param("eventId", eventId)
+                .query(EVENT_DETAIL_ROW_MAPPER)
+                .optional();
     }
 }

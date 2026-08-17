@@ -2,6 +2,7 @@ package nl.hackyourfuture.project.backend.config;
 
 import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsException;
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
+import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -19,7 +20,7 @@ import java.util.Objects;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ProblemDetail handleEmailExist(EmailAlreadyExistsException ex){
+    public ProblemDetail handleEmailExist(EmailAlreadyExistsException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problem.setTitle("Email already registered");
         problem.setDetail(ex.getMessage());
@@ -27,7 +28,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ProblemDetail handleInvalidCredential(InvalidCredentialsException ex){
+    public ProblemDetail handleInvalidCredential(InvalidCredentialsException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problem.setTitle("Invalid credentials");
         problem.setDetail(ex.getMessage());
@@ -55,6 +56,17 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
         problem.setTitle("Not found");
         problem.setDetail("The requested resource does not exist");
+        return problem;
+    }
+
+    @ExceptionHandler(EventNotFoundException.class)
+    public ProblemDetail handleEventNotFound(EventNotFoundException ex) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+
+        problem.setTitle("Event not found");
+        problem.setDetail(ex.getMessage());
+
         return problem;
     }
 
