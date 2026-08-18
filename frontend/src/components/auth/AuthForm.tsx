@@ -1,7 +1,8 @@
 "use client";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { type SubmitEvent, useState } from "react";
+import { login, register } from "@/lib/api";
 
 type AuthTab = "login" | "register";
 
@@ -11,10 +12,34 @@ export function AuthForm() {
     searchParams.get("tab") === "register" ? "register" : "login";
   const [tab, setTab] = useState<AuthTab>(initialTab);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    // TODO: wire up to real auth endpoint once backend delivers it
-    console.log(tab === "login" ? "login submit" : "register submit");
+    setError(null);
+    setIsSubmitting(true);
+
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    try {
+      if (tab === "login") {
+        await login({ email, password });
+      } else {
+        const name = formData.get("name") as string;
+        await register({ name, email, password });
+      }
+      router.push("/profile");
+    } catch {
+      setError(
+        "Something went wrong. Please check your details and try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -119,12 +144,13 @@ export function AuthForm() {
                 className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 outline-none focus:border-orange-500"
               />
             </div>
-
-            <button
-              type="submit"
-              className="mt-2 rounded-xl bg-orange-600 py-3 font-semibold text-white transition hover:bg-orange-700"
-            >
-              {tab === "login" ? "Log in" : "Create account"}
+            {error && <p>{error}</p>}
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? "Please wait..."
+                : tab === "login"
+                  ? "Log in"
+                  : "Sign up"}
             </button>
           </form>
         </div>
