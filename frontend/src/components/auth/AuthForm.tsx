@@ -102,6 +102,8 @@ export function AuthForm() {
                   id="name"
                   name="name"
                   type="text"
+                  required
+                  minLength={2}
                   placeholder="Your name"
                   className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 outline-none focus:border-orange-500"
                 />
@@ -126,26 +128,35 @@ export function AuthForm() {
             </div>
 
             <div>
-              <div className="mb-1 flex items-center justify-between">
+              <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-semibold"
+                  className="mb-1 block text-sm font-semibold"
                 >
                   Password
                 </label>
-                {tab === "login"}
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  minLength={tab === "register" ? 8 : undefined}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 outline-none focus:border-orange-500"
+                />
+                {tab === "register" && (
+                  <p className="mt-1 text-sm text-neutral-500">
+                    At least 8 characters
+                  </p>
+                )}
               </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 outline-none focus:border-orange-500"
-              />
             </div>
-            {error && <p>{error}</p>}
-            <button type="submit" disabled={isSubmitting}>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
               {isSubmitting
                 ? "Please wait..."
                 : tab === "login"
