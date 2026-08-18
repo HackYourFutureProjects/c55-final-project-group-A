@@ -2,6 +2,8 @@ interface HomeBannerProps {
   eventCount: number;
 }
 
+const chipBase = "rounded-full px-4 py-1.5 text-sm font-semibold";
+
 export default function HomeBanner({ eventCount }: HomeBannerProps) {
   const today = new Date();
   const formattedDate = today.toLocaleDateString("en-GB", {
@@ -11,35 +13,55 @@ export default function HomeBanner({ eventCount }: HomeBannerProps) {
   });
 
   return (
-    <div>
-      <div>
-        <span>🎵 Music</span>
-        <span>🎨 Art</span>
-        <span>⚽ Sports</span>
-        <span>🎭 Theatre</span>
+    <div className="relative overflow-hidden rounded-3xl bg-orange-50 px-8 py-10">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-10 right-0 flex gap-3"
+      >
+        <div className="h-40 w-14 rotate-12 rounded-2xl bg-purple-200" />
+        <div className="h-48 w-14 rotate-12 rounded-2xl bg-amber-200" />
+        <div className="h-40 w-14 rotate-12 rounded-2xl bg-blue-200" />
+        <div className="h-48 w-14 rotate-12 rounded-2xl bg-green-200" />
+        <div className="h-40 w-14 rotate-12 rounded-2xl bg-pink-200" />
       </div>
 
-      <h1>Discover events across the Netherlands</h1>
-      <p>
-        {formattedDate} · {eventCount} events found
-      </p>
+      <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="mb-6 flex flex-wrap gap-2">
+            <span className={`${chipBase} bg-purple-100 text-purple-700`}>
+              🎵 Music
+            </span>
+            <span className={`${chipBase} bg-orange-100 text-orange-700`}>
+              🎨 Art
+            </span>
+            <span className={`${chipBase} bg-blue-100 text-blue-700`}>
+              ⚽ Sports
+            </span>
+            <span className={`${chipBase} bg-amber-100 text-amber-700`}>
+              🍔 Food
+            </span>
+            <span className={`${chipBase} bg-pink-100 text-pink-700`}>
+              🎭 Theatre
+            </span>
+          </div>
 
-      {/* TODO: wire up in frontend-event-search */}
-      <input
-        type="text"
-        placeholder="Search events, venues, artists..."
-        disabled
-      />
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+            What's on in{" "}
+            <span className="text-orange-600">the Netherlands</span>
+          </h1>
 
-      {/* TODO: wire up in frontend-event-sort */}
-      <div>
-        <label htmlFor="sort">Sort:</label>
-        <select id="sort" defaultValue="date">
-          <option value="date">Date</option>
-          <option value="priceAsc">Price (low to high)</option>
-          <option value="priceDesc">Price (high to low)</option>
-          <option value="popularity">Popularity</option>
-        </select>
+          <p className="mt-3 text-neutral-500">
+            {formattedDate} · {eventCount} events
+          </p>
+        </div>
+
+        {/* TODO: wire up in frontend-event-search */}
+        <input
+          type="text"
+          placeholder="Search events..."
+          disabled
+          className="w-full rounded-full border border-neutral-200 bg-white px-5 py-3 outline-none focus:border-orange-500 disabled:cursor-not-allowed lg:w-80"
+        />
       </div>
     </div>
   );

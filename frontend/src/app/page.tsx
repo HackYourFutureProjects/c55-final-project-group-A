@@ -46,7 +46,7 @@ const samplePage: EventPage = {
 
 export default function Home() {
   return (
-    <main>
+    <main className="mx-auto w-full max-w-10xl px-6 py-8">
       <HomeBanner eventCount={samplePage.totalElements} />
       <EventList events={samplePage.events} />
     </main>
