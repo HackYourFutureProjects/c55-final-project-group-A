@@ -29,7 +29,10 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_ARGS = {
     "owner": "data-team",
-    "retries": 2,
+    # 3, not 2: the Databricks warehouse returns a transient internal error on
+    # roughly a third of scheduled dbt builds, and two attempts leaves no margin
+    # when the first one hits it.
+    "retries": 3,
     "retry_delay": timedelta(minutes=5),
     # Inherited by every task, including the one you add at 11pm on a Thursday.
     "on_failure_callback": slack_alert,
@@ -221,7 +224,7 @@ def final_project_pipeline():
         """Copy the enriched mart into the backend's database, atomically.
 
         The work is in src/publishing/sync.py, which you can also run by hand
-        with `uv run python -m src.publishing.sync`. This task's job is to turn
+        with `uv run --extra sync python -m src.publishing.sync`. This task's job is to turn
         Airflow Variables and Key Vault into the environment that module reads,
         so both routes build the same connection string.
         """

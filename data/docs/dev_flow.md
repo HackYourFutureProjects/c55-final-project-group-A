@@ -179,7 +179,7 @@ For refresher take a look at week 13's chapter [dbt on Databricks](https://app.n
 # 3. Build the models and run the tests.
 # --project .. points dbt at data/dbt/dbt_project.yml, while `uv run` still
 # resolves dependencies from data/pyproject.toml one level up.
-cd dbt && uv run --project .. dbt build
+cd dbt && uv run --project .. --extra dbt dbt build
 ```
 
 You are looking for a successful summary at the end of the run, for example:
@@ -253,7 +253,7 @@ build the expected data.
 # Reads team_a.dev_<yourname>.fct_postings_enriched from Databricks and
 # overwrites analytics_dev.fct_postings in Postgres — refuses to run if the
 # source mart is empty, so it never wipes a good table with nothing.
-cd .. && uv run python -m src.publishing.sync
+cd .. && uv run --extra sync python -m src.publishing.sync
 ```
 
 It prints what it read and what it wrote:
