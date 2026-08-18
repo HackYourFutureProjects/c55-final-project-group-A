@@ -8,6 +8,10 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import nl.hackyourfuture.project.backend.event.category.dto.CategoryResponse;
+
+import java.util.List;
+
 @Schema(description = "Detailed public information about a single event")
 public record EventDetailResponse(
 
@@ -33,11 +37,10 @@ public record EventDetailResponse(
         String description,
 
         @Schema(
-                description = "Name of the event category",
-                example = "Music",
+                description = "Categories assigned to the event",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        String categoryName,
+        List<CategoryResponse> categories,
 
         @Schema(
                 description = "Date and time when the event starts",
@@ -140,7 +143,10 @@ public record EventDetailResponse(
                 event.id(),
                 event.title(),
                 event.description(),
-                event.categoryName(),
+                event.categories()
+                        .stream()
+                        .map(CategoryResponse::from)
+                        .toList(),
                 event.startAt(),
                 event.endAt(),
                 event.price(),

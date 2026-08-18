@@ -3,14 +3,18 @@ package nl.hackyourfuture.project.backend.event.repository;
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
+import nl.hackyourfuture.project.backend.event.category.model.Category;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 
 @Repository
 @RequiredArgsConstructor
@@ -22,7 +26,7 @@ public class EventRepository {
             (rs, _) -> new EventSummary(
                     rs.getObject("id", UUID.class),
                     rs.getString("title"),
-                    rs.getString("category_name"),
+                    mapCategories(rs),
                     rs.getObject("start_at", OffsetDateTime.class),
                     rs.getObject("end_at", OffsetDateTime.class),
                     rs.getBigDecimal("price"),
@@ -36,11 +40,45 @@ public class EventRepository {
                     rs.getBoolean("is_cancelled")
             );
 
+    private static List<Category> mapCategories(
+            java.sql.ResultSet resultSet
+    ) throws SQLException {
+        UUID[] categoryIds =
+                (UUID[]) resultSet.getArray("category_ids").getArray();
+
+        String[] categoryNames =
+                (String[]) resultSet.getArray("category_names").getArray();
+
+        List<Category> categories = new ArrayList<>(categoryIds.length);
+
+        for (int index = 0; index < categoryIds.length; index++) {
+            categories.add(new Category(
+                    categoryIds[index],
+                    categoryNames[index]
+            ));
+        }
+
+        return List.copyOf(categories);
+    }
+
     public List<EventSummary> findEventSummaries(String search, int limit, int offset) {
         String sql = """
                 SELECT e.id,
                        e.title,
-                       c.name AS category_name,
+                       ARRAY(
+                           SELECT c.id
+                           FROM event_categories ec
+                           JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                       ) AS category_ids,
+                       ARRAY(
+                           SELECT c.name
+                           FROM event_categories ec
+                           JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                       ) AS category_names,
                        e.start_at,
                        e.end_at,
                        e.price,
@@ -63,7 +101,6 @@ public class EventRepository {
                        ) AS going_count,
                        e.is_cancelled
                 FROM events e
-                JOIN categories c ON c.id = e.category_id
                 JOIN addresses a ON a.id = e.address_id
                 JOIN cities ci ON ci.id = a.city_id
                 WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
@@ -100,7 +137,7 @@ public class EventRepository {
                     rs.getObject("id", UUID.class),
                     rs.getString("title"),
                     rs.getString("description"),
-                    rs.getString("category_name"),
+                    mapCategories(rs),
                     rs.getObject("start_at", OffsetDateTime.class),
                     rs.getObject("end_at", OffsetDateTime.class),
                     rs.getBigDecimal("price"),
@@ -119,7 +156,20 @@ public class EventRepository {
                 SELECT e.id,
                        e.title,
                        e.description,
-                       c.name AS category_name,
+                       ARRAY(
+                           SELECT c.id
+                           FROM event_categories ec
+                           JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                       ) AS category_ids,
+                       ARRAY(
+                           SELECT c.name
+                           FROM event_categories ec
+                           JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                       ) AS category_names,
                        e.start_at,
                        e.end_at,
                        e.price,
@@ -142,7 +192,6 @@ public class EventRepository {
                        ) AS going_count,
                        e.is_cancelled
                 FROM events e
-                JOIN categories c ON c.id = e.category_id
                 JOIN addresses a ON a.id = e.address_id
                 JOIN cities ci ON ci.id = a.city_id
                 WHERE e.id = :eventId
