@@ -1,8 +1,8 @@
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
-import type { Event } from "@/types/event";
+import type { EventDetail, EventPage } from "@/types/event";
 
-export async function getEvents(): Promise<Event[]> {
-  const response = await fetch("/api/events");
+export async function getEvents(page = 0, size = 9): Promise<EventPage> {
+  const response = await fetch(`/api/events?page=${page}&size=${size}`);
   if (!response.ok) {
     throw new Error(`Failed to load events: ${response.status}`);
   }
