@@ -1,32 +1,35 @@
-"""Validation models for the source data. Replace with your source's shape."""
+"""Validation models for Ticketmaster event data."""
 
-from datetime import UTC, datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
-class Posting(BaseModel):
-    """One job posting from the source API."""
+class EventStart(BaseModel):
+    """Ticketmaster start-date information."""
 
-    slug: str
-    title: str
-    company_name: str = Field(alias="company_name")
-    location: str | None = None
-    remote: bool = False
-    tags: list[str] = Field(default_factory=list)
-    created_at: datetime
+    local_date: date | None = Field(default=None, alias="localDate")
+    date_time: datetime | None = Field(default=None, alias="dateTime")
 
-    @field_validator("created_at", mode="before")
-    @classmethod
-    def _epoch_to_datetime(cls, value: object) -> object:
-        """Unix timestamp to a UTC datetime.
+    model_config = {"populate_by_name": True, "extra": "allow"}
 
-        Without the timezone, Python reads the number in whatever zone the
-        machine is in, so your laptop and the container disagree about what
-        `posted_at` means.
-        """
-        if isinstance(value, int):
-            return datetime.fromtimestamp(value, tz=UTC)
-        return value
 
-    model_config = {"populate_by_name": True}
+class EventDates(BaseModel):
+    """Ticketmaster event-date information."""
+
+    start: EventStart | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class TicketmasterEvent(BaseModel):
+    """One event returned by the Ticketmaster Discovery API."""
+
+    id: str
+    name: str
+    type: str | None = None
+    url: str | None = None
+    locale: str | None = None
+    dates: EventDates | None = None
+
+    model_config = {"populate_by_name": True, "extra": "allow"}
