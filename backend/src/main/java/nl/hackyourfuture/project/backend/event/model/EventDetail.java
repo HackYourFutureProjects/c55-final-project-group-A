@@ -1,13 +1,16 @@
 package nl.hackyourfuture.project.backend.event.model;
 
+import nl.hackyourfuture.project.backend.event.category.model.Category;
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record EventDetail(UUID id,
                           String title,
                           String description,
-                          String categoryName,
+                          List<Category> categories,
                           OffsetDateTime startAt,
                           OffsetDateTime endAt,
                           BigDecimal price,

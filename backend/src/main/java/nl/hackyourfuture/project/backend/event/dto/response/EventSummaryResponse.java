@@ -1,10 +1,12 @@
 package nl.hackyourfuture.project.backend.event.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import nl.hackyourfuture.project.backend.event.category.dto.CategoryResponse;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Schema(description = "An event as returned by the API")
@@ -25,11 +27,10 @@ public record EventSummaryResponse(
         String title,
 
         @Schema(
-                description = "Name of the event category",
-                example = "Music",
+                description = "Categories assigned to the event",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        String categoryName,
+        List<CategoryResponse> categories,
 
         @Schema(
                 description = "Date and time when the event starts",
@@ -113,7 +114,10 @@ public record EventSummaryResponse(
         return new EventSummaryResponse(
                 event.id(),
                 event.title(),
-                event.categoryName(),
+                event.categories()
+                        .stream()
+                        .map(CategoryResponse::from)
+                        .toList(),
                 event.startAt(),
                 event.endAt(),
                 event.price(),

@@ -26,23 +26,24 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/docs/**").permitAll()
-                    .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
-                    .requestMatchers("/api/events/**").hasRole("ADMIN")
-                    .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers("/api/events/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(sessionAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(sessionAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder(12);
-  }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
 }
