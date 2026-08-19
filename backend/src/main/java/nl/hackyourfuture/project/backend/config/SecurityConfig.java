@@ -4,6 +4,7 @@ import nl.hackyourfuture.project.backend.auth.helpers.CustomAuthenticationEntryP
 import nl.hackyourfuture.project.backend.auth.helpers.SessionAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -11,39 +12,40 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   SessionAuthFilter sessionAuthFilter,
-                                                   CustomAuthenticationEntryPoint entryPoint) throws Exception {
-        http
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers("/api/docs/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
-                        .requestMatchers("/api/events/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
-                )
-                .csrf(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
-                .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(sessionAuthFilter, UsernamePasswordAuthenticationFilter.class);
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                 SessionAuthFilter sessionAuthFilter,
+                                                 CustomAuthenticationEntryPoint entryPoint) throws Exception {
+    http
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/error").permitAll()
+            .requestMatchers("/api/docs/**").permitAll()
+            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/events/*/saved", "/api/events/*/going").authenticated()
+            .requestMatchers(HttpMethod.DELETE, "/api/events/*/saved", "/api/events/*/going").authenticated()
+            .requestMatchers("/api/events/**").hasRole("ADMIN")
+            .anyRequest().authenticated()
+        )
+        .csrf(AbstractHttpConfigurer::disable)
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .formLogin(AbstractHttpConfigurer::disable)
+        .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(sessionAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+    return http.build();
+  }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder(12);
+  }
 }
