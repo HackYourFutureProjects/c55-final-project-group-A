@@ -14,7 +14,7 @@ public record RegisterRequest(
     String name,
 
     @NotBlank(message = "Please provide an email")
-    @Size(max = 100, message = "Email must not exceed 100 characters")
+    @Size(min=5, max = 100, message = "Email must not exceed 100 characters")
     @Email(message = "Please provide a valid email address")
     @Schema(description = "Email address of the user", example = "anouk.devries@example.com")
     String email,
