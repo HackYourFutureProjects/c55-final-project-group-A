@@ -16,16 +16,12 @@ public class UserService {
   private final UserRepository userRepository;
 
   public UserResponse getCurrentUser(UUID id) {
-    User user = userRepository.findUserById(id)
-        .orElseThrow(() -> new UserNotFoundException("User not found"));
-
+    User user = getUserOrThrow(id);
     return UserResponse.from(user);
   }
 
   public UserResponse updateUser(UUID id, PatchUserRequest request) {
-    if (userRepository.findUserById(id).isEmpty()) {
-      throw new UserNotFoundException("User not found");
-    }
+      getUserOrThrow(id);
 
     boolean emailBlank = request.email() == null || request.email().isBlank();
     boolean nameBlank = request.name() == null || request.name().isBlank();
@@ -54,6 +50,12 @@ public class UserService {
   }
 
   public void deleteUser(UUID id) {
+      getUserOrThrow(id);
     userRepository.deleteUserById(id);
+  }
+
+  private User getUserOrThrow(UUID id){
+      return userRepository.findUserById(id)
+          .orElseThrow(() -> new UserNotFoundException("User not found"));
   }
 }
