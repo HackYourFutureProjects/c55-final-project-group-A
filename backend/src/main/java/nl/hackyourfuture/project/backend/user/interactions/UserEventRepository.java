@@ -54,6 +54,14 @@ public class UserEventRepository {
         .update();
   }
 
+  public boolean eventExists(UUID eventId) {
+    return jdbcClient
+        .sql("SELECT EXISTS(SELECT 1 FROM events WHERE id = :eventId)")
+        .param("eventId", eventId)
+        .query(Boolean.class)
+        .single();
+  }
+
 
 }
 
