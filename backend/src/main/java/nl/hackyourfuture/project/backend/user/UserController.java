@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.user.dto.PatchUserRequest;
 import nl.hackyourfuture.project.backend.user.dto.UserResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -59,6 +60,7 @@ public class UserController {
 
 
     @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete the current user", description = "Permanently deletes the current user's account.")
     @ApiResponse(responseCode = "204", description = "User successfully deleted")
     @ApiResponse(
