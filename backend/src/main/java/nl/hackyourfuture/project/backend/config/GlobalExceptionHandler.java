@@ -3,6 +3,7 @@ package nl.hackyourfuture.project.backend.config;
 import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsException;
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
+import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ProblemDetail handleUserNotFound(UserNotFoundException ex){
+    public ProblemDetail handleUserNotFound(UserNotFoundException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
         problem.setTitle("User not found");
         problem.setDetail(ex.getMessage());
@@ -47,7 +48,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ProblemDetail handleBadRequest(BadRequestException ex){
+    public ProblemDetail handleBadRequest(BadRequestException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Bad request");
         problem.setDetail(ex.getMessage());
@@ -99,6 +100,19 @@ public class GlobalExceptionHandler {
         problem.setTitle("Validation failed");
         problem.setDetail(
                 "One or more request parameters are outside the allowed range"
+        );
+
+        return problem;
+    }
+
+    @ExceptionHandler(ImageUploadException.class)
+    public ProblemDetail handleImageUpload(ImageUploadException ex) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.BAD_GATEWAY);
+
+        problem.setTitle("Image upload failed");
+        problem.setDetail(
+                "The image service could not upload the file. Please try again."
         );
 
         return problem;

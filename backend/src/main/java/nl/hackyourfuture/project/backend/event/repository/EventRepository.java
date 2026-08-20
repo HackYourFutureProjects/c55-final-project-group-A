@@ -86,7 +86,7 @@ public class EventRepository {
                        a.city_name,
                        a.province,
                        (
-                           SELECT ei.image_key
+                           SELECT ei.image_url
                            FROM event_images ei
                            WHERE ei.event_id = e.id
                            ORDER BY ei.created_at, ei.id
@@ -166,7 +166,7 @@ public class EventRepository {
                            SELECT c.name
                            FROM event_categories ec
                            JOIN categories c ON c.id = ec.category_id
-                           WHERE ec.event_id = e.id 
+                           WHERE ec.event_id = e.id
                            ORDER BY c.name
                        ) AS category_names,
                        e.start_at,
@@ -178,7 +178,7 @@ public class EventRepository {
                        a.city_name,
                        a.province,
                        (
-                           SELECT ei.image_key
+                           SELECT ei.image_url
                            FROM event_images ei
                            WHERE ei.event_id = e.id
                            ORDER BY ei.created_at, ei.id
@@ -250,5 +250,42 @@ public class EventRepository {
                     .param("categoryId", categoryId)
                     .update();
         }
+    }
+
+    public boolean existsById(UUID eventId) {
+        return jdbcClient
+                .sql("""
+                        SELECT EXISTS(
+                            SELECT 1
+                            FROM events
+                            WHERE id = :eventId
+                        )
+                        """)
+                .param("eventId", eventId)
+                .query(Boolean.class)
+                .single();
+    }
+
+    public boolean isCancelled(UUID eventId) {
+        return jdbcClient
+                .sql("""
+                        SELECT is_cancelled
+                        FROM events
+                        WHERE id = :eventId
+                        """)
+                .param("eventId", eventId)
+                .query(Boolean.class)
+                .single();
+    }
+
+    public void publish(UUID eventId) {
+        jdbcClient
+                .sql("""
+                        UPDATE events
+                        SET is_published = TRUE
+                        WHERE id = :eventId
+                        """)
+                .param("eventId", eventId)
+                .update();
     }
 }
