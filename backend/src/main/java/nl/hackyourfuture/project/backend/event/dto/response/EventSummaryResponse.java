@@ -84,7 +84,7 @@ public record EventSummaryResponse(
         @Schema(
                 description = "Province where the event takes place",
                 example = "North Holland",
-                requiredMode = Schema.RequiredMode.REQUIRED
+                nullable = true
         )
         String province,
 

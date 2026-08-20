@@ -85,8 +85,8 @@ public class EventRepository {
                        a.street,
                        a.house_number,
                        a.postal_code,
-                       ci.name AS city_name,
-                       ci.province,
+                       a.city_name,
+                       a.province,
                        (
                            SELECT ei.image_key
                            FROM event_images ei
@@ -102,7 +102,6 @@ public class EventRepository {
                        e.is_cancelled
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
-                JOIN cities ci ON ci.id = a.city_id
                 WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
@@ -176,8 +175,8 @@ public class EventRepository {
                        a.street,
                        a.house_number,
                        a.postal_code,
-                       ci.name AS city_name,
-                       ci.province,
+                       a.city_name,
+                       a.province,
                        (
                            SELECT ei.image_key
                            FROM event_images ei
@@ -193,7 +192,6 @@ public class EventRepository {
                        e.is_cancelled
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
-                JOIN cities ci ON ci.id = a.city_id
                 WHERE e.id = :eventId
                 """;
 
