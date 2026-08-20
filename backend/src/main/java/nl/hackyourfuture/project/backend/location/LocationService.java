@@ -1,16 +1,15 @@
 package nl.hackyourfuture.project.backend.location;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.RequiredArgsConstructor;
-import nl.hackyourfuture.project.backend.location.dto.LocationSuggestionResponse;
-import nl.hackyourfuture.project.backend.location.exceptions.ExternalServiceException;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @Service
@@ -37,6 +36,7 @@ public class LocationService {
               .queryParam("format", "json")
               .queryParam("addressdetails", 1)
               .queryParam("countrycodes", "nl")
+              .queryParam("accept-language", "en")
               .queryParam("limit", 5)
               .build())
           .retrieve()
@@ -48,6 +48,7 @@ public class LocationService {
 
       return Stream.of(results)
           .map(LocationSuggestionResponse::from)
+          .filter(distinctByLabel())
           .toList();
     } catch (RestClientException e) {
       throw new ExternalServiceException("Location search is temporarily unavailable");
@@ -55,13 +56,8 @@ public class LocationService {
 
   }
 
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  public record NominatimResult(
-      @JsonProperty("place_id")
-      String placeId,
-
-      @JsonProperty("display_name")
-      String displayName
-  ) {
+  private static Predicate<LocationSuggestionResponse> distinctByLabel() {
+    Set<String> seen = new HashSet<>();
+    return r -> seen.add(r.label());
   }
 }
