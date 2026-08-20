@@ -2,6 +2,7 @@ package nl.hackyourfuture.project.backend.event.repository;
 
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
+import nl.hackyourfuture.project.backend.event.model.EventDraft;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
 import nl.hackyourfuture.project.backend.event.category.model.Category;
 import org.springframework.jdbc.core.RowMapper;
@@ -10,10 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 
 @Repository
@@ -102,7 +100,8 @@ public class EventRepository {
                        e.is_cancelled
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
-                WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                WHERE e.is_published = TRUE
+                  AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
                 OFFSET :offset
@@ -121,7 +120,8 @@ public class EventRepository {
         String sql = """
                 SELECT COUNT(*)
                 FROM events e
-                WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                WHERE e.is_published = TRUE
+                  AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
                 """;
 
         return jdbcClient
@@ -166,7 +166,7 @@ public class EventRepository {
                            SELECT c.name
                            FROM event_categories ec
                            JOIN categories c ON c.id = ec.category_id
-                           WHERE ec.event_id = e.id
+                           WHERE ec.event_id = e.id 
                            ORDER BY c.name
                        ) AS category_names,
                        e.start_at,
@@ -193,6 +193,7 @@ public class EventRepository {
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
                 WHERE e.id = :eventId
+                  AND e.is_published = TRUE
                 """;
 
         return jdbcClient
@@ -200,5 +201,54 @@ public class EventRepository {
                 .param("eventId", eventId)
                 .query(EVENT_DETAIL_ROW_MAPPER)
                 .optional();
+    }
+
+    public UUID createDraft(EventDraft draft) {
+        String sql = """
+                INSERT INTO events (
+                    title,
+                    description,
+                    address_id,
+                    start_at,
+                    end_at,
+                    price,
+                    created_by_user_id
+                )
+                VALUES (
+                    :title,
+                    :description,
+                    :addressId,
+                    :startAt,
+                    :endAt,
+                    :price,
+                    :createdByUserId
+                )
+                RETURNING id
+                """;
+
+        return jdbcClient
+                .sql(sql)
+                .param("title", draft.title())
+                .param("description", draft.description())
+                .param("addressId", draft.addressId())
+                .param("startAt", draft.startAt())
+                .param("endAt", draft.endAt())
+                .param("price", draft.price())
+                .param("createdByUserId", draft.createdByUserId())
+                .query(UUID.class)
+                .single();
+    }
+
+    public void addCategories(UUID eventId, Set<UUID> categoryIds) {
+        for (UUID categoryId : categoryIds) {
+            jdbcClient
+                    .sql("""
+                            INSERT INTO event_categories (event_id, category_id)
+                            VALUES (:eventId, :categoryId)
+                            """)
+                    .param("eventId", eventId)
+                    .param("categoryId", categoryId)
+                    .update();
+        }
     }
 }
