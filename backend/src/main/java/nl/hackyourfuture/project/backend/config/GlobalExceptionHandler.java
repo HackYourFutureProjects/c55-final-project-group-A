@@ -3,6 +3,7 @@ package nl.hackyourfuture.project.backend.config;
 import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsException;
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
+import nl.hackyourfuture.project.backend.location.ExternalServiceException;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -89,6 +90,8 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+
+
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ProblemDetail handleMethodValidation(
             HandlerMethodValidationException ex
@@ -101,6 +104,14 @@ public class GlobalExceptionHandler {
                 "One or more request parameters are outside the allowed range"
         );
 
+        return problem;
+    }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    public ProblemDetail handleExternalServiceError(ExternalServiceException ex){
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setTitle("External service unavailable");
+        problem.setDetail(ex.getMessage());
         return problem;
     }
 
