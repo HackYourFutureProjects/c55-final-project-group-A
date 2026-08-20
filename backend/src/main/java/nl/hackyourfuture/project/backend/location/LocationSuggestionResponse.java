@@ -12,6 +12,6 @@ public record LocationSuggestionResponse(
     String label
 ) {
   public static LocationSuggestionResponse from(LocationService.NominatimResult result){
-    return new LocationSuggestionResponse(result.placeId(), result.displayName());
+    return new LocationSuggestionResponse(result.toLookupId(), result.displayName());
   }
 }
