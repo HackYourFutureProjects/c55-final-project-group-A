@@ -49,7 +49,12 @@ public class LocationController {
       content = @Content(schema = @Schema(implementation = ProblemDetail.class))
   )
   public List<LocationSuggestionResponse> suggest(
-      @Parameter(description = "Text to search for. Works best with complete words (e.g. \\\"Amsterdam\\\" rather than \\\"Amst\\\") — the underlying service doesn't reliably match partial words mid-typing.", example = "Paradiso Amsterdam")
+      @Parameter(description = """
+          Text to search for. Works best with complete words \
+          (e.g. "Amsterdam" rather than "Amst") — the underlying \
+          service doesn't reliably match partial words mid-typing.
+          """,
+          example = "Paradiso Amsterdam")
       @RequestParam String q) {
     return locationService.suggest(q);
   }

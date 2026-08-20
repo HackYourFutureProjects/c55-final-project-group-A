@@ -28,9 +28,15 @@ public record NominatimResult(
   }
 
   public String cityName() {
-    if (address == null) return null;
-    if (address.containsKey("city")) return address.get("city");
-    if (address.containsKey("town")) return address.get("town");
+    if (address == null) {
+      return null;
+    }
+    if (address.containsKey("city")) {
+      return address.get("city");
+    }
+    if (address.containsKey("town")) {
+      return address.get("town");
+    }
     return address.get("village");
   }
 
