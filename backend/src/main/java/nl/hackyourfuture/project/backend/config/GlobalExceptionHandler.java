@@ -3,6 +3,7 @@ package nl.hackyourfuture.project.backend.config;
 import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsException;
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
+import nl.hackyourfuture.project.backend.location.ExternalServiceException;
 import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
@@ -90,6 +91,8 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+
+
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ProblemDetail handleMethodValidation(
             HandlerMethodValidationException ex
@@ -115,6 +118,14 @@ public class GlobalExceptionHandler {
                 "The image service could not upload the file. Please try again."
         );
 
+        return problem;
+    }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    public ProblemDetail handleExternalServiceError(ExternalServiceException ex){
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setTitle("External service unavailable");
+        problem.setDetail(ex.getMessage());
         return problem;
     }
 

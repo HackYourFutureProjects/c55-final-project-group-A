@@ -29,6 +29,7 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/events/*/saved", "/api/events/*/going").authenticated()
             .requestMatchers(HttpMethod.DELETE, "/api/events/*/saved", "/api/events/*/going").authenticated()
             .requestMatchers("/api/events/**").hasRole("ADMIN")
