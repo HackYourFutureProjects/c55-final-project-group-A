@@ -1,4 +1,4 @@
-package nl.hackyourfuture.project.backend.location.exceptions;
+package nl.hackyourfuture.project.backend.location;
 
 public class ExternalServiceException extends RuntimeException{
   public ExternalServiceException(String message){
