@@ -1,6 +1,9 @@
 package nl.hackyourfuture.project.backend.event.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import nl.hackyourfuture.project.backend.event.category.repository.CategoryRepository;
 import nl.hackyourfuture.project.backend.event.dto.request.CreateEventRequest;
 import nl.hackyourfuture.project.backend.event.dto.response.CreateEventResponse;
@@ -11,10 +14,13 @@ import nl.hackyourfuture.project.backend.event.model.EventDraft;
 import nl.hackyourfuture.project.backend.event.repository.AddressRepository;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import nl.hackyourfuture.project.backend.event.dto.response.AdminEventPageResponse;
+import nl.hackyourfuture.project.backend.event.dto.response.AdminEventSummaryResponse;
+import nl.hackyourfuture.project.backend.event.repository.AdminEventRepository;
+import nl.hackyourfuture.project.backend.event.dto.response.AdminEventDetailResponse;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,6 +34,7 @@ public class AdminEventService {
     private final EventImageRepository eventImageRepository;
     private final ImageService imageService;
     private final AddressRepository addressRepository;
+    private final AdminEventRepository adminEventRepository;
 
     @Transactional
     public CreateEventResponse createDraft(
@@ -100,5 +107,49 @@ public class AdminEventService {
                     "One or more selected categories do not exist"
             );
         }
+    }
+
+    @Transactional(readOnly = true)
+    public AdminEventPageResponse getAdminEventPage(
+            int page,
+            int size
+    ) {
+        int offset = page * size;
+
+        List<AdminEventSummaryResponse> events =
+                adminEventRepository
+                        .findAdminEventSummaries(size, offset)
+                        .stream()
+                        .map(AdminEventSummaryResponse::from)
+                        .toList();
+
+        long totalElements = adminEventRepository.countAdminEvents();
+
+        int totalPages = (int) Math.ceil(
+                (double) totalElements / size
+        );
+
+        boolean hasNext = page + 1 < totalPages;
+
+        return new AdminEventPageResponse(
+                events,
+                page,
+                size,
+                totalElements,
+                totalPages,
+                hasNext
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public AdminEventDetailResponse getAdminEventDetail(UUID eventId) {
+        return adminEventRepository
+                .findEventDetailById(eventId)
+                .map(AdminEventDetailResponse::from)
+                .orElseThrow(() ->
+                        new EventNotFoundException(
+                                "Event not found: " + eventId
+                        )
+                );
     }
 }

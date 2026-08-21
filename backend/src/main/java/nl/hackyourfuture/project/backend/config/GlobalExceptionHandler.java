@@ -15,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
@@ -92,7 +93,6 @@ public class GlobalExceptionHandler {
     }
 
 
-
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ProblemDetail handleMethodValidation(
             HandlerMethodValidationException ex
@@ -103,6 +103,22 @@ public class GlobalExceptionHandler {
         problem.setTitle("Validation failed");
         problem.setDetail(
                 "One or more request parameters are outside the allowed range"
+        );
+
+        return problem;
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+
+        problem.setTitle("Invalid request parameter");
+        problem.setDetail(
+                "The value provided for '" + ex.getName()
+                        + "' has an invalid format"
         );
 
         return problem;
@@ -122,7 +138,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ExternalServiceException.class)
-    public ProblemDetail handleExternalServiceError(ExternalServiceException ex){
+    public ProblemDetail handleExternalServiceError(ExternalServiceException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
         problem.setTitle("External service unavailable");
         problem.setDetail(ex.getMessage());

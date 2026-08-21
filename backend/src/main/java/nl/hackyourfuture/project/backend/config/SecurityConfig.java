@@ -18,35 +18,53 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-  @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                 SessionAuthFilter sessionAuthFilter,
-                                                 CustomAuthenticationEntryPoint entryPoint) throws Exception {
-    http
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/error").permitAll()
-            .requestMatchers("/api/docs/**").permitAll()
-            .requestMatchers("/api/auth/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/events/*/saved", "/api/events/*/going").authenticated()
-            .requestMatchers(HttpMethod.DELETE, "/api/events/*/saved", "/api/events/*/going").authenticated()
-            .requestMatchers("/api/events/**").hasRole("ADMIN")
-            .anyRequest().authenticated()
-        )
-        .csrf(AbstractHttpConfigurer::disable)
-        .httpBasic(AbstractHttpConfigurer::disable)
-        .formLogin(AbstractHttpConfigurer::disable)
-        .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(sessionAuthFilter, UsernamePasswordAuthenticationFilter.class);
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   SessionAuthFilter sessionAuthFilter,
+                                                   CustomAuthenticationEntryPoint entryPoint) throws Exception {
+        http
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/docs/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
 
-    return http.build();
-  }
+                        .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/locations/**")
+                        .permitAll()
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder(12);
-  }
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/events/*/saved",
+                                "/api/events/*/going"
+                        ).authenticated()
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/events/*/saved",
+                                "/api/events/*/going"
+                        ).authenticated()
+
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers("/api/events/**")
+                        .hasRole("ADMIN")
+
+                        .anyRequest().authenticated()
+                )
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(sessionAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
 }
