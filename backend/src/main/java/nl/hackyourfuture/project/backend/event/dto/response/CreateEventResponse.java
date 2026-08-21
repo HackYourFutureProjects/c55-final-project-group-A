@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.UUID;
 
-@Schema(description = "Information returned after an admin creates an event draft")
+@Schema(description = "Information returned after an admin creates an event")
 public record CreateEventResponse(
         @Schema(
                 description = "Unique identifier of the event",
@@ -14,8 +14,8 @@ public record CreateEventResponse(
         UUID id,
 
         @Schema(
-                description = "Whether the event is publicly visible. Newly created events are drafts and return false.",
-                example = "false",
+                description = "Whether the new event was published immediately or saved as a draft",
+                example = "true",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         boolean isPublished,

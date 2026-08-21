@@ -12,13 +12,32 @@ public class EventImageRepository {
 
     private final JdbcClient jdbcClient;
 
-    public void save(UUID eventId, String imageUrl, String contentType) {
-        String sql = """
-                INSERT INTO event_images(event_id, image_url, content_type)
-                VALUES (:eventId, :imageUrl, :contentType)
-                """;
+    public void save(
+            UUID eventId,
+            String imageUrl,
+            String contentType
+    ) {
+        jdbcClient
+                .sql("""
+                        DELETE FROM event_images
+                        WHERE event_id = :eventId
+                        """)
+                .param("eventId", eventId)
+                .update();
 
-        jdbcClient.sql(sql)
+        jdbcClient
+                .sql("""
+                        INSERT INTO event_images (
+                            event_id,
+                            image_url,
+                            content_type
+                        )
+                        VALUES (
+                            :eventId,
+                            :imageUrl,
+                            :contentType
+                        )
+                        """)
                 .param("eventId", eventId)
                 .param("imageUrl", imageUrl)
                 .param("contentType", contentType)

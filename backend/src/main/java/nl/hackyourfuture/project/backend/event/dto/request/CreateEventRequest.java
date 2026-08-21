@@ -14,7 +14,7 @@ import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.UUID;
 
-@Schema(description = "The details an admin provides to create an event draft")
+@Schema(description = "Details an admin provides to create an event as a draft or publish it immediately")
 public record CreateEventRequest(
 
         @NotBlank(message = "Please provide an event title")

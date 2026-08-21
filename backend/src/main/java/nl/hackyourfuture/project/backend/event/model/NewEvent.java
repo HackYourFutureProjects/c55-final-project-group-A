@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-public record EventDraft(
+public record NewEvent(
         String title,
         String description,
         UUID addressId,

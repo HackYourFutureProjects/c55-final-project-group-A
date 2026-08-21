@@ -2,7 +2,7 @@ package nl.hackyourfuture.project.backend.event.repository;
 
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
-import nl.hackyourfuture.project.backend.event.model.EventDraft;
+import nl.hackyourfuture.project.backend.event.model.NewEvent;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
 import nl.hackyourfuture.project.backend.event.category.model.Category;
 import org.springframework.jdbc.core.RowMapper;
@@ -203,7 +203,7 @@ public class EventRepository {
                 .optional();
     }
 
-    public UUID createDraft(EventDraft draft) {
+    public UUID createEvent(NewEvent event) {
         String sql = """
                 INSERT INTO events (
                     title,
@@ -228,28 +228,15 @@ public class EventRepository {
 
         return jdbcClient
                 .sql(sql)
-                .param("title", draft.title())
-                .param("description", draft.description())
-                .param("addressId", draft.addressId())
-                .param("startAt", draft.startAt())
-                .param("endAt", draft.endAt())
-                .param("price", draft.price())
-                .param("createdByUserId", draft.createdByUserId())
+                .param("title", event.title())
+                .param("description", event.description())
+                .param("addressId", event.addressId())
+                .param("startAt", event.startAt())
+                .param("endAt", event.endAt())
+                .param("price", event.price())
+                .param("createdByUserId", event.createdByUserId())
                 .query(UUID.class)
                 .single();
-    }
-
-    public void addCategories(UUID eventId, Set<UUID> categoryIds) {
-        for (UUID categoryId : categoryIds) {
-            jdbcClient
-                    .sql("""
-                            INSERT INTO event_categories (event_id, category_id)
-                            VALUES (:eventId, :categoryId)
-                            """)
-                    .param("eventId", eventId)
-                    .param("categoryId", categoryId)
-                    .update();
-        }
     }
 
     public boolean existsById(UUID eventId) {
