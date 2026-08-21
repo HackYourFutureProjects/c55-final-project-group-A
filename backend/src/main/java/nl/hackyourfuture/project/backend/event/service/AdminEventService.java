@@ -5,22 +5,20 @@ import nl.hackyourfuture.project.backend.event.category.repository.CategoryRepos
 import nl.hackyourfuture.project.backend.event.dto.request.CreateEventRequest;
 import nl.hackyourfuture.project.backend.event.dto.response.CreateEventResponse;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
+import nl.hackyourfuture.project.backend.event.image.service.ImageService;
 import nl.hackyourfuture.project.backend.event.image.repository.EventImageRepository;
 import nl.hackyourfuture.project.backend.event.model.EventDraft;
+import nl.hackyourfuture.project.backend.event.repository.AddressRepository;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
-import lombok.extern.slf4j.Slf4j;
-import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
-import nl.hackyourfuture.project.backend.event.image.service.ImageService;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminEventService {
@@ -29,6 +27,7 @@ public class AdminEventService {
     private final CategoryRepository categoryRepository;
     private final EventImageRepository eventImageRepository;
     private final ImageService imageService;
+    private final AddressRepository addressRepository;
 
     @Transactional
     public CreateEventResponse createDraft(
@@ -38,11 +37,12 @@ public class AdminEventService {
     ) {
         validateEventDates(request);
         validateCategoryIds(request.categoryIds());
+        UUID addressId = addressRepository.create(request.address());
 
         EventDraft draft = new EventDraft(
                 request.title(),
                 request.description(),
-                request.addressId(),
+                addressId,
                 request.startAt(),
                 request.endAt(),
                 request.price(),
@@ -53,17 +53,7 @@ public class AdminEventService {
 
         eventRepository.addCategories(eventId, request.categoryIds());
 
-        String imageUrl = null;
-
-        try {
-            imageUrl = imageService.upload(eventId, image);
-        } catch (ImageUploadException exception) {
-            log.warn(
-                    "Draft event {} was created, but image upload failed",
-                    eventId,
-                    exception
-            );
-        }
+        String imageUrl = imageService.upload(eventId, image);
 
         return new CreateEventResponse(eventId, false, imageUrl);
     }

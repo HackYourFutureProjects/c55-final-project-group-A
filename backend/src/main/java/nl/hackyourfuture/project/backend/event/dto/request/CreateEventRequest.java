@@ -1,6 +1,7 @@
 package nl.hackyourfuture.project.backend.event.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -34,12 +35,13 @@ public record CreateEventRequest(
         )
         Set<UUID> categoryIds,
 
+        @Valid
         @NotNull(message = "Please provide an address")
         @Schema(
-                description = "ID of the address where the event takes place",
-                example = "50000000-0000-0000-0000-000000000001"
+                description = "Selected location where the event takes place",
+                requiredMode = Schema.RequiredMode.REQUIRED
         )
-        UUID addressId,
+        EventAddressRequest address,
 
         @NotNull(message = "Please provide a start date and time")
         @Schema(

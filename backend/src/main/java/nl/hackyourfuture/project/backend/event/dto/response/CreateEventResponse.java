@@ -21,9 +21,9 @@ public record CreateEventResponse(
         boolean isPublished,
 
         @Schema(
-                description = "Uploaded event image URL; null when image upload failed",
+                description = "Uploaded event image URL",
                 example = "https://ik.imagekit.io/example/events/event.jpg",
-                nullable = true
+                requiredMode = Schema.RequiredMode.REQUIRED
         )
         String imageUrl
 ) {

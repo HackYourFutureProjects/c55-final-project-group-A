@@ -70,6 +70,13 @@ public class AdminEventController {
             responseCode = "403",
             description = "Only admins can create event drafts"
     )
+    @ApiResponse(
+            responseCode = "502",
+            description = "The external image service could not upload the image",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
+    )
     public CreateEventResponse createDraft(
             @Parameter(
                     description = "Event data as JSON",
