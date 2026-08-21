@@ -1,18 +1,20 @@
 package nl.hackyourfuture.project.backend.event.repository;
 
 import lombok.RequiredArgsConstructor;
+import nl.hackyourfuture.project.backend.event.category.model.Category;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
 import nl.hackyourfuture.project.backend.event.model.NewEvent;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
-import nl.hackyourfuture.project.backend.event.category.model.Category;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -101,6 +103,8 @@ public class EventRepository {
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
                 WHERE e.is_published = TRUE
+                  AND e.is_cancelled = FALSE
+                  AND e.end_at > now()
                   AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
@@ -121,6 +125,8 @@ public class EventRepository {
                 SELECT COUNT(*)
                 FROM events e
                 WHERE e.is_published = TRUE
+                  AND e.is_cancelled = FALSE
+                  AND e.end_at > now()
                   AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
                 """;
 

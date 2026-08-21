@@ -1,6 +1,5 @@
 package nl.hackyourfuture.project.backend.event.controller;
 
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,19 +9,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
-
-import java.util.UUID;
-
+import nl.hackyourfuture.project.backend.event.dto.response.AdminEventDetailResponse;
+import nl.hackyourfuture.project.backend.event.dto.response.AdminEventPageResponse;
+import nl.hackyourfuture.project.backend.event.service.AdminEventService;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import nl.hackyourfuture.project.backend.event.dto.response.AdminEventPageResponse;
-import nl.hackyourfuture.project.backend.event.service.AdminEventService;
-import nl.hackyourfuture.project.backend.event.dto.response.AdminEventDetailResponse;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/events")

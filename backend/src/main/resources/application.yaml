@@ -10,7 +10,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 5MB
-      max-request-size: 5MB
+      max-request-size: 6MB
 
 server:
   port: 8080
@@ -24,7 +24,5 @@ scalar:
   path: /api/docs
   url: ${springdoc.api-docs.path}
 
-
 image:
   private-key: ${IMAGEKIT_PRIVATE_KEY}
-  url-endpoint: ${IMAGEKIT_URL_ENDPOINT}

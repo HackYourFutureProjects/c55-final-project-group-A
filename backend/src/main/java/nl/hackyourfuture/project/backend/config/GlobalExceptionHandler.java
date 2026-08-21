@@ -3,8 +3,8 @@ package nl.hackyourfuture.project.backend.config;
 import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsException;
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
-import nl.hackyourfuture.project.backend.location.ExternalServiceException;
 import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
+import nl.hackyourfuture.project.backend.location.ExternalServiceException;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
@@ -133,6 +134,19 @@ public class GlobalExceptionHandler {
         problem.setDetail(
                 "The image service could not upload the file. Please try again."
         );
+
+        return problem;
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleMaxUploadSize(
+            MaxUploadSizeExceededException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.CONTENT_TOO_LARGE);
+
+        problem.setTitle("Image is too large");
+        problem.setDetail("The image must not exceed 5 MB");
 
         return problem;
     }

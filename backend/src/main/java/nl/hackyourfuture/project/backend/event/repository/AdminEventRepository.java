@@ -1,15 +1,13 @@
 package nl.hackyourfuture.project.backend.event.repository;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
-
 import nl.hackyourfuture.project.backend.event.category.model.Category;
 import nl.hackyourfuture.project.backend.event.model.AdminEventDetail;
-import org.springframework.jdbc.core.RowMapper;
 import nl.hackyourfuture.project.backend.event.model.AdminEventSummary;
 import nl.hackyourfuture.project.backend.event.model.EventUpdate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
-
+import org.springframework.stereotype.Repository;
 
 import java.sql.SQLException;
 import java.time.OffsetDateTime;

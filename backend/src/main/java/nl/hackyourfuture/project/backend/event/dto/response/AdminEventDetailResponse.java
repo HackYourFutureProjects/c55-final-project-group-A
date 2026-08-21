@@ -1,6 +1,5 @@
 package nl.hackyourfuture.project.backend.event.dto.response;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import nl.hackyourfuture.project.backend.event.category.dto.CategoryResponse;
 import nl.hackyourfuture.project.backend.event.model.AdminEventDetail;

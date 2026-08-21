@@ -9,14 +9,12 @@ import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadExcep
 import nl.hackyourfuture.project.backend.event.image.repository.EventImageRepository;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
-
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

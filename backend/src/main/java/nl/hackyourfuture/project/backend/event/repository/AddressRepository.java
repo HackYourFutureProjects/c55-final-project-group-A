@@ -1,6 +1,5 @@
 package nl.hackyourfuture.project.backend.event.repository;
 
-
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.dto.request.EventAddressRequest;
 import org.springframework.jdbc.core.simple.JdbcClient;

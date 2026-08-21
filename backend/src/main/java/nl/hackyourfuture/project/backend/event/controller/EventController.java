@@ -30,7 +30,8 @@ public class EventController {
     @Operation(
             summary = "List events",
             description = """
-                    Returns one page of events ordered by start date.
+                    Returns one page of active, published, non-cancelled events
+                    ordered by start date.
                     When search is provided, only events with matching
                     titles are returned. Search is case-insensitive.
                     """
@@ -75,9 +76,10 @@ public class EventController {
     @Operation(
             summary = "Get event details",
             description = """
-                    Returns the public details of a single event, including its
-                    description, category, schedule, location, primary image,
-                    attendee count, and calculated status.
+                    Returns the public details of a published event, including
+                    its description, category, schedule, location, primary
+                    image, attendee count, and calculated status. Cancelled and
+                    past published events remain accessible by their ID.
                     """
     )
     @ApiResponse(
@@ -90,7 +92,7 @@ public class EventController {
     )
     @ApiResponse(
             responseCode = "404",
-            description = "No event exists with the supplied ID"
+            description = "No published event exists with the supplied ID"
     )
     public EventDetailResponse getEventDetail(
             @PathVariable @Parameter(

@@ -1,11 +1,10 @@
 package nl.hackyourfuture.project.backend.event.category.repository;
 
-import nl.hackyourfuture.project.backend.event.category.model.Category;
 import lombok.RequiredArgsConstructor;
+import nl.hackyourfuture.project.backend.event.category.model.Category;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
-
 
 import java.util.List;
 import java.util.Set;
@@ -22,7 +21,6 @@ public class CategoryRepository {
                     rs.getObject("id", UUID.class),
                     rs.getString("name")
             );
-
 
     public List<Category> findAll() {
         String sql = """

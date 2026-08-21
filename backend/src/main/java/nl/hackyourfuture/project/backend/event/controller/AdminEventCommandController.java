@@ -9,12 +9,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.dto.request.CreateEventRequest;
+import nl.hackyourfuture.project.backend.event.dto.request.UpdateEventRequest;
+import nl.hackyourfuture.project.backend.event.dto.response.AdminEventDetailResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.CreateEventResponse;
 import nl.hackyourfuture.project.backend.event.service.AdminEventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,9 +27,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import nl.hackyourfuture.project.backend.event.dto.request.UpdateEventRequest;
-import nl.hackyourfuture.project.backend.event.dto.response.AdminEventDetailResponse;
-import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.UUID;
 
@@ -49,7 +49,7 @@ public class AdminEventCommandController {
                     Creates an event and uploads its image. Set `publishNow` to
                     `false` to save the event as a draft or to `true` to make it
                     publicly visible immediately.
-                    
+
                     Send a multipart/form-data request with an `event` JSON part
                     and an `image` file part. Images must be JPEG, PNG, or WebP
                     and no larger than 5 MB. Only admins can use this endpoint.
@@ -76,6 +76,13 @@ public class AdminEventCommandController {
     @ApiResponse(
             responseCode = "403",
             description = "Only admins can create events"
+    )
+    @ApiResponse(
+            responseCode = "413",
+            description = "The uploaded image exceeds the 5 MB limit",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
     )
     @ApiResponse(
             responseCode = "502",
@@ -130,7 +137,7 @@ public class AdminEventCommandController {
     )
     @ApiResponse(
             responseCode = "400",
-            description = "The event does not have an image",
+            description = "The event is cancelled or does not have an image",
             content = @Content(
                     schema = @Schema(implementation = ProblemDetail.class)
             )
@@ -202,6 +209,13 @@ public class AdminEventCommandController {
     @ApiResponse(
             responseCode = "404",
             description = "The event does not exist",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
+    )
+    @ApiResponse(
+            responseCode = "413",
+            description = "The replacement image exceeds the 5 MB limit",
             content = @Content(
                     schema = @Schema(implementation = ProblemDetail.class)
             )

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
@@ -12,6 +13,10 @@ import java.math.BigDecimal;
 public record EventAddressRequest(
 
         @NotBlank(message = "Please provide a street")
+        @Size(
+                max = 255,
+                message = "Street must not exceed 255 characters"
+        )
         @Schema(
                 description = "Street where the event takes place",
                 example = "Weteringschans",
@@ -19,6 +24,10 @@ public record EventAddressRequest(
         )
         String street,
 
+        @Size(
+                max = 20,
+                message = "House number must not exceed 20 characters"
+        )
         @Schema(
                 description = "House or building number",
                 example = "6",
@@ -26,6 +35,10 @@ public record EventAddressRequest(
         )
         String houseNumber,
 
+        @Size(
+                max = 10,
+                message = "Postal code must not exceed 10 characters"
+        )
         @Schema(
                 description = "Postal code",
                 example = "1017SG",
@@ -54,6 +67,10 @@ public record EventAddressRequest(
         BigDecimal longitude,
 
         @NotBlank(message = "Please provide a city")
+        @Size(
+                max = 200,
+                message = "City must not exceed 200 characters"
+        )
         @Schema(
                 description = "City where the event takes place",
                 example = "Amsterdam",
@@ -61,6 +78,10 @@ public record EventAddressRequest(
         )
         String cityName,
 
+        @Size(
+                max = 100,
+                message = "Province must not exceed 100 characters"
+        )
         @Schema(
                 description = "Province or region",
                 example = "North Holland",
