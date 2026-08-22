@@ -1,15 +1,19 @@
+export interface Category {
+  id: string;
+  name: string;
+}
 export interface Event {
   id: string;
   title: string;
-  categoryName: string;
+  categories: Category[];
   startAt: string;
   endAt: string;
   price: number;
   street: string;
-  houseNumber: string;
-  postalCode: string;
+  houseNumber: string | null;
+  postalCode: string | null;
   cityName: string;
-  province: string;
+  province: string | null;
   imageUrl: string | null;
   goingCount: number;
   cancelled: boolean;
@@ -30,7 +34,7 @@ export interface EventDetail {
   id: string;
   title: string;
   description: string | null;
-  categoryName: string;
+  categories: Category[];
   startAt: string;
   endAt: string;
   price: number;
@@ -38,7 +42,7 @@ export interface EventDetail {
   houseNumber: string;
   postalCode: string;
   cityName: string;
-  province: string;
+  province: string | null;
   imageUrl: string | null;
   goingCount: number;
   eventStatus: EventStatus;
