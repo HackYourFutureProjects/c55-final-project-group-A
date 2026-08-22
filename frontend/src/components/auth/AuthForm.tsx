@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type SubmitEvent, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { login, register } from "@/lib/api";
 
 type AuthTab = "login" | "register";
@@ -13,6 +14,7 @@ export function AuthForm() {
   const [tab, setTab] = useState<AuthTab>(initialTab);
 
   const router = useRouter();
+  const { refresh } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,7 +34,8 @@ export function AuthForm() {
         const name = formData.get("name") as string;
         await register({ name, email, password });
       }
-      router.push("/profile");
+      const currentUser = await refresh();
+      router.push(currentUser?.role === "admin" ? "/admin" : "/profile");
     } catch {
       setError(
         "Something went wrong. Please check your details and try again.",
