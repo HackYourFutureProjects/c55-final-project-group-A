@@ -21,9 +21,9 @@ docker run --name hyf-postgres -e POSTGRES_DB=project_db -e POSTGRES_USER=admin 
 
 ### 2. Set up configuration
 
-Nothing to do if you used the command above: every setting in [`application.yaml`](src/main/resources/application.yaml) reads an environment variable and falls back to a local-development default, and those defaults match that container.
+The database settings in [`application.yaml`](src/main/resources/application.yaml) have local-development defaults that match the container above. Event image uploads use ImageKit and require an `IMAGEKIT_PRIVATE_KEY`; ask the backend team for the shared development value through a private channel.
 
-To point at a different database, set the [`DB_*` variables](#environment-variables) rather than editing the YAML — in your IDE's run configuration, in your shell, or by copying [`.env.example`](.env.example) to `.env` and loading it (`set -a; source .env`, an IDE plugin, or `--env-file`). Spring Boot does not read `.env` by itself.
+Set `IMAGEKIT_PRIVATE_KEY` and any non-default [`DB_*` variables](#environment-variables) in your IDE's run configuration, in your shell, or by copying [`.env.example`](.env.example) to `.env` and loading it (`set -a; source .env`, an IDE plugin, or `--env-file`). Spring Boot does not read `.env` by itself. Never commit the private key.
 
 ### 3. Start the application
 
@@ -103,7 +103,7 @@ docker pull ghcr.io/<org>/<repo>/backend:latest
 Run it, pointing at your database:
 
 ```bash
-docker run -p 8080:8080 -e DB_HOST=my-db-host -e DB_PORT=5432 -e DB_NAME=project_db -e DB_SCHEMA=app -e DB_USER=<user> -e DB_PASSWORD=<password> ghcr.io/<org>/<repo>/backend:latest
+docker run -p 8080:8080 --env-file secrets.env ghcr.io/<org>/<repo>/backend:latest
 ```
 
 Two things to watch:
@@ -117,7 +117,7 @@ The image sets `SPRING_PROFILES_DEFAULT=prod`, so it runs with the `prod` profil
 
 ## Environment variables
 
-All configuration lives in [`application.yaml`](src/main/resources/application.yaml). Each value reads an environment variable and falls back to a local-development default, so you only set what you need to change.
+All configuration lives in [`application.yaml`](src/main/resources/application.yaml). Database values have local-development defaults, while sensitive integrations such as ImageKit require an environment variable.
 
 | Variable | Default | Description |
 |---|---|---|
@@ -127,6 +127,7 @@ All configuration lives in [`application.yaml`](src/main/resources/application.y
 | `DB_SCHEMA` | `app` | Database schema |
 | `DB_USER` | `admin` | Database username |
 | `DB_PASSWORD` | `password` | Database password |
+| `IMAGEKIT_PRIVATE_KEY` | — | Private ImageKit API key used for event image uploads; share it only through a secure private channel |
 | `SPRING_PROFILES_ACTIVE` | — | Active profile: `dev` or `prod`. None is active unless you set it; the Docker image defaults to `prod` |
 
 [`.env.example`](.env.example) lists the same variables as a starting point — copy it to `.env` (gitignored) and load it as described in [Quick start](#quick-start) step 2.

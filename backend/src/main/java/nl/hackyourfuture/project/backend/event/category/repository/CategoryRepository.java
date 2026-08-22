@@ -1,13 +1,13 @@
 package nl.hackyourfuture.project.backend.event.category.repository;
 
-import nl.hackyourfuture.project.backend.event.category.model.Category;
 import lombok.RequiredArgsConstructor;
+import nl.hackyourfuture.project.backend.event.category.model.Category;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -22,7 +22,6 @@ public class CategoryRepository {
                     rs.getString("name")
             );
 
-
     public List<Category> findAll() {
         String sql = """
                 SELECT id, name
@@ -34,5 +33,19 @@ public class CategoryRepository {
                 .sql(sql)
                 .query(CATEGORY_ROW_MAPPER)
                 .list();
+    }
+
+    public boolean existsAllByIds(Set<UUID> categoryIds) {
+        long existingCategoryCount = jdbcClient
+                .sql("""
+                        SELECT COUNT(*)
+                        FROM categories
+                        WHERE id IN (:categoryIds)
+                        """)
+                .param("categoryIds", categoryIds)
+                .query(Long.class)
+                .single();
+
+        return existingCategoryCount == categoryIds.size();
     }
 }

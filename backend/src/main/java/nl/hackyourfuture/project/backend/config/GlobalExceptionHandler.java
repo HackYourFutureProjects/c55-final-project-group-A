@@ -3,6 +3,7 @@ package nl.hackyourfuture.project.backend.config;
 import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsException;
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
+import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
 import nl.hackyourfuture.project.backend.location.ExternalServiceException;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
@@ -40,7 +43,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ProblemDetail handleUserNotFound(UserNotFoundException ex){
+    public ProblemDetail handleUserNotFound(UserNotFoundException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
         problem.setTitle("User not found");
         problem.setDetail(ex.getMessage());
@@ -48,7 +51,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ProblemDetail handleBadRequest(BadRequestException ex){
+    public ProblemDetail handleBadRequest(BadRequestException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Bad request");
         problem.setDetail(ex.getMessage());
@@ -91,7 +94,6 @@ public class GlobalExceptionHandler {
     }
 
 
-
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ProblemDetail handleMethodValidation(
             HandlerMethodValidationException ex
@@ -107,8 +109,50 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+
+        problem.setTitle("Invalid request parameter");
+        problem.setDetail(
+                "The value provided for '" + ex.getName()
+                        + "' has an invalid format"
+        );
+
+        return problem;
+    }
+
+    @ExceptionHandler(ImageUploadException.class)
+    public ProblemDetail handleImageUpload(ImageUploadException ex) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.BAD_GATEWAY);
+
+        problem.setTitle("Image upload failed");
+        problem.setDetail(
+                "The image service could not upload the file. Please try again."
+        );
+
+        return problem;
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleMaxUploadSize(
+            MaxUploadSizeExceededException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.CONTENT_TOO_LARGE);
+
+        problem.setTitle("Image is too large");
+        problem.setDetail("The image must not exceed 5 MB");
+
+        return problem;
+    }
+
     @ExceptionHandler(ExternalServiceException.class)
-    public ProblemDetail handleExternalServiceError(ExternalServiceException ex){
+    public ProblemDetail handleExternalServiceError(ExternalServiceException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
         problem.setTitle("External service unavailable");
         problem.setDetail(ex.getMessage());

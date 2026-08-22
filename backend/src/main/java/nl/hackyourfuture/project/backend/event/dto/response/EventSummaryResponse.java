@@ -63,14 +63,14 @@ public record EventSummaryResponse(
         @Schema(
                 description = "Building or house number",
                 example = "40",
-                requiredMode = Schema.RequiredMode.REQUIRED
+                nullable = true
         )
         String houseNumber,
 
         @Schema(
                 description = "Postal code of the event location",
                 example = "1032 KJ",
-                requiredMode = Schema.RequiredMode.REQUIRED
+                nullable = true
         )
         String postalCode,
 

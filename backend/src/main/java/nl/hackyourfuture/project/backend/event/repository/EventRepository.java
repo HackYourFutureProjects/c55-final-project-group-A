@@ -1,9 +1,10 @@
 package nl.hackyourfuture.project.backend.event.repository;
 
 import lombok.RequiredArgsConstructor;
-import nl.hackyourfuture.project.backend.event.model.EventDetail;
-import nl.hackyourfuture.project.backend.event.model.EventSummary;
 import nl.hackyourfuture.project.backend.event.category.model.Category;
+import nl.hackyourfuture.project.backend.event.model.EventDetail;
+import nl.hackyourfuture.project.backend.event.model.NewEvent;
+import nl.hackyourfuture.project.backend.event.model.EventSummary;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -14,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 
 @Repository
 @RequiredArgsConstructor
@@ -88,7 +88,7 @@ public class EventRepository {
                        a.city_name,
                        a.province,
                        (
-                           SELECT ei.image_key
+                           SELECT ei.image_url
                            FROM event_images ei
                            WHERE ei.event_id = e.id
                            ORDER BY ei.created_at, ei.id
@@ -102,7 +102,10 @@ public class EventRepository {
                        e.is_cancelled
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
-                WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                WHERE e.is_published = TRUE
+                  AND e.is_cancelled = FALSE
+                  AND e.end_at > now()
+                  AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
                 OFFSET :offset
@@ -121,7 +124,10 @@ public class EventRepository {
         String sql = """
                 SELECT COUNT(*)
                 FROM events e
-                WHERE e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                WHERE e.is_published = TRUE
+                  AND e.is_cancelled = FALSE
+                  AND e.end_at > now()
+                  AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
                 """;
 
         return jdbcClient
@@ -178,7 +184,7 @@ public class EventRepository {
                        a.city_name,
                        a.province,
                        (
-                           SELECT ei.image_key
+                           SELECT ei.image_url
                            FROM event_images ei
                            WHERE ei.event_id = e.id
                            ORDER BY ei.created_at, ei.id
@@ -193,6 +199,7 @@ public class EventRepository {
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
                 WHERE e.id = :eventId
+                  AND e.is_published = TRUE
                 """;
 
         return jdbcClient
@@ -200,5 +207,78 @@ public class EventRepository {
                 .param("eventId", eventId)
                 .query(EVENT_DETAIL_ROW_MAPPER)
                 .optional();
+    }
+
+    public UUID createEvent(NewEvent event) {
+        String sql = """
+                INSERT INTO events (
+                    title,
+                    description,
+                    address_id,
+                    start_at,
+                    end_at,
+                    price,
+                    created_by_user_id
+                )
+                VALUES (
+                    :title,
+                    :description,
+                    :addressId,
+                    :startAt,
+                    :endAt,
+                    :price,
+                    :createdByUserId
+                )
+                RETURNING id
+                """;
+
+        return jdbcClient
+                .sql(sql)
+                .param("title", event.title())
+                .param("description", event.description())
+                .param("addressId", event.addressId())
+                .param("startAt", event.startAt())
+                .param("endAt", event.endAt())
+                .param("price", event.price())
+                .param("createdByUserId", event.createdByUserId())
+                .query(UUID.class)
+                .single();
+    }
+
+    public boolean existsById(UUID eventId) {
+        return jdbcClient
+                .sql("""
+                        SELECT EXISTS(
+                            SELECT 1
+                            FROM events
+                            WHERE id = :eventId
+                        )
+                        """)
+                .param("eventId", eventId)
+                .query(Boolean.class)
+                .single();
+    }
+
+    public boolean isCancelled(UUID eventId) {
+        return jdbcClient
+                .sql("""
+                        SELECT is_cancelled
+                        FROM events
+                        WHERE id = :eventId
+                        """)
+                .param("eventId", eventId)
+                .query(Boolean.class)
+                .single();
+    }
+
+    public void publish(UUID eventId) {
+        jdbcClient
+                .sql("""
+                        UPDATE events
+                        SET is_published = TRUE
+                        WHERE id = :eventId
+                        """)
+                .param("eventId", eventId)
+                .update();
     }
 }
