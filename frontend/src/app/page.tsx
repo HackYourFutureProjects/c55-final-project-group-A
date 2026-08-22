@@ -1,5 +1,6 @@
 import EventList from "@/components/EventList";
 import HomeBanner from "@/components/HomeBanner";
+import { getEvents } from "@/lib/api";
 import type { EventPage } from "@/types/event";
 
 const samplePage: EventPage = {
@@ -51,11 +52,13 @@ const samplePage: EventPage = {
   hasNext: false,
 };
 
-export default function Home() {
+export default async function Home() {
+  const page = await getEvents();
+
   return (
     <main className="mx-auto w-full max-w-10xl px-6 py-8">
-      <HomeBanner eventCount={samplePage.totalElements} />
-      <EventList events={samplePage.events} />
+      <HomeBanner eventCount={page.totalElements} />
+      <EventList events={page.events} />
     </main>
   );
 }

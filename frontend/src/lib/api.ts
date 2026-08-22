@@ -1,11 +1,31 @@
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
 import type { EventDetail, EventPage } from "@/types/event";
 
+function apiUrl(path: string) {
+  if (typeof window === "undefined") {
+    const backendUrl = process.env.BACKEND_API_URL || "http://localhost:8080";
+    return new URL(path, backendUrl).toString();
+  }
+  return path;
+}
+
 export async function getEvents(page = 0, size = 9): Promise<EventPage> {
-  const response = await fetch(`/api/events?page=${page}&size=${size}`);
+  const response = await fetch(apiUrl(`/api/events?page=${page}&size=${size}`));
   if (!response.ok) {
     throw new Error(`Failed to load events: ${response.status}`);
   }
+  return response.json();
+}
+
+export async function getEventById(id: string): Promise<EventDetail> {
+  const response = await fetch(apiUrl(`/api/events/${id}`), {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch event");
+  }
+
   return response.json();
 }
 
