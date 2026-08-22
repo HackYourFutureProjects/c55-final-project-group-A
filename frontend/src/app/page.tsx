@@ -7,7 +7,9 @@ const samplePage: EventPage = {
     {
       id: "40000000-0000-0000-0000-000000000001",
       title: "Jazz Night in Amsterdam",
-      categoryName: "Music",
+      categories: [
+        { id: "c3551998-6b23-446c-a503-d18de49861a1", name: "Music" },
+      ],
       startAt: "2026-09-12T17:00:00Z",
       endAt: "2026-09-12T21:30:00Z",
       price: 15,
@@ -23,7 +25,12 @@ const samplePage: EventPage = {
     {
       id: "40000000-0000-0000-0000-000000000002",
       title: "Free Yoga in the Park",
-      categoryName: "Sports",
+      categories: [
+        {
+          id: "ef8a608b-810a-4717-a623-b869d8f2bd9e",
+          name: "Sports & Fitness",
+        },
+      ],
       startAt: "2026-09-14T07:00:00Z",
       endAt: "2026-09-14T08:00:00Z",
       price: 0,
