@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 
@@ -16,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex h-screen flex-col overflow-hidden antialiased">
-        <Navbar />
-        <main className="min-h-0 flex-1">{children}</main>
+        <AuthProvider>
+          <Navbar />
+          <main className="min-h-0 flex-1">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

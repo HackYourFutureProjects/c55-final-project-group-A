@@ -1,3 +1,9 @@
-export default function AdminAddEventPage() {
-  return <h1>Add event</h1>;
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+export default function AdminPage() {
+  return (
+    <ProtectedRoute adminOnly>
+      <h1>Admin</h1>
+    </ProtectedRoute>
+  );
 }

@@ -1,5 +1,6 @@
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
 import type { EventDetail, EventPage } from "@/types/event";
+import type { User } from "@/types/user";
 
 function apiUrl(path: string) {
   if (typeof window === "undefined") {
@@ -65,4 +66,16 @@ export async function logout(): Promise<void> {
   if (!response.ok) {
     throw new Error(`Failed to logout: ${response.status}`);
   }
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+  const response = await fetch(apiUrl("/api/users/me"), {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
 }
