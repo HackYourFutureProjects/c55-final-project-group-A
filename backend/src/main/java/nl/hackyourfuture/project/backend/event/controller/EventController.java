@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -41,12 +42,13 @@ public class EventController {
             responseCode = "200",
             description = """
                     A page of matching events with pagination metadata.
-                    The events array is empty when no events match the search.
+                    The events array is empty when no events match the search
+                    or selected filters.
                     """
     )
     @ApiResponse(
             responseCode = "400",
-            description = "Page or size is outside the allowed range"
+            description = "One or more query parameters is invalid"
     )
     public EventPageResponse getEvents(
             @Parameter(
@@ -55,6 +57,15 @@ public class EventController {
             )
             @RequestParam(required = false)
             String search,
+            @Parameter(
+                    description = """
+                            Optional category IDs. Repeat the parameter to select multiple
+                            categories. Events matching any selected category are returned.
+                            """,
+                    example = "10000000-0000-0000-0000-000000000001"
+            )
+            @RequestParam(required = false)
+            List<UUID> categoryIds,
 
             @Parameter(
                     description = "Zero-based page number",
@@ -73,7 +84,12 @@ public class EventController {
             @Max(100)
             int size
     ) {
-        return eventService.getEventPage(search, page, size);
+        return eventService.getEventPage(
+                search,
+                categoryIds,
+                page,
+                size
+        );
     }
 
     @GetMapping("/{eventId}")

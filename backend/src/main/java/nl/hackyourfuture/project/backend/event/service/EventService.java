@@ -6,6 +6,7 @@ import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventSummaryResponse;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
+import nl.hackyourfuture.project.backend.event.model.EventQueryCriteria;
 import nl.hackyourfuture.project.backend.event.model.EventStatus;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
 import org.springframework.stereotype.Service;
@@ -22,22 +23,36 @@ public class EventService {
 
     public EventPageResponse getEventPage(
             String search,
+            List<UUID> categoryIds,
             int page,
             int size
     ) {
-        String normalizedSearch =
-                search == null || search.isBlank() ? null : search.trim();
+        EventQueryCriteria criteria = new EventQueryCriteria(
+                search,
+                categoryIds,
+                null,       // dateFrom
+                null,       // dateTo
+                null,       // latitude
+                null,       // longitude
+                null,       // radiusKm
+                null,       // price
+                List.of()   // timesOfDay
+        );
 
         int offset = page * size;
 
         List<EventSummaryResponse> events = eventRepository
-                .findEventSummaries(normalizedSearch, size, offset)
+                .findEventSummaries(criteria, size, offset)
                 .stream()
                 .map(EventSummaryResponse::from)
                 .toList();
 
-        long totalElements = eventRepository.countEvents(normalizedSearch);
-        int totalPages = (int) Math.ceil((double) totalElements / size);
+        long totalElements = eventRepository.countEvents(criteria);
+
+        int totalPages = (int) Math.ceil(
+                (double) totalElements / size
+        );
+
         boolean hasNext = page + 1 < totalPages;
 
         return new EventPageResponse(
@@ -48,6 +63,7 @@ public class EventService {
                 totalPages,
                 hasNext
         );
+
     }
 
     private EventStatus determineStatus(EventDetail event) {

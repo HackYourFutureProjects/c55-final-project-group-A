@@ -3,6 +3,7 @@ package nl.hackyourfuture.project.backend.event.repository;
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.category.model.Category;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
+import nl.hackyourfuture.project.backend.event.model.EventQueryCriteria;
 import nl.hackyourfuture.project.backend.event.model.NewEvent;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
 import org.springframework.jdbc.core.RowMapper;
@@ -21,6 +22,15 @@ import java.util.UUID;
 public class EventRepository {
 
     private final JdbcClient jdbcClient;
+
+    private static final String CATEGORY_FILTER_CLAUSE = """
+              AND EXISTS (
+                  SELECT 1
+                  FROM event_categories filter_ec
+                  WHERE filter_ec.event_id = e.id
+                    AND filter_ec.category_id IN (:categoryIds)
+              )
+            """;
 
     private static final RowMapper<EventSummary> EVENT_SUMMARY_ROW_MAPPER =
             (rs, _) -> new EventSummary(
@@ -61,7 +71,13 @@ public class EventRepository {
         return List.copyOf(categories);
     }
 
-    public List<EventSummary> findEventSummaries(String search, int limit, int offset) {
+    public List<EventSummary> findEventSummaries(
+            EventQueryCriteria criteria,
+            int limit,
+            int offset
+    ) {
+        boolean filterByCategory = criteria.hasCategoryFilter();
+
         String sql = """
                 SELECT e.id,
                        e.title,
@@ -117,21 +133,33 @@ public class EventRepository {
                             AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
                       )
                   )
+                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "") + """
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
                 OFFSET :offset
                 """;
 
-        return jdbcClient
+        var statement = jdbcClient
                 .sql(sql)
-                .param("search", search)
+                .param("search", criteria.search())
                 .param("limit", limit)
-                .param("offset", offset)
+                .param("offset", offset);
+
+        if (filterByCategory) {
+            statement.param(
+                    "categoryIds",
+                    criteria.categoryIds()
+            );
+        }
+
+        return statement
                 .query(EVENT_SUMMARY_ROW_MAPPER)
                 .list();
     }
 
-    public long countEvents(String search) {
+    public long countEvents(EventQueryCriteria criteria) {
+        boolean filterByCategory = criteria.hasCategoryFilter();
+
         String sql = """
                 SELECT COUNT(*)
                 FROM events e
@@ -151,11 +179,20 @@ public class EventRepository {
                             AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
                       )
                   )
-                """;
+                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "");
 
-        return jdbcClient
+        var statement = jdbcClient
                 .sql(sql)
-                .param("search", search)
+                .param("search", criteria.search());
+
+        if (filterByCategory) {
+            statement.param(
+                    "categoryIds",
+                    criteria.categoryIds()
+            );
+        }
+
+        return statement
                 .query(Long.class)
                 .single();
     }
