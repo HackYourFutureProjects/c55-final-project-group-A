@@ -6,6 +6,7 @@ import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventSummaryResponse;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
+import nl.hackyourfuture.project.backend.event.model.EventPriceFilter;
 import nl.hackyourfuture.project.backend.event.model.EventQueryCriteria;
 import nl.hackyourfuture.project.backend.event.model.EventStatus;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
@@ -32,6 +33,7 @@ public class EventService {
             BigDecimal latitude,
             BigDecimal longitude,
             BigDecimal radiusKm,
+            EventPriceFilter price,
             int page,
             int size
     ) {
@@ -43,7 +45,7 @@ public class EventService {
                 latitude,
                 longitude,
                 radiusKm,
-                null,       // price
+                price,
                 List.of()   // timesOfDay
         );
         if (criteria.hasAnyDateFilter()

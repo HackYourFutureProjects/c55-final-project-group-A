@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.dto.response.EventDetailResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
+import nl.hackyourfuture.project.backend.event.model.EventPriceFilter;
 import nl.hackyourfuture.project.backend.event.service.EventService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -137,6 +138,16 @@ public class EventController {
             BigDecimal radiusKm,
 
             @Parameter(
+                    description = """
+                            Optional price filter. FREE returns events with a zero
+                            price; PAID returns events with a price greater than zero.
+                            """,
+                    example = "FREE"
+            )
+            @RequestParam(required = false)
+            EventPriceFilter price,
+
+            @Parameter(
                     description = "Zero-based page number",
                     example = "0"
             )
@@ -161,6 +172,7 @@ public class EventController {
                 latitude,
                 longitude,
                 radiusKm,
+                price,
                 page,
                 size
         );

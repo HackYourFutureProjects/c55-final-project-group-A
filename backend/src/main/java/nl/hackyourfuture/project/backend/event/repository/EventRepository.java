@@ -80,6 +80,13 @@ public class EventRepository {
                   )
               ) <= CAST(:radiusKm AS DOUBLE PRECISION)
             """;
+    private static final String PRICE_FILTER_CLAUSE = """
+              AND (
+                  (:price = 'FREE' AND e.price = 0)
+                  OR (:price = 'PAID' AND e.price > 0)
+              )
+            """;
+
 
     private static final RowMapper<EventSummary> EVENT_SUMMARY_ROW_MAPPER =
             (rs, _) -> new EventSummary(
@@ -130,6 +137,7 @@ public class EventRepository {
         boolean filterByCategory = criteria.hasCategoryFilter();
         boolean filterByDate = criteria.hasCompleteDateFilter();
         boolean filterByLocation = criteria.hasCompleteLocationFilter();
+        boolean filterByPrice = criteria.hasPriceFilter();
 
         String sql = """
                 SELECT e.id,
@@ -190,10 +198,12 @@ public class EventRepository {
                   )
                 """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
                 + (filterByDate ? DATE_FILTER_CLAUSE : "")
-                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "") + """
+                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
+                + (filterByPrice ? PRICE_FILTER_CLAUSE : "") + """
                 ORDER BY e.start_at, e.id
-                LIMIT :limit
-                OFFSET :offset
+                
+                                LIMIT :limit
+                                OFFSET :offset
                 """;
 
         var statement = jdbcClient
@@ -231,6 +241,10 @@ public class EventRepository {
                     .param("longitude", criteria.longitude())
                     .param("radiusKm", criteria.radiusKm());
         }
+        if (filterByPrice) {
+            statement = statement
+                    .param("price", criteria.price().name());
+        }
 
         return statement
                 .query(EVENT_SUMMARY_ROW_MAPPER)
@@ -241,6 +255,7 @@ public class EventRepository {
         boolean filterByCategory = criteria.hasCategoryFilter();
         boolean filterByDate = criteria.hasCompleteDateFilter();
         boolean filterByLocation = criteria.hasCompleteLocationFilter();
+        boolean filterByPrice = criteria.hasPriceFilter();
 
         String sql = """
                 SELECT COUNT(*)
@@ -263,7 +278,8 @@ public class EventRepository {
                   )
                 """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
                 + (filterByDate ? DATE_FILTER_CLAUSE : "")
-                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "");
+                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
+                + (filterByPrice ? PRICE_FILTER_CLAUSE : "");
 
         var statement = jdbcClient
                 .sql(sql)
@@ -298,6 +314,10 @@ public class EventRepository {
                     .param("latitude", criteria.latitude())
                     .param("longitude", criteria.longitude())
                     .param("radiusKm", criteria.radiusKm());
+        }
+        if (filterByPrice) {
+            statement = statement
+                    .param("price", criteria.price().name());
         }
 
         return statement
