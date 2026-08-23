@@ -1,5 +1,5 @@
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
-import type { EventDetail, EventPage } from "@/types/event";
+import type { EventDetail, EventFilters, EventPage } from "@/types/event";
 
 import type { LocationSuggestion } from "@/types/location";
 
@@ -13,11 +13,37 @@ function apiUrl(path: string) {
   return path;
 }
 
-export async function getEvents(page = 0, size = 9): Promise<EventPage> {
-  const response = await fetch(apiUrl(`/api/events?page=${page}&size=${size}`));
+export async function getEvents(
+  filters: EventFilters = {},
+): Promise<EventPage> {
+  // URLSearchParams builds the query string and escapes values for us
+  const query = new URLSearchParams();
+
+  query.set("page", String(filters.page ?? 0));
+  query.set("size", String(filters.size ?? 9));
+
+  if (filters.search) {
+    query.set("search", filters.search);
+  }
+
+  // append (not set) so the same key repeats: ?categoryIds=a&categoryIds=b
+  for (const categoryId of filters.categoryIds ?? []) {
+    query.append("categoryIds", categoryId);
+  }
+
+  // The radius filter only works when all three are sent together
+  if (filters.latitude && filters.longitude && filters.radiusKm) {
+    query.set("latitude", String(filters.latitude));
+    query.set("longitude", String(filters.longitude));
+    query.set("radiusKm", String(filters.radiusKm));
+  }
+
+  const response = await fetch(apiUrl(`/api/events?${query.toString()}`));
+
   if (!response.ok) {
     throw new Error(`Failed to load events: ${response.status}`);
   }
+
   return response.json();
 }
 

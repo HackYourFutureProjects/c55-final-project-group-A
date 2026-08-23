@@ -17,6 +17,8 @@ export interface Event {
   imageUrl: string | null;
   goingCount: number;
   cancelled: boolean;
+  latitude: number;
+  longitude: number;
 }
 
 export interface EventPage {
@@ -46,4 +48,16 @@ export interface EventDetail {
   imageUrl: string | null;
   goingCount: number;
   eventStatus: EventStatus;
+  latitude: number;
+  longitude: number;
+}
+
+export interface EventFilters {
+  page?: number;
+  size?: number;
+  search?: string;
+  categoryIds?: string[];
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
 }

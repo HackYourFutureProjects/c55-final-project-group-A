@@ -16,7 +16,7 @@ interface LocationAutocompleteProps {
 export function LocationAutocomplete({
   onSelect,
   placeholder,
-   hint,
+  hint,
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
@@ -68,9 +68,8 @@ export function LocationAutocomplete({
       {/* Shown while the field is focused but the query is too short
     for the geocoder to return anything useful */}
       {isFocused && query.length < 3 && (
-  <p>{hint ?? "Type at least 3 characters"}</p>
-)}
-
+        <p>{hint ?? "Type at least 3 characters"}</p>
+      )}
 
       {isLoading && <p>Searching...</p>}
 

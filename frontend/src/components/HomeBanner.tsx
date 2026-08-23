@@ -1,3 +1,5 @@
+import { SearchInput } from "@/components/SearchInput";
+
 interface HomeBannerProps {
   eventCount: number;
 }
@@ -54,6 +56,7 @@ export default function HomeBanner({ eventCount }: HomeBannerProps) {
             {formattedDate} · {eventCount} events
           </p>
         </div>
+        <SearchInput />
       </div>
     </div>
   );
