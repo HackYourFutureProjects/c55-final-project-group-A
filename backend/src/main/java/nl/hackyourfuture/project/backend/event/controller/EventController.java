@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.dto.response.EventDetailResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.model.EventPriceFilter;
+import nl.hackyourfuture.project.backend.event.model.EventTimeOfDay;
 import nl.hackyourfuture.project.backend.event.service.EventService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -148,6 +149,20 @@ public class EventController {
             EventPriceFilter price,
 
             @Parameter(
+                    description = """
+                            Optional time-of-day filters: MORNING, AFTERNOON, or
+                            EVENING. Repeat the parameter to select multiple
+                            periods. Events matching any selected period are returned.
+                            The event start time is interpreted in Europe/Amsterdam:
+                            MORNING is 06:00–11:59, AFTERNOON is 12:00–17:59, and
+                            EVENING is 18:00–05:59.
+                            """,
+                    example = "MORNING"
+            )
+            @RequestParam(required = false)
+            List<EventTimeOfDay> timesOfDay,
+
+            @Parameter(
                     description = "Zero-based page number",
                     example = "0"
             )
@@ -173,6 +188,7 @@ public class EventController {
                 longitude,
                 radiusKm,
                 price,
+                timesOfDay,
                 page,
                 size
         );

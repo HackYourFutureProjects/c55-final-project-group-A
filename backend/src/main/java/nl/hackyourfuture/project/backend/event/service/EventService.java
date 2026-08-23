@@ -9,6 +9,7 @@ import nl.hackyourfuture.project.backend.event.model.EventDetail;
 import nl.hackyourfuture.project.backend.event.model.EventPriceFilter;
 import nl.hackyourfuture.project.backend.event.model.EventQueryCriteria;
 import nl.hackyourfuture.project.backend.event.model.EventStatus;
+import nl.hackyourfuture.project.backend.event.model.EventTimeOfDay;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
 import org.springframework.stereotype.Service;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
@@ -34,6 +35,7 @@ public class EventService {
             BigDecimal longitude,
             BigDecimal radiusKm,
             EventPriceFilter price,
+            List<EventTimeOfDay> timesOfDay,
             int page,
             int size
     ) {
@@ -46,7 +48,7 @@ public class EventService {
                 longitude,
                 radiusKm,
                 price,
-                List.of()   // timesOfDay
+                timesOfDay
         );
         if (criteria.hasAnyDateFilter()
                 && !criteria.hasCompleteDateFilter()) {

@@ -87,6 +87,26 @@ public class EventRepository {
               )
             """;
 
+    private static final String TIME_OF_DAY_FILTER_CLAUSE = """
+              AND CASE
+                  WHEN CAST(
+                      e.start_at AT TIME ZONE 'Europe/Amsterdam' AS TIME
+                  ) >= TIME '06:00:00'
+                  AND CAST(
+                      e.start_at AT TIME ZONE 'Europe/Amsterdam' AS TIME
+                  ) < TIME '12:00:00'
+                      THEN 'MORNING'
+                  WHEN CAST(
+                      e.start_at AT TIME ZONE 'Europe/Amsterdam' AS TIME
+                  ) >= TIME '12:00:00'
+                  AND CAST(
+                      e.start_at AT TIME ZONE 'Europe/Amsterdam' AS TIME
+                  ) < TIME '18:00:00'
+                      THEN 'AFTERNOON'
+                  ELSE 'EVENING'
+              END IN (:timesOfDay)
+            """;
+
 
     private static final RowMapper<EventSummary> EVENT_SUMMARY_ROW_MAPPER =
             (rs, _) -> new EventSummary(
@@ -138,6 +158,7 @@ public class EventRepository {
         boolean filterByDate = criteria.hasCompleteDateFilter();
         boolean filterByLocation = criteria.hasCompleteLocationFilter();
         boolean filterByPrice = criteria.hasPriceFilter();
+        boolean filterByTimeOfDay = criteria.hasTimeOfDayFilter();
 
         String sql = """
                 SELECT e.id,
@@ -199,7 +220,8 @@ public class EventRepository {
                 """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
                 + (filterByDate ? DATE_FILTER_CLAUSE : "")
                 + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
-                + (filterByPrice ? PRICE_FILTER_CLAUSE : "") + """
+                + (filterByPrice ? PRICE_FILTER_CLAUSE : "")
+                + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "") + """
                 ORDER BY e.start_at, e.id
                 
                                 LIMIT :limit
@@ -246,6 +268,15 @@ public class EventRepository {
                     .param("price", criteria.price().name());
         }
 
+        if (filterByTimeOfDay) {
+            statement = statement.param(
+                    "timesOfDay",
+                    criteria.timesOfDay().stream()
+                            .map(Enum::name)
+                            .toList()
+            );
+        }
+
         return statement
                 .query(EVENT_SUMMARY_ROW_MAPPER)
                 .list();
@@ -256,6 +287,7 @@ public class EventRepository {
         boolean filterByDate = criteria.hasCompleteDateFilter();
         boolean filterByLocation = criteria.hasCompleteLocationFilter();
         boolean filterByPrice = criteria.hasPriceFilter();
+        boolean filterByTimeOfDay = criteria.hasTimeOfDayFilter();
 
         String sql = """
                 SELECT COUNT(*)
@@ -279,7 +311,8 @@ public class EventRepository {
                 """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
                 + (filterByDate ? DATE_FILTER_CLAUSE : "")
                 + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
-                + (filterByPrice ? PRICE_FILTER_CLAUSE : "");
+                + (filterByPrice ? PRICE_FILTER_CLAUSE : "")
+                + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "");
 
         var statement = jdbcClient
                 .sql(sql)
@@ -318,6 +351,15 @@ public class EventRepository {
         if (filterByPrice) {
             statement = statement
                     .param("price", criteria.price().name());
+        }
+
+        if (filterByTimeOfDay) {
+            statement = statement.param(
+                    "timesOfDay",
+                    criteria.timesOfDay().stream()
+                            .map(Enum::name)
+                            .toList()
+            );
         }
 
         return statement
