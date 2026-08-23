@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +32,14 @@ public class EventRepository {
                     AND filter_ec.category_id IN (:categoryIds)
               )
             """;
+
+    private static final String DATE_FILTER_CLAUSE = """
+              AND e.start_at < :dateToExclusive
+              AND e.end_at >= :dateFromStart
+            """;
+
+    private static final ZoneId EVENT_TIME_ZONE =
+            ZoneId.of("Europe/Amsterdam");
 
     private static final RowMapper<EventSummary> EVENT_SUMMARY_ROW_MAPPER =
             (rs, _) -> new EventSummary(
@@ -77,6 +86,7 @@ public class EventRepository {
             int offset
     ) {
         boolean filterByCategory = criteria.hasCategoryFilter();
+        boolean filterByDate = criteria.hasCompleteDateFilter();
 
         String sql = """
                 SELECT e.id,
@@ -133,7 +143,8 @@ public class EventRepository {
                             AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
                       )
                   )
-                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "") + """
+                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
+                + (filterByDate ? DATE_FILTER_CLAUSE : "") + """
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
                 OFFSET :offset
@@ -146,10 +157,27 @@ public class EventRepository {
                 .param("offset", offset);
 
         if (filterByCategory) {
-            statement.param(
+            statement = statement.param(
                     "categoryIds",
                     criteria.categoryIds()
             );
+        }
+
+        if (filterByDate) {
+            statement = statement
+                    .param(
+                            "dateFromStart",
+                            criteria.dateFrom()
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    )
+                    .param(
+                            "dateToExclusive",
+                            criteria.dateTo()
+                                    .plusDays(1)
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    );
         }
 
         return statement
@@ -159,6 +187,7 @@ public class EventRepository {
 
     public long countEvents(EventQueryCriteria criteria) {
         boolean filterByCategory = criteria.hasCategoryFilter();
+        boolean filterByDate = criteria.hasCompleteDateFilter();
 
         String sql = """
                 SELECT COUNT(*)
@@ -179,17 +208,35 @@ public class EventRepository {
                             AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
                       )
                   )
-                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "");
+                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
+                + (filterByDate ? DATE_FILTER_CLAUSE : "");
 
         var statement = jdbcClient
                 .sql(sql)
                 .param("search", criteria.search());
 
         if (filterByCategory) {
-            statement.param(
+            statement = statement.param(
                     "categoryIds",
                     criteria.categoryIds()
             );
+        }
+
+        if (filterByDate) {
+            statement = statement
+                    .param(
+                            "dateFromStart",
+                            criteria.dateFrom()
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    )
+                    .param(
+                            "dateToExclusive",
+                            criteria.dateTo()
+                                    .plusDays(1)
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    );
         }
 
         return statement

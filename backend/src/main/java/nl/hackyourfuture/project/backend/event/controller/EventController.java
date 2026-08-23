@@ -10,12 +10,14 @@ import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.dto.response.EventDetailResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.service.EventService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -68,6 +70,29 @@ public class EventController {
             List<UUID> categoryIds,
 
             @Parameter(
+                    description = """
+                            Optional first date of the inclusive event date range,
+                            formatted as YYYY-MM-DD. Must be provided with dateTo.
+                            """,
+                    example = "2026-09-01"
+            )
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate dateFrom,
+
+            @Parameter(
+                    description = """
+                            Optional last date of the inclusive event date range,
+                            formatted as YYYY-MM-DD. Must be provided with dateFrom
+                            and must not be before dateFrom.
+                            """,
+                    example = "2026-09-30"
+            )
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate dateTo,
+
+            @Parameter(
                     description = "Zero-based page number",
                     example = "0"
             )
@@ -87,6 +112,8 @@ public class EventController {
         return eventService.getEventPage(
                 search,
                 categoryIds,
+                dateFrom,
+                dateTo,
                 page,
                 size
         );

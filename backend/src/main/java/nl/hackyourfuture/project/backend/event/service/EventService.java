@@ -10,7 +10,9 @@ import nl.hackyourfuture.project.backend.event.model.EventQueryCriteria;
 import nl.hackyourfuture.project.backend.event.model.EventStatus;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
 import org.springframework.stereotype.Service;
+import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -24,20 +26,35 @@ public class EventService {
     public EventPageResponse getEventPage(
             String search,
             List<UUID> categoryIds,
+            LocalDate dateFrom,
+            LocalDate dateTo,
             int page,
             int size
     ) {
         EventQueryCriteria criteria = new EventQueryCriteria(
                 search,
                 categoryIds,
-                null,       // dateFrom
-                null,       // dateTo
+                dateFrom,
+                dateTo,
                 null,       // latitude
                 null,       // longitude
                 null,       // radiusKm
                 null,       // price
                 List.of()   // timesOfDay
         );
+        if (criteria.hasAnyDateFilter()
+                && !criteria.hasCompleteDateFilter()) {
+            throw new BadRequestException(
+                    "dateFrom and dateTo must be provided together"
+            );
+        }
+
+        if (criteria.hasCompleteDateFilter()
+                && criteria.dateFrom().isAfter(criteria.dateTo())) {
+            throw new BadRequestException(
+                    "dateFrom must not be after dateTo"
+            );
+        }
 
         int offset = page * size;
 
