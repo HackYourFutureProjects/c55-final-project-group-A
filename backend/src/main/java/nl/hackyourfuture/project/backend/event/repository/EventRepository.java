@@ -3,6 +3,7 @@ package nl.hackyourfuture.project.backend.event.repository;
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.category.model.Category;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
+import nl.hackyourfuture.project.backend.event.model.EventQueryCriteria;
 import nl.hackyourfuture.project.backend.event.model.NewEvent;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
 import org.springframework.jdbc.core.RowMapper;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +23,90 @@ import java.util.UUID;
 public class EventRepository {
 
     private final JdbcClient jdbcClient;
+
+    private static final String CATEGORY_FILTER_CLAUSE = """
+              AND EXISTS (
+                  SELECT 1
+                  FROM event_categories filter_ec
+                  WHERE filter_ec.event_id = e.id
+                    AND filter_ec.category_id IN (:categoryIds)
+              )
+            """;
+
+    private static final String DATE_FILTER_CLAUSE = """
+              AND e.start_at < :dateToExclusive
+              AND e.end_at > :dateFromStart
+            """;
+
+    private static final ZoneId EVENT_TIME_ZONE =
+            ZoneId.of("Europe/Amsterdam");
+
+    private static final String LOCATION_FILTER_CLAUSE = """
+              AND (
+                  6371.0088 * 2 * ASIN(
+                      SQRT(
+                          LEAST(
+                              1.0,
+                              POWER(
+                                  SIN(
+                                      RADIANS(
+                                          CAST(a.latitude AS DOUBLE PRECISION)
+                                          - CAST(:latitude AS DOUBLE PRECISION)
+                                      ) / 2
+                                  ),
+                                  2
+                              )
+                              + COS(
+                                  RADIANS(
+                                      CAST(:latitude AS DOUBLE PRECISION)
+                                  )
+                              )
+                              * COS(
+                                  RADIANS(
+                                      CAST(a.latitude AS DOUBLE PRECISION)
+                                  )
+                              )
+                              * POWER(
+                                  SIN(
+                                      RADIANS(
+                                          CAST(a.longitude AS DOUBLE PRECISION)
+                                          - CAST(:longitude AS DOUBLE PRECISION)
+                                      ) / 2
+                                  ),
+                                  2
+                              )
+                          )
+                      )
+                  )
+              ) <= CAST(:radiusKm AS DOUBLE PRECISION)
+            """;
+    private static final String PRICE_FILTER_CLAUSE = """
+              AND (
+                  (:price = 'FREE' AND e.price = 0)
+                  OR (:price = 'PAID' AND e.price > 0)
+              )
+            """;
+
+    private static final String TIME_OF_DAY_FILTER_CLAUSE = """
+              AND CASE
+                  WHEN CAST(
+                      e.start_at AT TIME ZONE 'Europe/Amsterdam' AS TIME
+                  ) >= TIME '06:00:00'
+                  AND CAST(
+                      e.start_at AT TIME ZONE 'Europe/Amsterdam' AS TIME
+                  ) < TIME '12:00:00'
+                      THEN 'MORNING'
+                  WHEN CAST(
+                      e.start_at AT TIME ZONE 'Europe/Amsterdam' AS TIME
+                  ) >= TIME '12:00:00'
+                  AND CAST(
+                      e.start_at AT TIME ZONE 'Europe/Amsterdam' AS TIME
+                  ) < TIME '18:00:00'
+                      THEN 'AFTERNOON'
+                  ELSE 'EVENING'
+              END IN (:timesOfDay)
+            """;
+
 
     private static final RowMapper<EventSummary> EVENT_SUMMARY_ROW_MAPPER =
             (rs, _) -> new EventSummary(
@@ -35,6 +121,8 @@ public class EventRepository {
                     rs.getString("postal_code"),
                     rs.getString("city_name"),
                     rs.getString("province"),
+                    rs.getBigDecimal("latitude"),
+                    rs.getBigDecimal("longitude"),
                     rs.getString("image_url"),
                     rs.getLong("going_count"),
                     rs.getBoolean("is_cancelled")
@@ -61,7 +149,17 @@ public class EventRepository {
         return List.copyOf(categories);
     }
 
-    public List<EventSummary> findEventSummaries(String search, int limit, int offset) {
+    public List<EventSummary> findEventSummaries(
+            EventQueryCriteria criteria,
+            int limit,
+            int offset
+    ) {
+        boolean filterByCategory = criteria.hasCategoryFilter();
+        boolean filterByDate = criteria.hasCompleteDateFilter();
+        boolean filterByLocation = criteria.hasCompleteLocationFilter();
+        boolean filterByPrice = criteria.hasPriceFilter();
+        boolean filterByTimeOfDay = criteria.hasTimeOfDayFilter();
+
         String sql = """
                 SELECT e.id,
                        e.title,
@@ -87,6 +185,8 @@ public class EventRepository {
                        a.postal_code,
                        a.city_name,
                        a.province,
+                       a.latitude,
+                       a.longitude,
                        (
                            SELECT ei.image_url
                            FROM event_images ei
@@ -105,34 +205,163 @@ public class EventRepository {
                 WHERE e.is_published = TRUE
                   AND e.is_cancelled = FALSE
                   AND e.end_at > now()
-                  AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                  AND (
+                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR a.city_name ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM event_categories ec
+                          JOIN categories c ON c.id = ec.category_id
+                          WHERE ec.event_id = e.id
+                            AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
+                      )
+                  )
+                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
+                + (filterByDate ? DATE_FILTER_CLAUSE : "")
+                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
+                + (filterByPrice ? PRICE_FILTER_CLAUSE : "")
+                + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "") + """
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
                 OFFSET :offset
                 """;
 
-        return jdbcClient
+        var statement = jdbcClient
                 .sql(sql)
-                .param("search", search)
+                .param("search", criteria.search())
                 .param("limit", limit)
-                .param("offset", offset)
+                .param("offset", offset);
+
+        if (filterByCategory) {
+            statement = statement.param(
+                    "categoryIds",
+                    criteria.categoryIds()
+            );
+        }
+
+        if (filterByDate) {
+            statement = statement
+                    .param(
+                            "dateFromStart",
+                            criteria.dateFrom()
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    )
+                    .param(
+                            "dateToExclusive",
+                            criteria.dateTo()
+                                    .plusDays(1)
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    );
+        }
+        if (filterByLocation) {
+            statement = statement
+                    .param("latitude", criteria.latitude())
+                    .param("longitude", criteria.longitude())
+                    .param("radiusKm", criteria.radiusKm());
+        }
+        if (filterByPrice) {
+            statement = statement
+                    .param("price", criteria.price().name());
+        }
+
+        if (filterByTimeOfDay) {
+            statement = statement.param(
+                    "timesOfDay",
+                    criteria.timesOfDay().stream()
+                            .map(Enum::name)
+                            .toList()
+            );
+        }
+
+        return statement
                 .query(EVENT_SUMMARY_ROW_MAPPER)
                 .list();
     }
 
-    public long countEvents(String search) {
+    public long countEvents(EventQueryCriteria criteria) {
+        boolean filterByCategory = criteria.hasCategoryFilter();
+        boolean filterByDate = criteria.hasCompleteDateFilter();
+        boolean filterByLocation = criteria.hasCompleteLocationFilter();
+        boolean filterByPrice = criteria.hasPriceFilter();
+        boolean filterByTimeOfDay = criteria.hasTimeOfDayFilter();
+
         String sql = """
                 SELECT COUNT(*)
                 FROM events e
+                JOIN addresses a ON a.id = e.address_id
                 WHERE e.is_published = TRUE
                   AND e.is_cancelled = FALSE
                   AND e.end_at > now()
-                  AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
-                """;
+                  AND (
+                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR a.city_name ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM event_categories ec
+                          JOIN categories c ON c.id = ec.category_id
+                          WHERE ec.event_id = e.id
+                            AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
+                      )
+                  )
+                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
+                + (filterByDate ? DATE_FILTER_CLAUSE : "")
+                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
+                + (filterByPrice ? PRICE_FILTER_CLAUSE : "")
+                + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "");
 
-        return jdbcClient
+        var statement = jdbcClient
                 .sql(sql)
-                .param("search", search)
+                .param("search", criteria.search());
+
+        if (filterByCategory) {
+            statement = statement.param(
+                    "categoryIds",
+                    criteria.categoryIds()
+            );
+        }
+
+        if (filterByDate) {
+            statement = statement
+                    .param(
+                            "dateFromStart",
+                            criteria.dateFrom()
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    )
+                    .param(
+                            "dateToExclusive",
+                            criteria.dateTo()
+                                    .plusDays(1)
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    );
+        }
+
+        if (filterByLocation) {
+            statement = statement
+                    .param("latitude", criteria.latitude())
+                    .param("longitude", criteria.longitude())
+                    .param("radiusKm", criteria.radiusKm());
+        }
+        if (filterByPrice) {
+            statement = statement
+                    .param("price", criteria.price().name());
+        }
+
+        if (filterByTimeOfDay) {
+            statement = statement.param(
+                    "timesOfDay",
+                    criteria.timesOfDay().stream()
+                            .map(Enum::name)
+                            .toList()
+            );
+        }
+
+        return statement
                 .query(Long.class)
                 .single();
     }
@@ -151,6 +380,8 @@ public class EventRepository {
                     rs.getString("postal_code"),
                     rs.getString("city_name"),
                     rs.getString("province"),
+                    rs.getBigDecimal("latitude"),
+                    rs.getBigDecimal("longitude"),
                     rs.getString("image_url"),
                     rs.getLong("going_count"),
                     rs.getBoolean("is_cancelled")
@@ -183,6 +414,8 @@ public class EventRepository {
                        a.postal_code,
                        a.city_name,
                        a.province,
+                       a.latitude,
+                       a.longitude,
                        (
                            SELECT ei.image_url
                            FROM event_images ei

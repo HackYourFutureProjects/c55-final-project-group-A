@@ -19,6 +19,8 @@ public record EventDetail(UUID id,
                           String postalCode,
                           String cityName,
                           String province,
+                          BigDecimal latitude,
+                          BigDecimal longitude,
                           String imageUrl,
                           long goingCount,
                           boolean cancelled) {
