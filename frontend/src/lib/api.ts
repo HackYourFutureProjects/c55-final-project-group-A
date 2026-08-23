@@ -1,6 +1,6 @@
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
 import type { EventDetail, EventPage } from "@/types/event";
-import type { User } from "@/types/user";
+import type { UpdateUserRequest, User } from "@/types/user";
 
 function apiUrl(path: string) {
   if (typeof window === "undefined") {
@@ -78,4 +78,32 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 
   return response.json();
+}
+
+export async function updateCurrentUser(
+  data: UpdateUserRequest,
+): Promise<User> {
+  const response = await fetch(apiUrl("/api/users/me"), {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update profile: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function deleteCurrentUser(): Promise<void> {
+  const response = await fetch(apiUrl("/api/users/me"), {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete account: ${response.status}`);
+  }
 }

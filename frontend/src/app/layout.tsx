@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex h-screen flex-col overflow-hidden antialiased">
+      <body className="flex min-h-screen flex-col antialiased">
         <AuthProvider>
           <Navbar />
           <main className="min-h-0 flex-1">{children}</main>

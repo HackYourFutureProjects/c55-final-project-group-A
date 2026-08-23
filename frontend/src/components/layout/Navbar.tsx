@@ -1,18 +1,11 @@
 "use client";
+
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { logout } from "@/lib/api";
 
 export function Navbar() {
-  const { user, isLoading, refresh } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
 
-  async function handleLogout() {
-    await logout();
-    await refresh();
-    router.push("/");
-  }
   return (
     <header className="flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-8">
       <div className="flex items-center gap-8">
@@ -34,22 +27,18 @@ export function Navbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        {isLoading ? null : user ? (
-          <>
-            <Link
-              href="/profile"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-700 hover:bg-orange-200"
-            >
+        {user ? (
+          <Link
+            href="/profile"
+            className="flex items-center gap-2 hover:opacity-80"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-700">
               {user.role === "admin" ? "A" : user.name.charAt(0).toUpperCase()}
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="text-sm font-semibold text-neutral-700 hover:text-orange-600"
-            >
-              Log out
-            </button>
-          </>
+            </span>
+            <span className="text-sm font-semibold text-neutral-700">
+              {user.name.split(" ")[0]}
+            </span>
+          </Link>
         ) : (
           <>
             <Link
