@@ -6,3 +6,9 @@ export interface User {
   createdAt: string;
   location?: string;
 }
+
+export interface UpdateUserRequest {
+  name?: string;
+  email?: string;
+  location?: string;
+}

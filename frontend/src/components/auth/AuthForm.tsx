@@ -46,7 +46,7 @@ export function AuthForm() {
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       <div className="flex w-full items-center justify-center px-8 sm:px-16 lg:w-2/5">
         <div className="w-full max-w-lg rounded-3xl border border-neutral-200 bg-white p-14 shadow-sm">
           <div className="mb-8 flex justify-center">
