@@ -1,3 +1,5 @@
+import { SearchInput } from "@/components/SearchInput";
+
 interface HomeBannerProps {
   eventCount: number;
 }
@@ -54,14 +56,7 @@ export default function HomeBanner({ eventCount }: HomeBannerProps) {
             {formattedDate} · {eventCount} events
           </p>
         </div>
-
-        {/* TODO: wire up in frontend-event-search */}
-        <input
-          type="text"
-          placeholder="Search events..."
-          disabled
-          className="w-full rounded-full border border-neutral-200 bg-white px-5 py-3 outline-none focus:border-orange-500 disabled:cursor-not-allowed lg:w-80"
-        />
+        <SearchInput />
       </div>
     </div>
   );
