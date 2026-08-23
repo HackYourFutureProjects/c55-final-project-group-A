@@ -100,12 +100,23 @@ public record EventDetailResponse(
         String province,
 
         @Schema(
-                description = """
-                        Public URL of the event's primary image.
-                        Null when the event does not have an image.
-                        """,
+                description = "Latitude of the event location",
+                example = "52.367600",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        BigDecimal latitude,
+
+        @Schema(
+                description = "Longitude of the event location",
+                example = "4.904100",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        BigDecimal longitude,
+
+        @Schema(
+                description = "Public URL of the event's primary image",
                 example = "https://ik.imagekit.io/example/events/music-night.jpg",
-                nullable = true
+                requiredMode = Schema.RequiredMode.REQUIRED
         )
         String imageUrl,
 
@@ -155,6 +166,8 @@ public record EventDetailResponse(
                 event.postalCode(),
                 event.cityName(),
                 event.province(),
+                event.latitude(),
+                event.longitude(),
                 event.imageUrl(),
                 event.goingCount(),
                 status

@@ -35,7 +35,7 @@ public class EventRepository {
 
     private static final String DATE_FILTER_CLAUSE = """
               AND e.start_at < :dateToExclusive
-              AND e.end_at >= :dateFromStart
+              AND e.end_at > :dateFromStart
             """;
 
     private static final ZoneId EVENT_TIME_ZONE =
@@ -223,9 +223,8 @@ public class EventRepository {
                 + (filterByPrice ? PRICE_FILTER_CLAUSE : "")
                 + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "") + """
                 ORDER BY e.start_at, e.id
-                
-                                LIMIT :limit
-                                OFFSET :offset
+                LIMIT :limit
+                OFFSET :offset
                 """;
 
         var statement = jdbcClient
@@ -381,6 +380,8 @@ public class EventRepository {
                     rs.getString("postal_code"),
                     rs.getString("city_name"),
                     rs.getString("province"),
+                    rs.getBigDecimal("latitude"),
+                    rs.getBigDecimal("longitude"),
                     rs.getString("image_url"),
                     rs.getLong("going_count"),
                     rs.getBoolean("is_cancelled")
@@ -413,6 +414,8 @@ public class EventRepository {
                        a.postal_code,
                        a.city_name,
                        a.province,
+                       a.latitude,
+                       a.longitude,
                        (
                            SELECT ei.image_url
                            FROM event_images ei

@@ -104,7 +104,8 @@ public record EventSummaryResponse(
 
         @Schema(
                 description = "URL of the event's primary image",
-                example = "https://example.com/images/music-night.jpg"
+                example = "https://example.com/images/music-night.jpg",
+                requiredMode = Schema.RequiredMode.REQUIRED
         )
         String imageUrl,
 
