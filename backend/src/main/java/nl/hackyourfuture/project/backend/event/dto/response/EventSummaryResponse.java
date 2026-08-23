@@ -89,6 +89,20 @@ public record EventSummaryResponse(
         String province,
 
         @Schema(
+                description = "Latitude of the event location",
+                example = "52.367600",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        BigDecimal latitude,
+
+        @Schema(
+                description = "Longitude of the event location",
+                example = "4.904100",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        BigDecimal longitude,
+
+        @Schema(
                 description = "URL of the event's primary image",
                 example = "https://example.com/images/music-night.jpg"
         )
@@ -126,6 +140,8 @@ public record EventSummaryResponse(
                 event.postalCode(),
                 event.cityName(),
                 event.province(),
+                event.latitude(),
+                event.longitude(),
                 event.imageUrl(),
                 event.goingCount(),
                 event.cancelled()

@@ -94,6 +94,8 @@ public class EventRepository {
                     rs.getString("postal_code"),
                     rs.getString("city_name"),
                     rs.getString("province"),
+                    rs.getBigDecimal("latitude"),
+                    rs.getBigDecimal("longitude"),
                     rs.getString("image_url"),
                     rs.getLong("going_count"),
                     rs.getBoolean("is_cancelled")
@@ -154,6 +156,8 @@ public class EventRepository {
                        a.postal_code,
                        a.city_name,
                        a.province,
+                       a.latitude,
+                       a.longitude,
                        (
                            SELECT ei.image_url
                            FROM event_images ei
