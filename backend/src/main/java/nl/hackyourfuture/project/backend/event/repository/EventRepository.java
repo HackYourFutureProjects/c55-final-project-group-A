@@ -41,6 +41,46 @@ public class EventRepository {
     private static final ZoneId EVENT_TIME_ZONE =
             ZoneId.of("Europe/Amsterdam");
 
+    private static final String LOCATION_FILTER_CLAUSE = """
+              AND (
+                  6371.0088 * 2 * ASIN(
+                      SQRT(
+                          LEAST(
+                              1.0,
+                              POWER(
+                                  SIN(
+                                      RADIANS(
+                                          CAST(a.latitude AS DOUBLE PRECISION)
+                                          - CAST(:latitude AS DOUBLE PRECISION)
+                                      ) / 2
+                                  ),
+                                  2
+                              )
+                              + COS(
+                                  RADIANS(
+                                      CAST(:latitude AS DOUBLE PRECISION)
+                                  )
+                              )
+                              * COS(
+                                  RADIANS(
+                                      CAST(a.latitude AS DOUBLE PRECISION)
+                                  )
+                              )
+                              * POWER(
+                                  SIN(
+                                      RADIANS(
+                                          CAST(a.longitude AS DOUBLE PRECISION)
+                                          - CAST(:longitude AS DOUBLE PRECISION)
+                                      ) / 2
+                                  ),
+                                  2
+                              )
+                          )
+                      )
+                  )
+              ) <= CAST(:radiusKm AS DOUBLE PRECISION)
+            """;
+
     private static final RowMapper<EventSummary> EVENT_SUMMARY_ROW_MAPPER =
             (rs, _) -> new EventSummary(
                     rs.getObject("id", UUID.class),
@@ -87,6 +127,7 @@ public class EventRepository {
     ) {
         boolean filterByCategory = criteria.hasCategoryFilter();
         boolean filterByDate = criteria.hasCompleteDateFilter();
+        boolean filterByLocation = criteria.hasCompleteLocationFilter();
 
         String sql = """
                 SELECT e.id,
@@ -144,7 +185,8 @@ public class EventRepository {
                       )
                   )
                 """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
-                + (filterByDate ? DATE_FILTER_CLAUSE : "") + """
+                + (filterByDate ? DATE_FILTER_CLAUSE : "")
+                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "") + """
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
                 OFFSET :offset
@@ -179,6 +221,12 @@ public class EventRepository {
                                     .toOffsetDateTime()
                     );
         }
+        if (filterByLocation) {
+            statement = statement
+                    .param("latitude", criteria.latitude())
+                    .param("longitude", criteria.longitude())
+                    .param("radiusKm", criteria.radiusKm());
+        }
 
         return statement
                 .query(EVENT_SUMMARY_ROW_MAPPER)
@@ -188,6 +236,7 @@ public class EventRepository {
     public long countEvents(EventQueryCriteria criteria) {
         boolean filterByCategory = criteria.hasCategoryFilter();
         boolean filterByDate = criteria.hasCompleteDateFilter();
+        boolean filterByLocation = criteria.hasCompleteLocationFilter();
 
         String sql = """
                 SELECT COUNT(*)
@@ -209,7 +258,8 @@ public class EventRepository {
                       )
                   )
                 """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
-                + (filterByDate ? DATE_FILTER_CLAUSE : "");
+                + (filterByDate ? DATE_FILTER_CLAUSE : "")
+                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "");
 
         var statement = jdbcClient
                 .sql(sql)
@@ -237,6 +287,13 @@ public class EventRepository {
                                     .atStartOfDay(EVENT_TIME_ZONE)
                                     .toOffsetDateTime()
                     );
+        }
+
+        if (filterByLocation) {
+            statement = statement
+                    .param("latitude", criteria.latitude())
+                    .param("longitude", criteria.longitude())
+                    .param("radiusKm", criteria.radiusKm());
         }
 
         return statement

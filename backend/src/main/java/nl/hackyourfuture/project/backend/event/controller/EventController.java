@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -93,6 +96,47 @@ public class EventController {
             LocalDate dateTo,
 
             @Parameter(
+                    description = """
+                            Optional latitude of the location filter centre,
+                            between -90 and 90. Must be provided with longitude
+                            and radiusKm.
+                            """,
+                    example = "52.3676"
+            )
+            @RequestParam(required = false)
+            @DecimalMin(value = "-90.0", message = "Latitude must be at least -90")
+            @DecimalMax(value = "90.0", message = "Latitude must not exceed 90")
+            BigDecimal latitude,
+
+            @Parameter(
+                    description = """
+                            Optional longitude of the location filter centre,
+                            between -180 and 180. Must be provided with latitude
+                            and radiusKm.
+                            """,
+                    example = "4.9041"
+            )
+            @RequestParam(required = false)
+            @DecimalMin(value = "-180.0", message = "Longitude must be at least -180")
+            @DecimalMax(value = "180.0", message = "Longitude must not exceed 180")
+            BigDecimal longitude,
+
+            @Parameter(
+                    description = """
+                            Optional search radius in kilometres. Must be greater
+                            than zero and provided with latitude and longitude.
+                            """,
+                    example = "10"
+            )
+            @RequestParam(required = false)
+            @DecimalMin(
+                    value = "0.0",
+                    inclusive = false,
+                    message = "Radius must be greater than zero"
+            )
+            BigDecimal radiusKm,
+
+            @Parameter(
                     description = "Zero-based page number",
                     example = "0"
             )
@@ -114,6 +158,9 @@ public class EventController {
                 categoryIds,
                 dateFrom,
                 dateTo,
+                latitude,
+                longitude,
+                radiusKm,
                 page,
                 size
         );

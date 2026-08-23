@@ -12,6 +12,7 @@ import nl.hackyourfuture.project.backend.event.repository.EventRepository;
 import org.springframework.stereotype.Service;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -28,6 +29,9 @@ public class EventService {
             List<UUID> categoryIds,
             LocalDate dateFrom,
             LocalDate dateTo,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            BigDecimal radiusKm,
             int page,
             int size
     ) {
@@ -36,9 +40,9 @@ public class EventService {
                 categoryIds,
                 dateFrom,
                 dateTo,
-                null,       // latitude
-                null,       // longitude
-                null,       // radiusKm
+                latitude,
+                longitude,
+                radiusKm,
                 null,       // price
                 List.of()   // timesOfDay
         );
@@ -53,6 +57,14 @@ public class EventService {
                 && criteria.dateFrom().isAfter(criteria.dateTo())) {
             throw new BadRequestException(
                     "dateFrom must not be after dateTo"
+            );
+
+
+        }
+        if (criteria.hasAnyLocationFilter()
+                && !criteria.hasCompleteLocationFilter()) {
+            throw new BadRequestException(
+                    "latitude, longitude, and radiusKm must be provided together"
             );
         }
 
