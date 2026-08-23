@@ -32,13 +32,17 @@ public class EventController {
             description = """
                     Returns one page of active, published, non-cancelled events
                     ordered by start date.
-                    When search is provided, only events with matching
-                    titles are returned. Search is case-insensitive.
+                    When search is provided, only events with matching titles,
+                    descriptions, city names, or category names are returned.
+                    Search is case-insensitive.
                     """
     )
     @ApiResponse(
             responseCode = "200",
-            description = "A page of matching events with pagination metadata"
+            description = """
+                    A page of matching events with pagination metadata.
+                    The events array is empty when no events match the search.
+                    """
     )
     @ApiResponse(
             responseCode = "400",
@@ -46,7 +50,7 @@ public class EventController {
     )
     public EventPageResponse getEvents(
             @Parameter(
-                    description = "Optional text to search for in event titles",
+                    description = "Optional text to search for in event titles, descriptions, city names, or category names",
                     example = "music"
             )
             @RequestParam(required = false)

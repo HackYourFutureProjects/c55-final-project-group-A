@@ -105,7 +105,18 @@ public class EventRepository {
                 WHERE e.is_published = TRUE
                   AND e.is_cancelled = FALSE
                   AND e.end_at > now()
-                  AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                  AND (
+                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR a.city_name ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM event_categories ec
+                          JOIN categories c ON c.id = ec.category_id
+                          WHERE ec.event_id = e.id
+                            AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
+                      )
+                  )
                 ORDER BY e.start_at, e.id
                 LIMIT :limit
                 OFFSET :offset
@@ -124,10 +135,22 @@ public class EventRepository {
         String sql = """
                 SELECT COUNT(*)
                 FROM events e
+                JOIN addresses a ON a.id = e.address_id
                 WHERE e.is_published = TRUE
                   AND e.is_cancelled = FALSE
                   AND e.end_at > now()
-                  AND e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                  AND (
+                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR a.city_name ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM event_categories ec
+                          JOIN categories c ON c.id = ec.category_id
+                          WHERE ec.event_id = e.id
+                            AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
+                      )
+                  )
                 """;
 
         return jdbcClient
