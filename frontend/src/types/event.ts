@@ -41,11 +41,11 @@ export interface EventDetail {
   endAt: string;
   price: number;
   street: string;
-  houseNumber: string;
-  postalCode: string;
+  houseNumber: string | null;
+  postalCode: string | null;
   cityName: string;
   province: string | null;
-  imageUrl: string | null;
+  imageUrl: string;
   goingCount: number;
   eventStatus: EventStatus;
   latitude: number;
@@ -60,4 +60,12 @@ export interface EventFilters {
   latitude?: number;
   longitude?: number;
   radiusKm?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  price?: PriceFilter;
+  timesOfDay?: TimeOfDay[]; // repeated key, like categoryIds
 }
+
+export type PriceFilter = "FREE" | "PAID";
+
+export type TimeOfDay = "MORNING" | "AFTERNOON" | "EVENING";
