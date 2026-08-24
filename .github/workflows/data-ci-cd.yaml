@@ -215,8 +215,10 @@ jobs:
           IDENTITY: ${{ vars.ACA_IDENTITY }}
           REGISTRY: ${{ vars.ACR_NAME }}.azurecr.io
           SUBSCRIPTION: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
         run: |
           set -euo pipefail
+          : "${TICKETMASTER_API_KEY:?TICKETMASTER_API_KEY repository secret is required}"
           image="$REGISTRY/pipeline:${{ github.sha }}"
           identity="/subscriptions/$SUBSCRIPTION/resourcegroups/$RG/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$IDENTITY"
           client_id="$(az identity show --ids "$identity" --query clientId -o tsv)"
@@ -232,6 +234,7 @@ jobs:
                     LANDING_CONTAINER=prod \
                     LANDING_PREFIX=raw \
                     DATABRICKS_CATALOG=${{ vars.DATABRICKS_CATALOG }} \
+                    TICKETMASTER_API_KEY=secretref:ticketmaster-api-key \
                     AZURE_CLIENT_ID=$client_id"
 
           # No 2>/dev/null: if this lookup fails for a transient reason we want
@@ -239,6 +242,8 @@ jobs:
           # `create` against a job that already exists.
           if az containerapp job show -g "$RG" -n "$JOB" -o none; then
             echo "updating $JOB -> $image"
+            az containerapp job secret set -g "$RG" -n "$JOB" \
+              --secrets ticketmaster-api-key="$TICKETMASTER_API_KEY" -o none
             az containerapp job update -g "$RG" -n "$JOB" \
               --image "$image" --set-env-vars $env_vars -o none
           else
@@ -250,6 +255,7 @@ jobs:
               --image "$image" \
               --mi-user-assigned "$identity" \
               --registry-identity "$identity" --registry-server "$REGISTRY" \
+              --secrets ticketmaster-api-key="$TICKETMASTER_API_KEY" \
               --env-vars $env_vars -o none
           fi
 
@@ -285,8 +291,10 @@ jobs:
           IDENTITY: ${{ vars.ACA_IDENTITY }}
           REGISTRY: ${{ vars.ACR_NAME }}.azurecr.io
           SUBSCRIPTION: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
         run: |
           set -euo pipefail
+          : "${TICKETMASTER_API_KEY:?TICKETMASTER_API_KEY repository secret is required}"
           image="$REGISTRY/pipeline:${{ github.sha }}"
           identity="/subscriptions/$SUBSCRIPTION/resourcegroups/$RG/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$IDENTITY"
           client_id="$(az identity show --ids "$identity" --query clientId -o tsv)"
@@ -297,10 +305,13 @@ jobs:
                     LANDING_CONTAINER=dev \
                     LANDING_PREFIX=aca-dev \
                     DATABRICKS_CATALOG=${{ vars.DATABRICKS_CATALOG }} \
+                    TICKETMASTER_API_KEY=secretref:ticketmaster-api-key \
                     AZURE_CLIENT_ID=$client_id"
 
           if az containerapp job show -g "$RG" -n "$JOB" -o none 2>/dev/null; then
             echo "updating $JOB -> $image"
+            az containerapp job secret set -g "$RG" -n "$JOB" \
+              --secrets ticketmaster-api-key="$TICKETMASTER_API_KEY" -o none
             az containerapp job update -g "$RG" -n "$JOB" \
               --image "$image" --set-env-vars $env_vars -o none
           else
@@ -312,6 +323,7 @@ jobs:
               --image "$image" \
               --mi-user-assigned "$identity" \
               --registry-identity "$identity" --registry-server "$REGISTRY" \
+              --secrets ticketmaster-api-key="$TICKETMASTER_API_KEY" \
               --env-vars $env_vars -o none
           fi
 
