@@ -12,12 +12,13 @@ import nl.hackyourfuture.project.backend.event.model.EventSort;
 import nl.hackyourfuture.project.backend.event.model.EventStatus;
 import nl.hackyourfuture.project.backend.event.model.EventTimeOfDay;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
-import org.springframework.stereotype.Service;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +27,21 @@ import java.util.UUID;
 public class EventService {
 
     private final EventRepository eventRepository;
+
+    private void validateCriteria(EventQueryCriteria criteria) {
+        if (criteria.hasAnyDateFilter()
+                && !criteria.hasCompleteDateFilter()) {
+            throw new BadRequestException("dateFrom and dateTo must be provided together");
+        }
+        if (criteria.hasCompleteDateFilter()
+                && criteria.dateFrom().isAfter(criteria.dateTo())) {
+            throw new BadRequestException("dateFrom must not be after dateTo");
+        }
+        if (criteria.hasAnyLocationFilter()
+                && !criteria.hasCompleteLocationFilter()) {
+            throw new BadRequestException("latitude, longitude, and radiusKm must be provided together");
+        }
+    }
 
     public EventPageResponse getEventPage(
             String search,
@@ -53,28 +69,7 @@ public class EventService {
                 timesOfDay,
                 sort
         );
-        if (criteria.hasAnyDateFilter()
-                && !criteria.hasCompleteDateFilter()) {
-            throw new BadRequestException(
-                    "dateFrom and dateTo must be provided together"
-            );
-        }
-
-        if (criteria.hasCompleteDateFilter()
-                && criteria.dateFrom().isAfter(criteria.dateTo())) {
-            throw new BadRequestException(
-                    "dateFrom must not be after dateTo"
-            );
-
-
-        }
-        if (criteria.hasAnyLocationFilter()
-                && !criteria.hasCompleteLocationFilter()) {
-            throw new BadRequestException(
-                    "latitude, longitude, and radiusKm must be provided together"
-            );
-        }
-
+        validateCriteria(criteria);
         int offset = page * size;
 
         List<EventSummaryResponse> events = eventRepository
@@ -106,7 +101,7 @@ public class EventService {
         if (event.cancelled()) {
             return EventStatus.CANCELLED;
         }
-        OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
         if (now.isBefore(event.startAt())) {
             return EventStatus.UPCOMING;
