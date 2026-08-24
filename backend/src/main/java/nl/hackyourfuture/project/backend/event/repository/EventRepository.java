@@ -108,6 +108,100 @@ public class EventRepository {
               END IN (:timesOfDay)
             """;
 
+    private static String buildFilterClauses(EventQueryCriteria criteria) {
+        String sql = """
+                WHERE e.is_published = TRUE
+                  AND e.is_cancelled = FALSE
+                  AND e.end_at > now()
+                  AND (
+                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR a.city_name ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM event_categories ec
+                          JOIN categories c ON c.id = ec.category_id
+                          WHERE ec.event_id = e.id
+                            AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
+                      )
+                  )
+                """;
+
+        if (criteria.hasCategoryFilter()) {
+            sql += CATEGORY_FILTER_CLAUSE;
+        }
+        if (criteria.hasCompleteDateFilter()) {
+            sql += DATE_FILTER_CLAUSE;
+        }
+        if (criteria.hasCompleteLocationFilter()) {
+            sql += LOCATION_FILTER_CLAUSE;
+        }
+        if (criteria.hasPriceFilter()) {
+            sql += PRICE_FILTER_CLAUSE;
+        }
+        if (criteria.hasTimeOfDayFilter()) {
+            sql += TIME_OF_DAY_FILTER_CLAUSE;
+        }
+
+        return sql;
+    }
+
+    private static JdbcClient.StatementSpec bindCriteriaParameters(
+            JdbcClient.StatementSpec statement,
+            EventQueryCriteria criteria
+    ) {
+        statement = statement.param("search", criteria.search());
+
+        if (criteria.hasCategoryFilter()) {
+            statement = statement.param(
+                    "categoryIds",
+                    criteria.categoryIds()
+            );
+        }
+
+        if (criteria.hasCompleteDateFilter()) {
+            statement = statement
+                    .param(
+                            "dateFromStart",
+                            criteria.dateFrom()
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    )
+                    .param(
+                            "dateToExclusive",
+                            criteria.dateTo()
+                                    .plusDays(1)
+                                    .atStartOfDay(EVENT_TIME_ZONE)
+                                    .toOffsetDateTime()
+                    );
+        }
+
+        if (criteria.hasCompleteLocationFilter()) {
+            statement = statement
+                    .param("latitude", criteria.latitude())
+                    .param("longitude", criteria.longitude())
+                    .param("radiusKm", criteria.radiusKm());
+        }
+
+        if (criteria.hasPriceFilter()) {
+            statement = statement.param(
+                    "price",
+                    criteria.price().name()
+            );
+        }
+
+        if (criteria.hasTimeOfDayFilter()) {
+            statement = statement.param(
+                    "timesOfDay",
+                    criteria.timesOfDay().stream()
+                            .map(Enum::name)
+                            .toList()
+            );
+        }
+
+        return statement;
+    }
+
     private static String orderByClause(EventSort sort) {
         return switch (sort) {
             case START_TIME_ASC -> " ORDER BY e.start_at ASC, e.id ASC ";
@@ -163,11 +257,6 @@ public class EventRepository {
             int limit,
             int offset
     ) {
-        boolean filterByCategory = criteria.hasCategoryFilter();
-        boolean filterByDate = criteria.hasCompleteDateFilter();
-        boolean filterByLocation = criteria.hasCompleteLocationFilter();
-        boolean filterByPrice = criteria.hasPriceFilter();
-        boolean filterByTimeOfDay = criteria.hasTimeOfDayFilter();
         String orderBy = orderByClause(criteria.sort());
 
         String sql = """
@@ -222,164 +311,31 @@ public class EventRepository {
                     FROM saved_events se
                     WHERE se.event_id = e.id
                 ) saved_stats
-                WHERE e.is_published = TRUE
-                  AND e.is_cancelled = FALSE
-                  AND e.end_at > now()
-                  AND (
-                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR a.city_name ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR EXISTS (
-                          SELECT 1
-                          FROM event_categories ec
-                          JOIN categories c ON c.id = ec.category_id
-                          WHERE ec.event_id = e.id
-                            AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
-                      )
-                  )
-                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
-                + (filterByDate ? DATE_FILTER_CLAUSE : "")
-                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
-                + (filterByPrice ? PRICE_FILTER_CLAUSE : "")
-                + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "")
-                + orderBy + """
+                """ + buildFilterClauses(criteria) + orderBy + """
                 LIMIT :limit
                 OFFSET :offset
                 """;
 
         var statement = jdbcClient
                 .sql(sql)
-                .param("search", criteria.search())
                 .param("limit", limit)
                 .param("offset", offset);
 
-        if (filterByCategory) {
-            statement = statement.param(
-                    "categoryIds",
-                    criteria.categoryIds()
-            );
-        }
-
-        if (filterByDate) {
-            statement = statement
-                    .param(
-                            "dateFromStart",
-                            criteria.dateFrom()
-                                    .atStartOfDay(EVENT_TIME_ZONE)
-                                    .toOffsetDateTime()
-                    )
-                    .param(
-                            "dateToExclusive",
-                            criteria.dateTo()
-                                    .plusDays(1)
-                                    .atStartOfDay(EVENT_TIME_ZONE)
-                                    .toOffsetDateTime()
-                    );
-        }
-        if (filterByLocation) {
-            statement = statement
-                    .param("latitude", criteria.latitude())
-                    .param("longitude", criteria.longitude())
-                    .param("radiusKm", criteria.radiusKm());
-        }
-        if (filterByPrice) {
-            statement = statement
-                    .param("price", criteria.price().name());
-        }
-
-        if (filterByTimeOfDay) {
-            statement = statement.param(
-                    "timesOfDay",
-                    criteria.timesOfDay().stream()
-                            .map(Enum::name)
-                            .toList()
-            );
-        }
-
+        statement = bindCriteriaParameters(statement, criteria);
         return statement
                 .query(EVENT_SUMMARY_ROW_MAPPER)
                 .list();
     }
 
     public long countEvents(EventQueryCriteria criteria) {
-        boolean filterByCategory = criteria.hasCategoryFilter();
-        boolean filterByDate = criteria.hasCompleteDateFilter();
-        boolean filterByLocation = criteria.hasCompleteLocationFilter();
-        boolean filterByPrice = criteria.hasPriceFilter();
-        boolean filterByTimeOfDay = criteria.hasTimeOfDayFilter();
-
         String sql = """
                 SELECT COUNT(*)
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
-                WHERE e.is_published = TRUE
-                  AND e.is_cancelled = FALSE
-                  AND e.end_at > now()
-                  AND (
-                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR a.city_name ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR EXISTS (
-                          SELECT 1
-                          FROM event_categories ec
-                          JOIN categories c ON c.id = ec.category_id
-                          WHERE ec.event_id = e.id
-                            AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
-                      )
-                  )
-                """ + (filterByCategory ? CATEGORY_FILTER_CLAUSE : "")
-                + (filterByDate ? DATE_FILTER_CLAUSE : "")
-                + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
-                + (filterByPrice ? PRICE_FILTER_CLAUSE : "")
-                + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "");
+                """ + buildFilterClauses(criteria);
 
-        var statement = jdbcClient
-                .sql(sql)
-                .param("search", criteria.search());
-
-        if (filterByCategory) {
-            statement = statement.param(
-                    "categoryIds",
-                    criteria.categoryIds()
-            );
-        }
-
-        if (filterByDate) {
-            statement = statement
-                    .param(
-                            "dateFromStart",
-                            criteria.dateFrom()
-                                    .atStartOfDay(EVENT_TIME_ZONE)
-                                    .toOffsetDateTime()
-                    )
-                    .param(
-                            "dateToExclusive",
-                            criteria.dateTo()
-                                    .plusDays(1)
-                                    .atStartOfDay(EVENT_TIME_ZONE)
-                                    .toOffsetDateTime()
-                    );
-        }
-
-        if (filterByLocation) {
-            statement = statement
-                    .param("latitude", criteria.latitude())
-                    .param("longitude", criteria.longitude())
-                    .param("radiusKm", criteria.radiusKm());
-        }
-        if (filterByPrice) {
-            statement = statement
-                    .param("price", criteria.price().name());
-        }
-
-        if (filterByTimeOfDay) {
-            statement = statement.param(
-                    "timesOfDay",
-                    criteria.timesOfDay().stream()
-                            .map(Enum::name)
-                            .toList()
-            );
-        }
+        var statement = jdbcClient.sql(sql);
+        statement = bindCriteriaParameters(statement, criteria);
 
         return statement
                 .query(Long.class)
