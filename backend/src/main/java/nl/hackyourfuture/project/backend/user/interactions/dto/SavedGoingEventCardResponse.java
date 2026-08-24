@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Schema(description = "An event as shown on a saved/going event card in the user's personal account")
-public record SavedGoingEventCardResponse (
+public record SavedGoingEventCardResponse(
     @Schema(
         description = "Unique identifier of the event",
         example = "40000000-0000-0000-0000-000000000001",
@@ -70,8 +70,8 @@ public record SavedGoingEventCardResponse (
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     boolean isCancelled
-){
-  public static SavedGoingEventCardResponse from (SavedGoingEventCard e){
+) {
+  public static SavedGoingEventCardResponse from(SavedGoingEventCard e) {
     return new SavedGoingEventCardResponse(
         e.id(),
         e.title(),
@@ -100,7 +100,8 @@ public record SavedGoingEventCardResponse (
           example = "Music",
           requiredMode = Schema.RequiredMode.REQUIRED
       )
-      String name){}
+      String name) {
+  }
 
   @Schema(description = "Short address summary shown on an event card")
   public record AddressSummaryResponse(
@@ -128,6 +129,7 @@ public record SavedGoingEventCardResponse (
           nullable = true
       )
       String province
-  ){}
+  ) {
+  }
 }
 

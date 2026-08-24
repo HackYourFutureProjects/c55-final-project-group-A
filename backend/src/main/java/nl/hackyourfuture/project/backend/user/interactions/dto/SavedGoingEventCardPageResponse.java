@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 @Schema(description = "A page of saved or attending events, with pagination metadata")
-public record SavedGoingEventCardPageResponse (
+public record SavedGoingEventCardPageResponse(
     @Schema(description = "The events on this page", requiredMode = Schema.RequiredMode.REQUIRED)
     List<SavedGoingEventCardResponse> events,
 

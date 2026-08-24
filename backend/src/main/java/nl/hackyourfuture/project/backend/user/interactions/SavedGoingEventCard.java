@@ -19,5 +19,6 @@ public record SavedGoingEventCard(
     String province,
     boolean isCancelled
 ) {
-  public record CategoryName(UUID id, String name){}
+  public record CategoryName(UUID id, String name) {
+  }
 }

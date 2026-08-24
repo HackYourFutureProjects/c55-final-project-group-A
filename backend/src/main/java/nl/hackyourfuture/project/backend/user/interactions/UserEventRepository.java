@@ -14,14 +14,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserEventRepository {
 
-  private final JdbcClient jdbcClient;
   public static final RowMapper<SavedGoingEventCard> SAVED_GOING_EVENT_CARD_ROW_MAPPER = (rs, _) -> {
     UUID[] categoryIds = (UUID[]) rs.getArray("category_ids").getArray();
     String[] categoryNames = (String[]) rs.getArray("category_names").getArray();
 
     List<SavedGoingEventCard.CategoryName> categories = new ArrayList<>();
 
-    for(int i=0; i<categoryIds.length; i++){
+    for (int i = 0; i < categoryIds.length; i++) {
       categories.add(new SavedGoingEventCard.CategoryName(categoryIds[i], categoryNames[i]));
 
     }
@@ -42,6 +41,7 @@ public class UserEventRepository {
     );
 
   };
+  private final JdbcClient jdbcClient;
 
   public void addEventToSaved(UUID userId, UUID eventId) {
     jdbcClient.sql("""
@@ -93,46 +93,46 @@ public class UserEventRepository {
         .single();
   }
 
-  public List<SavedGoingEventCard> getSavedEvents(UUID userId, int limit, int offset){
+  public List<SavedGoingEventCard> getSavedEvents(UUID userId, int limit, int offset) {
     return jdbcClient
         .sql("""
-        SELECT e.id, e.title,
-        (SELECT ei.image_url
-        FROM event_images ei
-        WHERE ei.event_id = e.id
-        ORDER BY ei.created_at
-        LIMIT 1
-        ) AS image_url,
-        ARRAY(
-        SELECT c.id
-        FROM event_categories ec
-        JOIN categories c ON c.id = ec.category_id
-        WHERE ec.event_id = e.id
-        ORDER BY c.name
-        ) AS category_ids,
-        ARRAY(
-        SELECT c.name
-        FROM event_categories ec
-        JOIN categories c ON c.id = ec.category_id
-        WHERE ec.event_id = e.id
-        ORDER BY c.name
-        ) AS category_names,
-        e.start_at,
-        e.end_at,
-        e.price,
-        a.street,
-        a.house_number,
-        a.city_name,
-        a.province,
-        e.is_cancelled
-        FROM saved_events se
-        JOIN events e ON e.id = se.event_id
-        JOIN addresses a ON a.id = e.address_id
-        WHERE se.user_id = :userId
-        ORDER BY e.start_at
-        LIMIT :limit
-        OFFSET :offset
-        """
+            SELECT e.id, e.title,
+            (SELECT ei.image_url
+            FROM event_images ei
+            WHERE ei.event_id = e.id
+            ORDER BY ei.created_at
+            LIMIT 1
+            ) AS image_url,
+            ARRAY(
+            SELECT c.id
+            FROM event_categories ec
+            JOIN categories c ON c.id = ec.category_id
+            WHERE ec.event_id = e.id
+            ORDER BY c.name
+            ) AS category_ids,
+            ARRAY(
+            SELECT c.name
+            FROM event_categories ec
+            JOIN categories c ON c.id = ec.category_id
+            WHERE ec.event_id = e.id
+            ORDER BY c.name
+            ) AS category_names,
+            e.start_at,
+            e.end_at,
+            e.price,
+            a.street,
+            a.house_number,
+            a.city_name,
+            a.province,
+            e.is_cancelled
+            FROM saved_events se
+            JOIN events e ON e.id = se.event_id
+            JOIN addresses a ON a.id = e.address_id
+            WHERE se.user_id = :userId
+            ORDER BY e.start_at
+            LIMIT :limit
+            OFFSET :offset
+            """
         )
         .param("userId", userId)
         .param("limit", limit)
@@ -141,7 +141,7 @@ public class UserEventRepository {
         .list();
   }
 
-  public long countSavedByUser(UUID userId){
+  public long countSavedByUser(UUID userId) {
     return jdbcClient
         .sql("""
             SELECT COUNT(*) FROM saved_events WHERE user_id = :userId
@@ -151,7 +151,7 @@ public class UserEventRepository {
         .single();
   }
 
-  public List<SavedGoingEventCard> getGoingEvents(UUID userId, int limit, int offset){
+  public List<SavedGoingEventCard> getGoingEvents(UUID userId, int limit, int offset) {
     return jdbcClient
         .sql("""
             SELECT e.id, e.title,
@@ -198,7 +198,7 @@ public class UserEventRepository {
         .list();
   }
 
-  public long countGoingByUser(UUID userId){
+  public long countGoingByUser(UUID userId) {
     return jdbcClient
         .sql("""
             SELECT COUNT(*) FROM event_attendees WHERE user_id = :userId
@@ -207,7 +207,6 @@ public class UserEventRepository {
         .query(Long.class)
         .single();
   }
-
 
 
 }
