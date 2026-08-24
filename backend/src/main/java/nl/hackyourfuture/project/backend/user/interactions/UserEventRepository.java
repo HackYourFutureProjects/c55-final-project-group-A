@@ -1,9 +1,13 @@
 package nl.hackyourfuture.project.backend.user.interactions;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -11,6 +15,33 @@ import java.util.UUID;
 public class UserEventRepository {
 
   private final JdbcClient jdbcClient;
+  public static final RowMapper<SavedGoingEventCard> SAVED_GOING_EVENT_CARD_ROW_MAPPER = (rs, _) -> {
+    UUID[] categoryIds = (UUID[]) rs.getArray("category_ids").getArray();
+    String[] categoryNames = (String[]) rs.getArray("category_names").getArray();
+
+    List<SavedGoingEventCard.CategoryName> categories = new ArrayList<>();
+
+    for(int i=0; i<categoryIds.length; i++){
+      categories.add(new SavedGoingEventCard.CategoryName(categoryIds[i], categoryNames[i]));
+
+    }
+
+    return new SavedGoingEventCard(
+        rs.getObject("id", UUID.class),
+        rs.getString("title"),
+        rs.getString("image_url"),
+        categories,
+        rs.getObject("start_at", OffsetDateTime.class),
+        rs.getObject("end_at", OffsetDateTime.class),
+        rs.getBigDecimal("price"),
+        rs.getString("street"),
+        rs.getString("house_number"),
+        rs.getString("city_name"),
+        rs.getString("province"),
+        rs.getBoolean("is_cancelled")
+    );
+
+  };
 
   public void addEventToSaved(UUID userId, UUID eventId) {
     jdbcClient.sql("""
@@ -61,6 +92,122 @@ public class UserEventRepository {
         .query(Boolean.class)
         .single();
   }
+
+  public List<SavedGoingEventCard> getSavedEvents(UUID userId, int limit, int offset){
+    return jdbcClient
+        .sql("""
+        SELECT e.id, e.title,
+        (SELECT ei.image_url
+        FROM event_images ei
+        WHERE ei.event_id = e.id
+        ORDER BY ei.created_at
+        LIMIT 1
+        ) AS image_url,
+        ARRAY(
+        SELECT c.id
+        FROM event_categories ec
+        JOIN categories c ON c.id = ec.category_id
+        WHERE ec.event_id = e.id
+        ORDER BY c.name
+        ) AS category_ids,
+        ARRAY(
+        SELECT c.name
+        FROM event_categories ec
+        JOIN categories c ON c.id = ec.category_id
+        WHERE ec.event_id = e.id
+        ORDER BY c.name
+        ) AS category_names,
+        e.start_at,
+        e.end_at,
+        e.price,
+        a.street,
+        a.house_number,
+        a.city_name,
+        a.province,
+        e.is_cancelled
+        FROM saved_events se
+        JOIN events e ON e.id = se.event_id
+        JOIN addresses a ON a.id = e.address_id
+        WHERE se.user_id = :userId
+        ORDER BY e.start_at
+        LIMIT :limit
+        OFFSET :offset
+        """
+        )
+        .param("userId", userId)
+        .param("limit", limit)
+        .param("offset", offset)
+        .query(SAVED_GOING_EVENT_CARD_ROW_MAPPER)
+        .list();
+  }
+
+  public long countSavedByUser(UUID userId){
+    return jdbcClient
+        .sql("""
+            SELECT COUNT(*) FROM saved_events WHERE user_id = :userId
+            """)
+        .param("userId", userId)
+        .query(Long.class)
+        .single();
+  }
+
+  public List<SavedGoingEventCard> getGoingEvents(UUID userId, int limit, int offset){
+    return jdbcClient
+        .sql("""
+            SELECT e.id, e.title,
+            (SELECT ei.image_url
+            FROM event_images ei
+            WHERE ei.event_id = e.id
+            ORDER BY ei.created_at
+            LIMIT 1
+            ) AS image_url,
+            ARRAY (
+            SELECT c.id
+            FROM event_categories ec
+            JOIN categories c ON c.id = ec.category_id 
+            WHERE ec.event_id = e.id
+            ORDER BY c.name
+            ) AS category_ids,
+            ARRAY(
+            SELECT c.name
+            FROM event_categories ec
+            JOIN categories c ON c.id = ec.category_id
+            WHERE ec.event_id = e.id
+            ORDER BY c.name
+            ) AS category_names,
+            e.start_at,
+            e.end_at,
+            e.price,
+            a.street,
+            a.house_number,
+            a.city_name,
+            a.province,
+            e.is_cancelled
+            FROM event_attendees ea
+            JOIN events e ON e.id = ea.event_id
+            JOIN addresses a ON a.id = e.address_id
+            WHERE ea.user_id = :userId
+            ORDER BY e.start_at
+            LIMIT :limit
+            OFFSET :offset
+            """)
+        .param("userId", userId)
+        .param("limit", limit)
+        .param("offset", offset)
+        .query(SAVED_GOING_EVENT_CARD_ROW_MAPPER)
+        .list();
+  }
+
+  public long countGoingByUser(UUID userId){
+    return jdbcClient
+        .sql("""
+            SELECT COUNT(*) FROM event_attendees WHERE user_id = :userId
+            """)
+        .param("userId", userId)
+        .query(Long.class)
+        .single();
+  }
+
 
 
 }
