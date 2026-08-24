@@ -2,7 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import LocationFilter from "@/components/location/LocationFilter";
 import type { Category, PriceFilter, TimeOfDay } from "@/types/event";
+import DateRangeFilter from "./DateRangeFilter";
 
 // Category chips cycle through this palette by index
 const CATEGORY_COLORS = [
@@ -50,11 +52,18 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
   const selectedCategories = searchParams.getAll("categoryIds");
   const selectedTimes = searchParams.getAll("timesOfDay");
   const selectedPrice = searchParams.get("price");
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
+  const latitude = searchParams.get("latitude");
+  const longitude = searchParams.get("longitude");
+  const radiusKm = searchParams.get("radiusKm");
 
   const hasFilters =
     selectedCategories.length > 0 ||
     selectedTimes.length > 0 ||
-    selectedPrice !== null;
+    dateFrom !== null ||
+    selectedPrice !== null ||
+    latitude !== null;
 
   // Long category lists stay collapsed to keep the sidebar compact
   const visibleCategories = showAllCategories
@@ -94,6 +103,42 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
       params.delete("price");
     } else {
       params.set("price", value);
+    }
+
+    apply(params);
+  }
+
+  // Both dates go in together — the backend rejects a half-filled range
+  function setDateRange(from: string | null, to: string | null) {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (from && to) {
+      params.set("dateFrom", from);
+      params.set("dateTo", to);
+    } else {
+      params.delete("dateFrom");
+      params.delete("dateTo");
+    }
+
+    apply(params);
+  }
+
+  // All three go in together — the radius filter only works when complete
+  function setLocation(
+    lat: number | null,
+    lng: number | null,
+    radius: number | null,
+  ) {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (lat !== null && lng !== null && radius !== null) {
+      params.set("latitude", String(lat));
+      params.set("longitude", String(lng));
+      params.set("radiusKm", String(radius));
+    } else {
+      params.delete("latitude");
+      params.delete("longitude");
+      params.delete("radiusKm");
     }
 
     apply(params);
@@ -159,6 +204,29 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
               : `+ Show all ${categories.length}`}
           </button>
         )}
+      </section>
+      <section>
+        <h3 className={SECTION_TITLE}>
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+          Date
+        </h3>
+        <DateRangeFilter
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onChange={setDateRange}
+        />
+      </section>
+      <section>
+        <h3 className={SECTION_TITLE}>
+          <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+          Location
+        </h3>
+        <LocationFilter
+          latitude={latitude ? Number(latitude) : null}
+          longitude={longitude ? Number(longitude) : null}
+          radiusKm={radiusKm ? Number(radiusKm) : null}
+          onChange={setLocation}
+        />
       </section>
 
       <section>

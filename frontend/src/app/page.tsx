@@ -37,6 +37,8 @@ function toFilters(params: {
     radiusKm: params.radiusKm ? Number(params.radiusKm) : undefined,
     price: params.price as PriceFilter | undefined,
     timesOfDay: toArray(params.timesOfDay) as TimeOfDay[] | undefined,
+    dateFrom: typeof params.dateFrom === "string" ? params.dateFrom : undefined,
+    dateTo: typeof params.dateTo === "string" ? params.dateTo : undefined,
   };
 }
 
