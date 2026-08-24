@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.dto.response.EventDetailResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.model.EventPriceFilter;
+import nl.hackyourfuture.project.backend.event.model.EventSort;
 import nl.hackyourfuture.project.backend.event.model.EventTimeOfDay;
 import nl.hackyourfuture.project.backend.event.service.EventService;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -39,7 +40,8 @@ public class EventController {
             summary = "List events",
             description = """
                     Returns one page of active, published, non-cancelled events
-                    ordered by start date.
+                    ordered by the selected sorting strategy. Results are ordered
+                    by start date when no sort parameter is provided.
                     When search is provided, only events with matching titles,
                     descriptions, city names, or category names are returned.
                     Search is case-insensitive.
@@ -163,6 +165,20 @@ public class EventController {
             List<EventTimeOfDay> timesOfDay,
 
             @Parameter(
+                    description = """
+                            Optional event ordering strategy. START_TIME_ASC returns
+                            events starting soonest, POPULARITY_DESC returns events
+                            with the highest weighted popularity score based on
+                            attendance and saves, PRICE_ASC returns the cheapest
+                            events first, and PRICE_DESC returns the most expensive
+                            events first.
+                            """,
+                    example = "START_TIME_ASC"
+            )
+            @RequestParam(defaultValue = "START_TIME_ASC")
+            EventSort sort,
+
+            @Parameter(
                     description = "Zero-based page number",
                     example = "0"
             )
@@ -189,6 +205,7 @@ public class EventController {
                 radiusKm,
                 price,
                 timesOfDay,
+                sort,
                 page,
                 size
         );

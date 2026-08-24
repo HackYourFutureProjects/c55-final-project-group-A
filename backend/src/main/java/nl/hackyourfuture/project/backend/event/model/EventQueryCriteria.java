@@ -14,7 +14,8 @@ public record EventQueryCriteria(
         BigDecimal longitude,
         BigDecimal radiusKm,
         EventPriceFilter price,
-        List<EventTimeOfDay> timesOfDay
+        List<EventTimeOfDay> timesOfDay,
+        EventSort sort
 ) {
 
     public EventQueryCriteria {
@@ -33,6 +34,10 @@ public record EventQueryCriteria(
                 : timesOfDay.stream()
                         .distinct()
                         .toList();
+
+        sort = sort == null
+                ? EventSort.START_TIME_ASC
+                : sort;
     }
 
     public boolean hasCategoryFilter() {

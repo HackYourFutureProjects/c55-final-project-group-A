@@ -4,8 +4,9 @@ import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.category.model.Category;
 import nl.hackyourfuture.project.backend.event.model.EventDetail;
 import nl.hackyourfuture.project.backend.event.model.EventQueryCriteria;
-import nl.hackyourfuture.project.backend.event.model.NewEvent;
+import nl.hackyourfuture.project.backend.event.model.EventSort;
 import nl.hackyourfuture.project.backend.event.model.EventSummary;
+import nl.hackyourfuture.project.backend.event.model.NewEvent;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -107,6 +108,14 @@ public class EventRepository {
               END IN (:timesOfDay)
             """;
 
+    private static String orderByClause(EventSort sort) {
+        return switch (sort) {
+            case START_TIME_ASC -> " ORDER BY e.start_at ASC, e.id ASC ";
+            case POPULARITY_DESC -> " ORDER BY popularity_score DESC, e.start_at ASC, e.id ASC ";
+            case PRICE_ASC -> " ORDER BY e.price ASC, e.start_at ASC, e.id ASC ";
+            case PRICE_DESC -> " ORDER BY e.price DESC, e.start_at ASC, e.id ASC ";
+        };
+    }
 
     private static final RowMapper<EventSummary> EVENT_SUMMARY_ROW_MAPPER =
             (rs, _) -> new EventSummary(
@@ -159,6 +168,7 @@ public class EventRepository {
         boolean filterByLocation = criteria.hasCompleteLocationFilter();
         boolean filterByPrice = criteria.hasPriceFilter();
         boolean filterByTimeOfDay = criteria.hasTimeOfDayFilter();
+        String orderBy = orderByClause(criteria.sort());
 
         String sql = """
                 SELECT e.id,
@@ -194,14 +204,24 @@ public class EventRepository {
                            ORDER BY ei.created_at, ei.id
                            LIMIT 1
                        ) AS image_url,
+                       attendee_stats.going_count AS going_count,
                        (
-                           SELECT COUNT(*)
-                           FROM event_attendees ea
-                           WHERE ea.event_id = e.id
-                       ) AS going_count,
+                           3 * attendee_stats.going_count
+                           + saved_stats.saved_count
+                       ) AS popularity_score,
                        e.is_cancelled
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
+                CROSS JOIN LATERAL (
+                    SELECT COUNT(*) AS going_count
+                    FROM event_attendees ea
+                    WHERE ea.event_id = e.id
+                ) attendee_stats
+                CROSS JOIN LATERAL (
+                    SELECT COUNT(*) AS saved_count
+                    FROM saved_events se
+                    WHERE se.event_id = e.id
+                ) saved_stats
                 WHERE e.is_published = TRUE
                   AND e.is_cancelled = FALSE
                   AND e.end_at > now()
@@ -221,8 +241,8 @@ public class EventRepository {
                 + (filterByDate ? DATE_FILTER_CLAUSE : "")
                 + (filterByLocation ? LOCATION_FILTER_CLAUSE : "")
                 + (filterByPrice ? PRICE_FILTER_CLAUSE : "")
-                + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "") + """
-                ORDER BY e.start_at, e.id
+                + (filterByTimeOfDay ? TIME_OF_DAY_FILTER_CLAUSE : "")
+                + orderBy + """
                 LIMIT :limit
                 OFFSET :offset
                 """;
