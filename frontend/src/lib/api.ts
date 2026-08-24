@@ -1,5 +1,10 @@
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
-import type { EventDetail, EventFilters, EventPage } from "@/types/event";
+import type {
+  Category,
+  EventDetail,
+  EventFilters,
+  EventPage,
+} from "@/types/event";
 
 import type { LocationSuggestion } from "@/types/location";
 
@@ -31,11 +36,30 @@ export async function getEvents(
     query.append("categoryIds", categoryId);
   }
 
+  // Backend rejects a half-filled range, so send both dates or neither
+  if (filters.dateFrom && filters.dateTo) {
+    query.set("dateFrom", filters.dateFrom);
+    query.set("dateTo", filters.dateTo);
+  }
+
   // The radius filter only works when all three are sent together
-  if (filters.latitude && filters.longitude && filters.radiusKm) {
+  if (
+    filters.latitude !== undefined &&
+    filters.longitude !== undefined &&
+    filters.radiusKm !== undefined
+  ) {
     query.set("latitude", String(filters.latitude));
     query.set("longitude", String(filters.longitude));
     query.set("radiusKm", String(filters.radiusKm));
+  }
+
+  if (filters.price) {
+    query.set("price", filters.price);
+  }
+
+  // Same repeated-key pattern as categoryIds
+  for (const timeOfDay of filters.timesOfDay ?? []) {
+    query.append("timesOfDay", timeOfDay);
   }
 
   const response = await fetch(apiUrl(`/api/events?${query.toString()}`));
@@ -149,4 +173,14 @@ export async function deleteCurrentUser(): Promise<void> {
   if (!response.ok) {
     throw new Error(`Failed to delete account: ${response.status}`);
   }
+}
+
+export async function getCategories(): Promise<Category[]> {
+  const response = await fetch(apiUrl("/api/categories"));
+
+  if (!response.ok) {
+    throw new Error(`Failed to load categories: ${response.status}`);
+  }
+
+  return response.json();
 }
