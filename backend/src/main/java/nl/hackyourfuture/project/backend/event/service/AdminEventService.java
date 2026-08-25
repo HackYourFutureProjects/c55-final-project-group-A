@@ -53,6 +53,9 @@ public class AdminEventService {
                 request.startAt(),
                 request.endAt()
         );
+        if (publishNow) {
+            validateEventCanBePublished(request.endAt());
+        }
         validateCategoryIds(request.categoryIds());
         UUID addressId = addressRepository.create(request.address());
 
@@ -76,7 +79,8 @@ public class AdminEventService {
             boolean published = eventRepository.publish(eventId);
             if (!published) {
                 throw new BadRequestException(
-                        "The event could not be published because its status changed"
+                        "The event could not be published because its status or "
+                                + "end time changed"
                 );
             }
         }
@@ -98,6 +102,8 @@ public class AdminEventService {
             return;
         }
 
+        validateEventCanBePublished(event.endAt());
+
         if (!eventImageRepository.existsByEventId(eventId)) {
             throw new BadRequestException(
                     "An event must have an image before it can be published"
@@ -107,8 +113,16 @@ public class AdminEventService {
         boolean published = eventRepository.publish(eventId);
         if (!published) {
             throw new BadRequestException(
-                    "The event could not be published because its status changed. "
-                            + "Refresh the event and try again."
+                    "The event could not be published because its status or "
+                            + "end time changed. Refresh the event and try again."
+            );
+        }
+    }
+
+    private void validateEventCanBePublished(OffsetDateTime endAt) {
+        if (!endAt.isAfter(OffsetDateTime.now())) {
+            throw new BadRequestException(
+                    "A past event cannot be published"
             );
         }
     }

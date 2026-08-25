@@ -462,6 +462,7 @@ public class EventRepository {
                         WHERE id = :eventId
                           AND is_published = FALSE
                           AND is_cancelled = FALSE
+                          AND end_at > now()
                         """)
                 .param("eventId", eventId)
                 .update() == 1;

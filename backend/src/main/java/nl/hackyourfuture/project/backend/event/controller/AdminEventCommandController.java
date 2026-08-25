@@ -50,7 +50,8 @@ public class AdminEventCommandController {
             description = """
                     Creates an event and uploads its image. Set `publishNow` to
                     `false` to save the event as a draft or to `true` to make it
-                    publicly visible immediately.
+                    publicly visible immediately. An event that has already ended
+                    cannot be published.
 
                     Send a multipart/form-data request with an `event` JSON part
                     and an `image` file part. Images must be JPEG, PNG, or WebP
@@ -148,8 +149,9 @@ public class AdminEventCommandController {
     @Operation(
             summary = "Publish an event draft",
             description = """
-                    Makes an event publicly visible. The event must exist and have
-                    an uploaded image. Only admins can use this endpoint.
+                    Makes an event publicly visible. The event must exist, have an
+                    uploaded image, and must not have ended. Only admins can use
+                    this endpoint.
                     """
     )
     @ApiResponse(
@@ -158,7 +160,7 @@ public class AdminEventCommandController {
     )
     @ApiResponse(
             responseCode = "400",
-            description = "The event is cancelled or does not have an image",
+            description = "The event is cancelled, has already ended, or does not have an image",
             content = @Content(
                     schema = @Schema(implementation = ProblemDetail.class)
             )
