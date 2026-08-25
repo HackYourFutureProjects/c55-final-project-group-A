@@ -53,6 +53,9 @@ public class AdminEventService {
                 request.startAt(),
                 request.endAt()
         );
+        if (publishNow) {
+            validateEventCanBePublished(request.endAt());
+        }
         validateCategoryIds(request.categoryIds());
         UUID addressId = addressRepository.create(request.address());
 
@@ -73,7 +76,13 @@ public class AdminEventService {
         String imageUrl = imageService.upload(eventId, image);
 
         if (publishNow) {
-            eventRepository.publish(eventId);
+            boolean published = eventRepository.publish(eventId);
+            if (!published) {
+                throw new BadRequestException(
+                        "The event could not be published because its status or "
+                                + "end time changed"
+                );
+            }
         }
 
         return new CreateEventResponse(eventId, publishNow, imageUrl);
@@ -81,15 +90,19 @@ public class AdminEventService {
 
     @Transactional
     public void publish(UUID eventId) {
-        if (!eventRepository.existsById(eventId)) {
-            throw new EventNotFoundException("Event not found: " + eventId);
-        }
+        AdminEventDetail event = findAdminEvent(eventId);
 
-        if (eventRepository.isCancelled(eventId)) {
+        if (event.cancelled()) {
             throw new BadRequestException(
                     "A cancelled event cannot be published"
             );
         }
+
+        if (event.published()) {
+            return;
+        }
+
+        validateEventCanBePublished(event.endAt());
 
         if (!eventImageRepository.existsByEventId(eventId)) {
             throw new BadRequestException(
@@ -97,7 +110,21 @@ public class AdminEventService {
             );
         }
 
-        eventRepository.publish(eventId);
+        boolean published = eventRepository.publish(eventId);
+        if (!published) {
+            throw new BadRequestException(
+                    "The event could not be published because its status or "
+                            + "end time changed. Refresh the event and try again."
+            );
+        }
+    }
+
+    private void validateEventCanBePublished(OffsetDateTime endAt) {
+        if (!endAt.isAfter(OffsetDateTime.now())) {
+            throw new BadRequestException(
+                    "A past event cannot be published"
+            );
+        }
     }
 
     private void validateEventDates(
@@ -280,6 +307,58 @@ public class AdminEventService {
         );
     }
 
+    @Transactional
+    public void unpublish(UUID eventId) {
+        AdminEventDetail event = findAdminEvent(eventId);
+
+        if (!event.published()) {
+            throw new BadRequestException(
+                    "The event is already a draft"
+            );
+        }
+
+        if (event.cancelled()) {
+            throw new BadRequestException(
+                    "Restore the cancelled event before unpublishing it"
+            );
+        }
+
+        if (!adminEventRepository.unpublishEvent(eventId)) {
+            throw new EventNotFoundException(
+                    "Event not found: " + eventId
+            );
+        }
+    }
+
+    @Transactional
+    public void uncancel(UUID eventId) {
+        AdminEventDetail event = findAdminEvent(eventId);
+
+        if (!event.cancelled()) {
+            throw new BadRequestException(
+                    "The event is not cancelled"
+            );
+        }
+
+        if (!event.published()) {
+            throw new BadRequestException(
+                    "A draft event cannot be restored"
+            );
+        }
+
+        if (!event.endAt().isAfter(OffsetDateTime.now())) {
+            throw new BadRequestException(
+                    "A past event cannot be restored"
+            );
+        }
+
+        if (!adminEventRepository.uncancelEvent(eventId)) {
+            throw new EventNotFoundException(
+                    "Event not found: " + eventId
+            );
+        }
+    }
+
 
     @Transactional
     public void cancel(UUID eventId) {
@@ -302,8 +381,9 @@ public class AdminEventService {
         }
 
         if (!adminEventRepository.cancelEvent(eventId)) {
-            throw new EventNotFoundException(
-                    "Event not found: " + eventId
+            throw new BadRequestException(
+                    "The event could not be cancelled because its status "
+                            + "changed. Refresh the event and try again."
             );
         }
     }

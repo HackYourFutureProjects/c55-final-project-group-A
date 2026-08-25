@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Encoding;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.dto.request.CreateEventRequest;
@@ -48,7 +50,8 @@ public class AdminEventCommandController {
             description = """
                     Creates an event and uploads its image. Set `publishNow` to
                     `false` to save the event as a draft or to `true` to make it
-                    publicly visible immediately.
+                    publicly visible immediately. An event that has already ended
+                    cannot be published.
 
                     Send a multipart/form-data request with an `event` JSON part
                     and an `image` file part. Images must be JPEG, PNG, or WebP
@@ -85,6 +88,13 @@ public class AdminEventCommandController {
             )
     )
     @ApiResponse(
+            responseCode = "415",
+            description = "The event multipart part must use application/json",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
+    )
+    @ApiResponse(
             responseCode = "502",
             description = "The external image service could not upload the image",
             content = @Content(
@@ -92,9 +102,21 @@ public class AdminEventCommandController {
             )
     )
     public CreateEventResponse createEvent(
+            @RequestBody(
+                    content = @Content(
+                            encoding = @Encoding(
+                                    name = "event",
+                                    contentType = MediaType.APPLICATION_JSON_VALUE
+                            )
+                    )
+            )
             @Parameter(
                     description = "Event data as JSON",
-                    required = true
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = CreateEventRequest.class)
+                    )
             )
             @Valid @RequestPart("event") CreateEventRequest request,
             @Parameter(
@@ -127,8 +149,9 @@ public class AdminEventCommandController {
     @Operation(
             summary = "Publish an event draft",
             description = """
-                    Makes an event publicly visible. The event must exist and have
-                    an uploaded image. Only admins can use this endpoint.
+                    Makes an event publicly visible. The event must exist, have an
+                    uploaded image, and must not have ended. Only admins can use
+                    this endpoint.
                     """
     )
     @ApiResponse(
@@ -137,7 +160,7 @@ public class AdminEventCommandController {
     )
     @ApiResponse(
             responseCode = "400",
-            description = "The event is cancelled or does not have an image",
+            description = "The event is cancelled, has already ended, or does not have an image",
             content = @Content(
                     schema = @Schema(implementation = ProblemDetail.class)
             )
@@ -165,6 +188,51 @@ public class AdminEventCommandController {
             @PathVariable UUID eventId
     ) {
         adminEventService.publish(eventId);
+    }
+
+    @PatchMapping("/{eventId}/unpublish")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+            summary = "Unpublish an event",
+            description = """
+                    Returns a published event to a private draft.
+                    Cancelled events must be restored first.
+                    """
+    )
+    @ApiResponse(
+            responseCode = "204",
+            description = "Event unpublished successfully"
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "The event is already a draft or cancelled",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
+    )
+    @ApiResponse(
+            responseCode = "401",
+            description = "Authentication is required"
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Only administrators can unpublish events"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "The event does not exist",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
+    )
+    public void unpublish(
+            @Parameter(
+                    description = "ID of the event to unpublish",
+                    required = true
+            )
+            @PathVariable UUID eventId
+    ) {
+        adminEventService.unpublish(eventId);
     }
 
     @PatchMapping(
@@ -221,6 +289,13 @@ public class AdminEventCommandController {
             )
     )
     @ApiResponse(
+            responseCode = "415",
+            description = "The event multipart part must use application/json",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
+    )
+    @ApiResponse(
             responseCode = "502",
             description = "The external image service could not upload the replacement image",
             content = @Content(
@@ -235,10 +310,19 @@ public class AdminEventCommandController {
             )
             @PathVariable UUID eventId,
 
+            @RequestBody(
+                    content = @Content(
+                            encoding = @Encoding(
+                                    name = "event",
+                                    contentType = MediaType.APPLICATION_JSON_VALUE
+                            )
+                    )
+            )
             @Parameter(
                     description = "Event fields to update as JSON",
                     required = true,
                     content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(
                                     implementation = UpdateEventRequest.class
                             )
@@ -322,6 +406,51 @@ public class AdminEventCommandController {
             @PathVariable UUID eventId
     ) {
         adminEventService.cancel(eventId);
+    }
+
+    @PatchMapping("/{eventId}/uncancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+            summary = "Restore a cancelled event",
+            description = """
+                    Restores a cancelled published event and makes it active again.
+                    Only upcoming or ongoing events can be restored.
+                    """
+    )
+    @ApiResponse(
+            responseCode = "204",
+            description = "Event restored successfully"
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "The event is not cancelled or has already ended",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
+    )
+    @ApiResponse(
+            responseCode = "401",
+            description = "Authentication is required"
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Only administrators can restore events"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "The event does not exist",
+            content = @Content(
+                    schema = @Schema(implementation = ProblemDetail.class)
+            )
+    )
+    public void uncancel(
+            @Parameter(
+                    description = "ID of the event to restore",
+                    required = true
+            )
+            @PathVariable UUID eventId
+    ) {
+        adminEventService.uncancel(eventId);
     }
 
     @DeleteMapping("/{eventId}")

@@ -1,6 +1,7 @@
 package nl.hackyourfuture.project.backend.config;
 
 import nl.hackyourfuture.project.backend.auth.helpers.CustomAuthenticationEntryPoint;
+import nl.hackyourfuture.project.backend.auth.helpers.CustomAccessDeniedHandler;
 import nl.hackyourfuture.project.backend.auth.helpers.SessionAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +22,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    SessionAuthFilter sessionAuthFilter,
-                                                   CustomAuthenticationEntryPoint entryPoint) throws Exception {
+                                                   CustomAuthenticationEntryPoint entryPoint,
+                                                   CustomAccessDeniedHandler accessDeniedHandler) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
@@ -56,7 +58,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
-                .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(entryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(sessionAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

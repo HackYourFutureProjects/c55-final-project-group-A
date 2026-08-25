@@ -9,6 +9,7 @@ import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
@@ -63,6 +65,35 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Malformed request body");
         problem.setDetail("The request body is missing or not valid JSON");
+        return problem;
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ProblemDetail handleUnsupportedMediaType(
+            HttpMediaTypeNotSupportedException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        problem.setTitle("Unsupported media type");
+        problem.setDetail(
+                "Use multipart/form-data for the request. The event part "
+                        + "must use application/json and the image part must "
+                        + "be JPEG, PNG, or WebP."
+        );
+        return problem;
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ProblemDetail handleMissingRequestPart(
+            MissingServletRequestPartException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setTitle("Missing multipart part");
+        problem.setDetail(
+                "Required multipart part '" + ex.getRequestPartName()
+                        + "' is missing"
+        );
         return problem;
     }
 
