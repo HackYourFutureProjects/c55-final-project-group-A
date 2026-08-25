@@ -27,7 +27,7 @@ export function SearchInput() {
     // A new search always starts from the first page
     params.delete("page");
 
-    router.push(`/?${params.toString()}`);
+    router.push(`/?${params.toString()}`, { scroll: false });
   }
 
   return (
