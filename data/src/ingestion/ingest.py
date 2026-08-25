@@ -32,6 +32,7 @@ def fetch_raw(url: str, api_key: str) -> list[Any]:
                     "apikey": api_key,
                     "size": PAGE_SIZE,
                     "page": requested_page,
+                    "countryCode": "NL",
                 },
                 timeout=REQUEST_TIMEOUT_SECONDS,
             )
