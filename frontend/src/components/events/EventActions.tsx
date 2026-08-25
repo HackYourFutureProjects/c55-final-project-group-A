@@ -2,13 +2,12 @@
 // Client component: needs useState for optimistic UI updates and onClick handlers.
 // Guests are redirected to /login instead of triggering a request.
 
-
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { saveEvent, unsaveEvent, markGoing, unmarkGoing } from "@/lib/api";
+import { markGoing, saveEvent, unmarkGoing, unsaveEvent } from "@/lib/api";
 
 interface EventActionsProps {
   eventId: string;
@@ -50,13 +49,14 @@ export default function EventActions({
     }
   }
 
-  async function handleGoingClick() {
+  async function handleGoingClick(nextIsGoing: boolean) {
     if (!user) {
       router.push("/login");
       return;
     }
 
-    const nextIsGoing = !isGoing;
+    if (nextIsGoing === isGoing) return;
+
     setIsGoing(nextIsGoing);
     setGoingCount((count) => (nextIsGoing ? count + 1 : count - 1));
 
@@ -73,13 +73,40 @@ export default function EventActions({
   }
 
   return (
-    <div>
-      <button onClick={handleSaveClick}>
-        {isSaved ? "Saved" : "Save"}
+    <div className="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        onClick={handleSaveClick}
+        className="flex items-center gap-2 rounded-full bg-orange-600 px-5 py-2.5 font-semibold text-white transition-colors hover:bg-orange-700"
+      >
+        <span>{isSaved ? "❤️" : "🤍"}</span>
+        {isSaved ? "Saved" : "Save event"}
       </button>
-      <button onClick={handleGoingClick}>
-        {isGoing ? "Going" : "Going?"} ({goingCount})
-      </button>
+
+      <div className="flex rounded-full border border-gray-300 p-1">
+        <button
+          type="button"
+          onClick={() => handleGoingClick(true)}
+          className={`rounded-full px-4 py-2 font-semibold transition-colors ${
+            isGoing
+              ? "bg-orange-600 text-white"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          I'm going
+        </button>
+        <button
+          type="button"
+          onClick={() => handleGoingClick(false)}
+          className={`rounded-full px-4 py-2 font-semibold transition-colors ${
+            !isGoing
+              ? "bg-orange-600 text-white"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          I'm not going
+        </button>
+      </div>
     </div>
   );
 }

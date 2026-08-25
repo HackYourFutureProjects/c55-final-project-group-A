@@ -229,7 +229,9 @@ export async function unmarkGoing(eventId: string): Promise<void> {
 
 // --- Saved / Going lists (for profile tabs + initial button state) ---
 
-export async function getSavedEvents(cookieHeader?: string): Promise<EventPage> {
+export async function getSavedEvents(
+  cookieHeader?: string,
+): Promise<EventPage> {
   const res = await fetch(apiUrl("/api/users/me/saved"), {
     credentials: "include",
     headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
@@ -240,7 +242,9 @@ export async function getSavedEvents(cookieHeader?: string): Promise<EventPage> 
   return res.json();
 }
 
-export async function getGoingEvents(cookieHeader?: string): Promise<EventPage> {
+export async function getGoingEvents(
+  cookieHeader?: string,
+): Promise<EventPage> {
   const res = await fetch(apiUrl("/api/users/me/going"), {
     credentials: "include",
     headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
