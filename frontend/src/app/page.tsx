@@ -1,4 +1,4 @@
-import EventList from "@/components/EventList";
+import EventList from "@/components/events/EventList";
 import FilterSidebar from "@/components/filters/FilterSidebar";
 import HomeBanner from "@/components/HomeBanner";
 import Pagination from "@/components/Pagination";

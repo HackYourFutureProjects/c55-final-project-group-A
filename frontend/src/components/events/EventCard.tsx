@@ -22,8 +22,9 @@ function formatEventDate(startAt: string) {
 export default function EventCard({ event }: EventCardProps) {
   return (
     <Link href={`/events/${event.id}`} className="block">
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="relative flex h-40 items-center justify-center bg-orange-50">
+      <div className="overflow-hidden rounded-2xl border border-gray-300 bg-gray-50 shadow-md transition-shadow hover:shadow-lg">
+        {/* Photo area — taller now, ~1cm more vertical space */}
+        <div className="relative flex h-52 items-center justify-center bg-orange-50">
           {event.imageUrl ? (
             <img
               src={event.imageUrl}
@@ -56,7 +57,7 @@ export default function EventCard({ event }: EventCardProps) {
           </p>
           <p className="text-sm text-gray-400">{event.cityName}</p>
 
-          <hr className="my-3 border-gray-100" />
+          <hr className="my-3 border-gray-200" />
 
           <div className="flex items-center justify-between">
             <span className="font-bold text-gray-900">
