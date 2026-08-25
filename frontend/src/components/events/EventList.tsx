@@ -1,5 +1,5 @@
 import type { Event } from "@/types/event";
-import EmptyState from "./EmptyState";
+import EmptyState from "../EmptyState";
 import EventCard from "./EventCard";
 
 interface EventListProps {

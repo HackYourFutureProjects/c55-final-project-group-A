@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
-import { getEventById } from "@/lib/api";
 import type { EventStatus } from "@/types/event";
+import { cookies } from "next/headers";
+import { getEventById, getSavedEvents, getGoingEvents } from "@/lib/api";
+import EventActions from "@/components/events/EventActions";
 
 interface EventDetailPageProps {
   params: Promise<{ id: string }>;
@@ -54,6 +56,22 @@ export default async function EventDetailPage({
   }
   const statusMessage = getStatusMessage(event.eventStatus);
 
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session_access_token");
+
+  let initialIsSaved = false;
+  let initialIsGoing = false;
+
+  if (sessionCookie) {
+    const cookieHeader = cookieStore.toString();
+    const [savedPage, goingPage] = await Promise.all([
+      getSavedEvents(cookieHeader).catch(() => null),
+      getGoingEvents(cookieHeader).catch(() => null),
+    ]);
+    initialIsSaved = savedPage?.events.some((e) => e.id === id) ?? false;
+    initialIsGoing = goingPage?.events.some((e) => e.id === id) ?? false;
+  }
+
   return (
     <main>
       <div>
@@ -88,6 +106,19 @@ export default async function EventDetailPage({
         <span>{event.price === 0 ? "Free" : `€${event.price}`}</span>
         <span>{event.goingCount} going</span>
       </div>
+      <hr />
+
+      <div>
+        <span>{event.price === 0 ? "Free" : `€${event.price}`}</span>
+        <span>{event.goingCount} going</span>
+      </div>
+
+      <EventActions
+        eventId={event.id}
+        initialIsSaved={initialIsSaved}
+        initialIsGoing={initialIsGoing}
+        initialGoingCount={event.goingCount}
+      />
     </main>
   );
 }

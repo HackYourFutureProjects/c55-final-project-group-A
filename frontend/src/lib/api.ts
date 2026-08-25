@@ -184,3 +184,69 @@ export async function getCategories(): Promise<Category[]> {
 
   return response.json();
 }
+
+// --- Save / Going actions ---
+
+export async function saveEvent(eventId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/saved`), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (res.status !== 204) {
+    throw new Error(`Failed to save event: ${res.status}`);
+  }
+}
+
+export async function unsaveEvent(eventId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/saved`), {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (res.status !== 204) {
+    throw new Error(`Failed to unsave event: ${res.status}`);
+  }
+}
+
+export async function markGoing(eventId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/going`), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (res.status !== 204) {
+    throw new Error(`Failed to mark going: ${res.status}`);
+  }
+}
+
+export async function unmarkGoing(eventId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/going`), {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (res.status !== 204) {
+    throw new Error(`Failed to unmark going: ${res.status}`);
+  }
+}
+
+// --- Saved / Going lists (for profile tabs + initial button state) ---
+
+export async function getSavedEvents(cookieHeader?: string): Promise<EventPage> {
+  const res = await fetch(apiUrl("/api/users/me/saved"), {
+    credentials: "include",
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch saved events: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getGoingEvents(cookieHeader?: string): Promise<EventPage> {
+  const res = await fetch(apiUrl("/api/users/me/going"), {
+    credentials: "include",
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch going events: ${res.status}`);
+  }
+  return res.json();
+}
