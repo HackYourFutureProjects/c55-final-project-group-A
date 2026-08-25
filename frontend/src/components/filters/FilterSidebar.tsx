@@ -74,7 +74,7 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
   function apply(params: URLSearchParams) {
     // Any filter change invalidates the current page number
     params.delete("page");
-    router.push(`/?${params.toString()}`);
+    router.push(`/?${params.toString()}`, { scroll: false });
   }
 
   // Adds the value if missing, removes it if already selected

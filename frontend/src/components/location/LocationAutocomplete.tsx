@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getLocationSuggestions } from "@/lib/api";
 import type { LocationSuggestion } from "@/types/location";
 
@@ -18,6 +18,7 @@ type Status =
   | "searching"
   | "results"
   | "no-results"
+  | "service-unavailable"
   | "selected";
 
 export function LocationAutocomplete({
@@ -36,10 +37,13 @@ export function LocationAutocomplete({
     setStatus("idle");
   }, [resetSignal]);
 
+  const justSelectedRef = useRef(false);
+  const lastRequestTimeRef = useRef(0);
   useEffect(() => {
-    // "selected" is set directly in handleSelect — this effect only
-    // reacts to further typing, not to the value it just wrote itself
-    if (status === "selected") return;
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      return;
+    }
 
     if (query.length < 3) {
       setSuggestions([]);
@@ -55,15 +59,18 @@ export function LocationAutocomplete({
           setSuggestions(results);
           setStatus(results.length > 0 ? "results" : "no-results");
         })
-        .catch(() => {
+        .catch((error) => {
           setSuggestions([]);
-          setStatus("no-results");
+          // 503 means the geocoder is temporarily rate-limited —
+          // different message than "no matching city"
+          const isUnavailable =
+            error instanceof Error && error.message.includes("503");
+          setStatus(isUnavailable ? "service-unavailable" : "no-results");
         });
-    }, 700);
+    }, 900);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, status]);
+  }, [query]);
 
   function handleChange(value: string) {
     setQuery(value);
@@ -73,6 +80,7 @@ export function LocationAutocomplete({
   }
 
   function handleSelect(suggestion: LocationSuggestion) {
+    justSelectedRef.current = true;
     setQuery(suggestion.label);
     setSuggestions([]);
     setStatus("selected");
@@ -121,6 +129,11 @@ export function LocationAutocomplete({
       {status === "no-results" && (
         <p className="mt-1 text-neutral-400 text-xs">
           No matching city. Try the full name.
+        </p>
+      )}
+      {status === "service-unavailable" && (
+        <p className="mt-1 text-neutral-400 text-xs">
+          Search is temporarily busy. Try again in a moment.
         </p>
       )}
     </div>
