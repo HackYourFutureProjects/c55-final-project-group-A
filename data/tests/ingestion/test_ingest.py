@@ -62,6 +62,7 @@ def test_fetch_raw_authenticates_and_extracts_ticketmaster_events(monkeypatch):
             "apikey": "test-api-key",
             "size": 200,
             "page": 0,
+            "countryCode": "NL",
         },
         "timeout": REQUEST_TIMEOUT_SECONDS,
     }
@@ -110,8 +111,8 @@ def test_fetch_raw_combines_ticketmaster_pages(monkeypatch):
         {"id": "event-2", "name": "Second Event"},
     ]
     assert requested_params == [
-        {"apikey": "test-api-key", "size": 200, "page": 0},
-        {"apikey": "test-api-key", "size": 200, "page": 1},
+        {"apikey": "test-api-key", "size": 200, "page": 0, "countryCode": "NL"},
+        {"apikey": "test-api-key", "size": 200, "page": 1, "countryCode": "NL"},
     ]
 
 
