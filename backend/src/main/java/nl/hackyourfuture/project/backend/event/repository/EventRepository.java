@@ -454,40 +454,16 @@ public class EventRepository {
                 .single();
     }
 
-    public boolean existsById(UUID eventId) {
+    public boolean publish(UUID eventId) {
         return jdbcClient
-                .sql("""
-                        SELECT EXISTS(
-                            SELECT 1
-                            FROM events
-                            WHERE id = :eventId
-                        )
-                        """)
-                .param("eventId", eventId)
-                .query(Boolean.class)
-                .single();
-    }
-
-    public boolean isCancelled(UUID eventId) {
-        return jdbcClient
-                .sql("""
-                        SELECT is_cancelled
-                        FROM events
-                        WHERE id = :eventId
-                        """)
-                .param("eventId", eventId)
-                .query(Boolean.class)
-                .single();
-    }
-
-    public void publish(UUID eventId) {
-        jdbcClient
                 .sql("""
                         UPDATE events
                         SET is_published = TRUE
                         WHERE id = :eventId
+                          AND is_published = FALSE
+                          AND is_cancelled = FALSE
                         """)
                 .param("eventId", eventId)
-                .update();
+                .update() == 1;
     }
 }

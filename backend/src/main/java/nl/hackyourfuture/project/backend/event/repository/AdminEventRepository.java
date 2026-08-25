@@ -204,6 +204,36 @@ public class AdminEventRepository {
                         SET is_cancelled = TRUE,
                             updated_at = now()
                         WHERE id = :eventId
+                          AND is_published = TRUE
+                          AND is_cancelled = FALSE
+                          AND end_at > now()
+                        """)
+                .param("eventId", eventId)
+                .update() == 1;
+    }
+
+    public boolean unpublishEvent(UUID eventId) {
+        return jdbcClient
+                .sql("""
+                        UPDATE events
+                        SET is_published = FALSE,
+                            updated_at = now()
+                        WHERE id = :eventId
+                          AND is_published = TRUE
+                          AND is_cancelled = FALSE
+                        """)
+                .param("eventId", eventId)
+                .update() == 1;
+    }
+
+    public boolean uncancelEvent(UUID eventId) {
+        return jdbcClient
+                .sql("""
+                        UPDATE events
+                        SET is_cancelled = FALSE,
+                            updated_at = now()
+                        WHERE id = :eventId
+                          AND is_cancelled = TRUE
                         """)
                 .param("eventId", eventId)
                 .update() == 1;
