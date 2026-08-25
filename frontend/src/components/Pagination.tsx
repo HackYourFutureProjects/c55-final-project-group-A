@@ -21,7 +21,7 @@ export default function Pagination({
   function goToPage(nextPage: number) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(nextPage));
-    router.push(`/?${params.toString()}`);
+    router.push(`/?${params.toString()}`, { scroll: false });
   }
   if (totalPages === 0) {
     return null;
