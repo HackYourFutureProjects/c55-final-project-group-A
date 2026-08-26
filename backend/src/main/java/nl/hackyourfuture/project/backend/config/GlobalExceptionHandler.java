@@ -77,7 +77,7 @@ public class GlobalExceptionHandler {
     ) {
         ProblemDetail problem =
                 ProblemDetail.forStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
-        problem.setTitle("Unsupported media type");
+        problem.setTitle("The request content type is not supported for this endpoint");
         problem.setDetail(
                 "Use multipart/form-data for the request. The event part "
                         + "must use application/json and the image part must "

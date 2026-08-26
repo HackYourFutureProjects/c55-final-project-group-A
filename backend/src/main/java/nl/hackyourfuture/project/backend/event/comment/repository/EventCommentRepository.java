@@ -57,7 +57,7 @@ public class EventCommentRepository {
     public List<EventComment> findCommentsByEventId(
             UUID eventId,
             int limit,
-            int offset
+            long offset
     ) {
         String sql = selectCommentWithUserFrom("event_comments") + """
                 WHERE c.event_id = :eventId

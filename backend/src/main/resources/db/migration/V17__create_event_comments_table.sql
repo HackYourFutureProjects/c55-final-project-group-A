@@ -39,3 +39,4 @@ CREATE TABLE event_comments
 
 CREATE INDEX idx_event_comments_event_created_at
     ON event_comments (event_id, created_at DESC);
+

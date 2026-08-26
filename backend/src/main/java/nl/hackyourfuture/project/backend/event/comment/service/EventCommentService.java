@@ -62,7 +62,7 @@ public class EventCommentService {
     ) {
         validateEventExists(eventId);
 
-        int offset = page * size;
+        long offset = (long) page * size;
 
         List<EventCommentResponse> comments = eventCommentRepository
                 .findCommentsByEventId(eventId, size, offset)
