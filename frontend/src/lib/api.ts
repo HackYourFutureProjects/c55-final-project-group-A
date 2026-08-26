@@ -1,3 +1,4 @@
+import type { AdminEventDetail, AdminEventPage } from "@/types/admin";
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
 import type {
   Category,
@@ -251,6 +252,38 @@ export async function getGoingEvents(
   });
   if (!res.ok) {
     throw new Error(`Failed to fetch going events: ${res.status}`);
+  }
+  return res.json();
+}
+
+// --- Admin events (admin role only, session cookie required) ---
+
+// --- Admin events (admin role only) ---
+
+export async function getAdminEvents(
+  page = 0,
+  size = 10,
+): Promise<AdminEventPage> {
+  const res = await fetch(
+    apiUrl(`/api/admin/events?page=${page}&size=${size}`),
+    {
+      credentials: "include",
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to fetch admin events: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getAdminEventById(
+  eventId: string,
+): Promise<AdminEventDetail> {
+  const res = await fetch(apiUrl(`/api/admin/events/${eventId}`), {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch admin event: ${res.status}`);
   }
   return res.json();
 }

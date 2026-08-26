@@ -9,7 +9,10 @@ interface ProtectedRouteProps {
   adminOnly?: boolean;
 }
 
-export function ProtectedRoute({ children, adminOnly }: ProtectedRouteProps) {
+export default function ProtectedRoute({
+  children,
+  adminOnly,
+}: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
