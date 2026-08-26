@@ -2,6 +2,9 @@ package nl.hackyourfuture.project.backend.config;
 
 import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsException;
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
+import nl.hackyourfuture.project.backend.event.comment.exceptions.AdminReplyAlreadyExistsException;
+import nl.hackyourfuture.project.backend.event.comment.exceptions.AdminReplyNotFoundException;
+import nl.hackyourfuture.project.backend.event.comment.exceptions.CommentNotFoundException;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
 import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
 import nl.hackyourfuture.project.backend.location.ExternalServiceException;
@@ -119,6 +122,45 @@ public class GlobalExceptionHandler {
                 ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
 
         problem.setTitle("Event not found");
+        problem.setDetail(ex.getMessage());
+
+        return problem;
+    }
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ProblemDetail handleCommentNotFound(
+            CommentNotFoundException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+
+        problem.setTitle("Comment not found");
+        problem.setDetail(ex.getMessage());
+
+        return problem;
+    }
+
+    @ExceptionHandler(AdminReplyAlreadyExistsException.class)
+    public ProblemDetail handleAdminReplyAlreadyExists(
+            AdminReplyAlreadyExistsException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.CONFLICT);
+
+        problem.setTitle("Admin reply already exists");
+        problem.setDetail(ex.getMessage());
+
+        return problem;
+    }
+
+    @ExceptionHandler(AdminReplyNotFoundException.class)
+    public ProblemDetail handleAdminReplyNotFound(
+            AdminReplyNotFoundException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+
+        problem.setTitle("Admin reply not found");
         problem.setDetail(ex.getMessage());
 
         return problem;
