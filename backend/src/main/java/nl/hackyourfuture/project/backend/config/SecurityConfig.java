@@ -30,7 +30,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/docs/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/*")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/events",
+                                "/api/events/*",
+                                "/api/events/*/comments"
+                        )
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories")
                         .permitAll()
@@ -40,12 +45,22 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/events/*/saved",
-                                "/api/events/*/going"
+                                "/api/events/*/going",
+                                "/api/events/*/comments"
                         ).authenticated()
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/events/*/saved",
                                 "/api/events/*/going"
+                        ).authenticated()
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/comments/*"
+                        ).authenticated()
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/comments/*"
                         ).authenticated()
 
                         .requestMatchers("/api/admin/**")
