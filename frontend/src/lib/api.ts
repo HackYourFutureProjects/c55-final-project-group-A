@@ -258,16 +258,16 @@ export async function getGoingEvents(
 
 // --- Admin events (admin role only, session cookie required) ---
 
+// --- Admin events (admin role only) ---
+
 export async function getAdminEvents(
   page = 0,
   size = 10,
-  cookieHeader?: string,
 ): Promise<AdminEventPage> {
   const res = await fetch(
     apiUrl(`/api/admin/events?page=${page}&size=${size}`),
     {
       credentials: "include",
-      headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
     },
   );
   if (!res.ok) {
@@ -278,11 +278,9 @@ export async function getAdminEvents(
 
 export async function getAdminEventById(
   eventId: string,
-  cookieHeader?: string,
 ): Promise<AdminEventDetail> {
   const res = await fetch(apiUrl(`/api/admin/events/${eventId}`), {
     credentials: "include",
-    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
   });
   if (!res.ok) {
     throw new Error(`Failed to fetch admin event: ${res.status}`);

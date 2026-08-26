@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { DeleteAccountModal } from "@/components/profile/DeleteAccountModal";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { useAuth } from "@/context/AuthContext";

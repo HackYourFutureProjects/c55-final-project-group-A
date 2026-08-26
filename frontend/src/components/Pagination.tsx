@@ -6,22 +6,22 @@ interface PaginationProps {
   page: number;
   totalPages: number;
   hasNext: boolean;
+  basePath?: string; // where to push to; defaults to the homepage
 }
 
 export default function Pagination({
   page,
   totalPages,
   hasNext,
+  basePath = "/",
 }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Writes the new page number into the URL, keeping every
-  // other filter that's already there
   function goToPage(nextPage: number) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(nextPage));
-    router.push(`/?${params.toString()}`, { scroll: false });
+    router.push(`${basePath}?${params.toString()}`, { scroll: false });
   }
   if (totalPages === 0) {
     return null;
