@@ -18,7 +18,7 @@ import java.util.UUID;
 public class AdminEventCommentService {
 
     private final EventCommentRepository eventCommentRepository;
-    
+
     @Transactional
     public EventCommentResponse createAdminReply(
             UUID commentId,
