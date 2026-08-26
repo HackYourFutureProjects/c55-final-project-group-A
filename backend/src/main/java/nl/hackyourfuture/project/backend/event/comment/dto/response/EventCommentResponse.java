@@ -23,6 +23,13 @@ public record EventCommentResponse(
         UUID eventId,
 
         @Schema(
+                description = "Identifier of the user who posted the comment",
+                example = "30000000-0000-0000-0000-000000000001",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        UUID userId,
+
+        @Schema(
                 description = "Name of the user who posted the comment",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
@@ -70,6 +77,7 @@ public record EventCommentResponse(
         return new EventCommentResponse(
                 comment.id(),
                 comment.eventId(),
+                comment.userId(),
                 comment.userName(),
                 comment.content(),
                 comment.createdAt(),
