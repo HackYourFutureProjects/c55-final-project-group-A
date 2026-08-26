@@ -66,14 +66,11 @@ public record EventCommentResponse(
 
 ) {
 
-    public static EventCommentResponse from(
-            EventComment comment,
-            String userName
-    ) {
+    public static EventCommentResponse from(EventComment comment) {
         return new EventCommentResponse(
                 comment.id(),
                 comment.eventId(),
-                userName,
+                comment.userName(),
                 comment.content(),
                 comment.createdAt(),
                 comment.updatedAt(),

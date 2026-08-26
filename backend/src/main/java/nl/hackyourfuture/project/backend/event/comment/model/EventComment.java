@@ -7,6 +7,7 @@ public record EventComment(
         UUID id,
         UUID eventId,
         UUID userId,
+        String userName,
         String content,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
