@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import EventActions from "@/components/events/EventActions";
+import EventMap from "@/components/events/EventMap";
 import { getEventById, getGoingEvents, getSavedEvents } from "@/lib/api";
 import type { EventStatus } from "@/types/event";
 
@@ -142,7 +143,7 @@ export default async function EventDetailPage({
         {/* Two-column layout: description on the left, info sidebar on the right */}
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left column: About this event */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
+          <div className="self-start rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
             <h2 className="mb-4 text-xl font-bold text-gray-900">
               About this event
             </h2>
@@ -158,7 +159,7 @@ export default async function EventDetailPage({
           {/* Right column: info card — sticky so it stays visible while scrolling a long description */}
           <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm lg:sticky lg:top-24 lg:self-start">
             {/* Accent stripe on the left edge, ties back to the badge colors */}
-            <div className="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-orange-500 to-purple-400" />
+            <div className="absolute left-0 top-0 h-full w-1.5 bg-linear-to-b from-orange-500 to-purple-400" />
 
             <div className="pl-2">
               <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -181,6 +182,15 @@ export default async function EventDetailPage({
                 {event.street} {event.houseNumber}, {event.postalCode}{" "}
                 {event.cityName}
               </p>
+
+              {/* Map pin at the event coordinates */}
+              <div className="mt-3">
+                <EventMap
+                  latitude={event.latitude}
+                  longitude={event.longitude}
+                  title={event.title}
+                />
+              </div>
 
               <hr className="my-4" />
 
