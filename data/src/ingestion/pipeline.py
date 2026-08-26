@@ -89,6 +89,18 @@ def run(run_date: str | None = None, local_dir: Path | None = None) -> int:
     config = load_config(local=local_dir is not None)
     run_date = run_date or datetime.now(tz=UTC).date().isoformat()
 
+    destination = (
+        f"local:{local_dir}"
+        if local_dir is not None
+        else f"{config.landing_container}/{config.landing_prefix}"
+    )
+    logger.info(
+        "Pipeline started: source=%s, run_date=%s, destination=%s",
+        config.source_name,
+        run_date,
+        destination,
+    )
+
     records = fetch_raw(config.source_api_url, api_key=config.ticketmaster_api_key)
     parsed, rejected = parse_records(records)
 
