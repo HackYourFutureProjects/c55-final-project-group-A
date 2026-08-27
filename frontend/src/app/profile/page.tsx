@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { DeleteAccountModal } from "@/components/profile/DeleteAccountModal";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
+import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useAuth } from "@/context/AuthContext";
 import { deleteCurrentUser, logout } from "@/lib/api";
 
@@ -73,6 +74,9 @@ function ProfileContent() {
           onClose={() => setIsDeleteOpen(false)}
         />
       )}
+      <Suspense fallback={<p>Loading...</p>}>
+        <ProfileTabs />
+      </Suspense>
     </main>
   );
 }

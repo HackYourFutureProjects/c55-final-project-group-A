@@ -235,12 +235,17 @@ export async function unmarkGoing(eventId: string): Promise<void> {
 // --- Saved / Going lists (for profile tabs + initial button state) ---
 
 export async function getSavedEvents(
+  page = 0,
+  size = 9,
   cookieHeader?: string,
 ): Promise<EventPage> {
-  const res = await fetch(apiUrl("/api/users/me/saved"), {
-    credentials: "include",
-    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
-  });
+  const res = await fetch(
+    apiUrl(`/api/users/me/saved?page=${page}&size=${size}`),
+    {
+      credentials: "include",
+      headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+    },
+  );
   if (!res.ok) {
     throw new Error(`Failed to fetch saved events: ${res.status}`);
   }
@@ -248,12 +253,17 @@ export async function getSavedEvents(
 }
 
 export async function getGoingEvents(
+  page = 0,
+  size = 9,
   cookieHeader?: string,
 ): Promise<EventPage> {
-  const res = await fetch(apiUrl("/api/users/me/going"), {
-    credentials: "include",
-    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
-  });
+  const res = await fetch(
+    apiUrl(`/api/users/me/going?page=${page}&size=${size}`),
+    {
+      credentials: "include",
+      headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+    },
+  );
   if (!res.ok) {
     throw new Error(`Failed to fetch going events: ${res.status}`);
   }

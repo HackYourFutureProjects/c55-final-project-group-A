@@ -64,8 +64,8 @@ export default async function EventDetailPage({
   if (sessionCookie) {
     const cookieHeader = cookieStore.toString();
     const [savedPage, goingPage] = await Promise.all([
-      getSavedEvents(cookieHeader).catch(() => null),
-      getGoingEvents(cookieHeader).catch(() => null),
+      getSavedEvents(0, 100, cookieHeader).catch(() => null),
+      getGoingEvents(0, 100, cookieHeader).catch(() => null),
     ]);
     initialIsSaved = savedPage?.events.some((e) => e.id === id) ?? false;
     initialIsGoing = goingPage?.events.some((e) => e.id === id) ?? false;
