@@ -48,7 +48,7 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
   }
 
   async function handleSubmit(
-    formEvent: SubmitEvent<HTMLFormElement>,
+    formEvent: { preventDefault: () => void; target: EventTarget | null },
     publishNow: boolean,
   ) {
     formEvent.preventDefault();
@@ -72,7 +72,11 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
       return;
     }
 
-    const formData = new FormData(formEvent.currentTarget);
+    // The publish button is type="button", so currentTarget is the button,
+    // not the form. Taking the form from the target works for both cases.
+    const form = (formEvent.target as HTMLElement).closest("form");
+    if (!form) return;
+    const formData = new FormData(form);
 
     const address = {
       street: source.street,
@@ -215,7 +219,7 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
       <button
         type="button"
         disabled={isSubmitting}
-        onClick={(e) => handleSubmit(e as never, true)}
+        onClick={(e) => handleSubmit(e, true)}
       >
         Publish now
       </button>
