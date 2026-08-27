@@ -35,11 +35,7 @@ with
             -- month needs no backfill and no change here.
             --
             -- https://docs.databricks.com/aws/en/sql/language-manual/functions/read_files
-            read_files(
-                '{{ var("landing_path") }}',
-                format => 'json',
-                schemahints
-                => '
+            read_files('{{ var("landing_path") }}', format => 'json', schemahints => '
                     priceRanges ARRAY<STRUCT<
                         type: STRING,
                         currency: STRING,
@@ -47,8 +43,7 @@ with
                         max: DOUBLE
                     >>,
                     pleaseNote STRING
-                '
-            )
+                ')
 
     ),
 
@@ -62,8 +57,7 @@ with
             coalesce(
                 try_element_at(
                     filter(
-                        classifications,
-                        classification -> classification.primary = true
+                        classifications, classification -> classification.primary = true
                     ),
                     1
                 ),
@@ -74,7 +68,7 @@ with
             -- use one venue, one image and one price range per event.
             try_element_at(_embedded.venues, 1) as selected_venue,
             try_element_at(images, 1) as selected_image,
-            try_element_at(priceRanges, 1) as selected_price_range
+            try_element_at(priceranges, 1) as selected_price_range
 
         from source
 
@@ -89,81 +83,60 @@ with
             trim(name) as event_name,
 
             coalesce(
-                nullif(trim(info), ''),
-                nullif(trim(pleaseNote), '')
+                nullif(trim(info), ''), nullif(trim(pleasenote), '')
             ) as event_info,
 
             nullif(trim(url), '') as event_url,
 
-            try_cast(dates.start.localDate as date) as start_date,
-            nullif(trim(dates.start.localTime), '') as start_time,
-            try_cast(dates.start.dateTime as timestamp) as start_at,
-            try_cast(dates.end.dateTime as timestamp) as end_at,
+            try_cast(dates.start.localdate as date) as start_date,
+            nullif(trim(dates.start.localtime), '') as start_time,
+            try_cast(dates.start.datetime as timestamp) as start_at,
+            try_cast(dates.end.datetime as timestamp) as end_at,
             nullif(trim(dates.timezone), '') as timezone,
             nullif(trim(dates.status.code), '') as status_code,
 
-            coalesce(dates.start.dateTBD, false) as date_tbd,
-            coalesce(dates.start.dateTBA, false) as date_tba,
-            coalesce(dates.start.timeTBA, false) as time_tba,
-            coalesce(dates.start.noSpecificTime, false) as no_specific_time,
-            coalesce(dates.spanMultipleDays, false) as spans_multiple_days,
+            coalesce(dates.start.datetbd, false) as date_tbd,
+            coalesce(dates.start.datetba, false) as date_tba,
+            coalesce(dates.start.timetba, false) as time_tba,
+            coalesce(dates.start.nospecifictime, false) as no_specific_time,
+            coalesce(dates.spanmultipledays, false) as spans_multiple_days,
 
             selected_classification.segment.id as segment_id,
             selected_classification.segment.name as segment_name,
             selected_classification.genre.id as genre_id,
             selected_classification.genre.name as genre_name,
-            selected_classification.subGenre.id as subgenre_id,
-            selected_classification.subGenre.name as subgenre_name,
+            selected_classification.subgenre.id as subgenre_id,
+            selected_classification.subgenre.name as subgenre_name,
             selected_classification.type.name as classification_type,
-            selected_classification.subType.name as classification_subtype,
+            selected_classification.subtype.name as classification_subtype,
             coalesce(selected_classification.family, false) as is_family,
 
             selected_venue.id as venue_id,
             nullif(trim(selected_venue.name), '') as venue_name,
             nullif(trim(selected_venue.address.line1), '') as address_line1,
-            nullif(trim(selected_venue.postalCode), '') as postal_code,
+            nullif(trim(selected_venue.postalcode), '') as postal_code,
             nullif(trim(selected_venue.city.name), '') as city_name,
 
             -- State is absent from the current Netherlands dataset. Reading it
             -- through JSON allows the model to return NULL now and pick it up
             -- if a future response contains it.
             nullif(
-                trim(
-                    get_json_object(
-                        to_json(selected_venue),
-                        '$.state.name'
-                    )
-                ),
-                ''
+                trim(get_json_object(to_json(selected_venue), '$.state.name')), ''
             ) as province,
 
-            nullif(
-                trim(selected_venue.country.countryCode),
-                ''
-            ) as country_code,
+            nullif(trim(selected_venue.country.countrycode), '') as country_code,
 
-            try_cast(
-                selected_venue.location.latitude as decimal(9, 6)
-            ) as latitude,
+            try_cast(selected_venue.location.latitude as decimal(9, 6)) as latitude,
 
-            try_cast(
-                selected_venue.location.longitude as decimal(9, 6)
-            ) as longitude,
+            try_cast(selected_venue.location.longitude as decimal(9, 6)) as longitude,
 
             nullif(trim(selected_image.url), '') as image_url,
 
-            try_cast(
-                selected_price_range.min as decimal(10, 2)
-            ) as price_min,
+            try_cast(selected_price_range.min as decimal(10, 2)) as price_min,
 
-            try_cast(
-                selected_price_range.max as decimal(10, 2)
-            ) as price_max,
+            try_cast(selected_price_range.max as decimal(10, 2)) as price_max,
 
-            nullif(
-                trim(selected_price_range.currency),
-                ''
-            ) as currency,
+            nullif(trim(selected_price_range.currency), '') as currency,
 
             'ticketmaster' as source,
             source_file,
@@ -184,10 +157,9 @@ with
         from renamed
         qualify
             row_number() over (
-                partition by event_id
-                order by ingested_at desc, source_file desc
-                )
-                = 1
+                partition by event_id order by ingested_at desc, source_file desc
+            )
+            = 1
 
     )
 

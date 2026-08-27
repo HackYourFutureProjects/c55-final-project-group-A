@@ -32,27 +32,23 @@ with
             -- backend category vocabulary.
             case
                 when genre_name = 'Family'
-                    then 'Family & Kids'
+                then 'Family & Kids'
                 when genre_name = 'Food & Drink'
-                    then 'Food & Drink'
+                then 'Food & Drink'
                 when genre_name = 'Community/Civic'
-                    then 'Community & Social'
-                when genre_name in (
-                    'Theatre',
-                    'Comedy',
-                    'Dance',
-                    'Performance Art',
-                    'Variety'
-                )
-                    then 'Theatre & Performance'
+                then 'Community & Social'
+                when
+                    genre_name
+                    in ('Theatre', 'Comedy', 'Dance', 'Performance Art', 'Variety')
+                then 'Theatre & Performance'
                 when genre_name = 'Fine Art'
-                    then 'Arts & Culture'
+                then 'Arts & Culture'
                 when segment_name = 'Music'
-                    then 'Music'
+                then 'Music'
                 when segment_name = 'Sports'
-                    then 'Sports & Fitness'
+                then 'Sports & Fitness'
                 when segment_name in ('Film', 'Arts & Theatre')
-                    then 'Arts & Culture'
+                then 'Arts & Culture'
                 else 'Other'
             end as category,
 
