@@ -35,8 +35,19 @@ public class EventRepository {
             """;
 
     private static final String DATE_FILTER_CLAUSE = """
-              AND e.start_at < :dateToExclusive
-              AND e.end_at > :dateFromStart
+              AND (
+                  (
+                      e.end_at IS NOT NULL
+                      AND e.start_at < :dateToExclusive
+                      AND e.end_at > :dateFromStart
+                  )
+                  OR
+                  (
+                      e.end_at IS NULL
+                      AND e.start_at >= :dateFromStart
+                      AND e.start_at < :dateToExclusive
+                  )
+              )
             """;
 
     private static final ZoneId EVENT_TIME_ZONE =
