@@ -63,9 +63,11 @@ export default function EventCard({ event }: EventCardProps) {
             <span className="font-bold text-gray-900">
               {event.price === 0 ? "Free" : `€${event.price}`}
             </span>
-            <span className="rounded-full bg-orange-50 px-3 py-1 text-sm font-medium text-orange-600">
-              {event.goingCount} going
-            </span>
+            {event.goingCount !== undefined && (
+              <span className="rounded-full bg-orange-50 px-3 py-1 text-sm font-medium text-orange-600">
+                {event.goingCount} going
+              </span>
+            )}
           </div>
         </div>
       </div>

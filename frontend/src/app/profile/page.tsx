@@ -5,6 +5,7 @@ import { Suspense, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { DeleteAccountModal } from "@/components/profile/DeleteAccountModal";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
+import { LogoutModal } from "@/components/profile/LogoutModal";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useAuth } from "@/context/AuthContext";
 import { deleteCurrentUser, logout } from "@/lib/api";
@@ -26,6 +27,7 @@ function ProfileContent() {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isLogoutOpen, setIsLogoutOpen] = useState(false);
 
   // Clears the session on the backend, resets the auth state,
   // then sends the user to the homepage
@@ -87,7 +89,7 @@ function ProfileContent() {
 
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={() => setIsLogoutOpen(true)}
           className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
         >
           Log out
@@ -114,6 +116,13 @@ function ProfileContent() {
         <DeleteAccountModal
           onConfirm={handleDeleteAccount}
           onClose={() => setIsDeleteOpen(false)}
+        />
+      )}
+
+      {isLogoutOpen && (
+        <LogoutModal
+          onConfirm={handleLogout}
+          onClose={() => setIsLogoutOpen(false)}
         />
       )}
     </main>
