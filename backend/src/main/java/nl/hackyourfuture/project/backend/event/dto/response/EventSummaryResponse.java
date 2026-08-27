@@ -40,8 +40,9 @@ public record EventSummaryResponse(
         OffsetDateTime startAt,
 
         @Schema(
-                description = "Date and time when the event ends",
+                description = "Date and time when the event ends; null when unknown",
                 example = "2026-09-12T21:30:00Z",
+                nullable = true,
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         OffsetDateTime endAt,
