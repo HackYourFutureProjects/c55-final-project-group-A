@@ -143,7 +143,8 @@ public class EventController {
             @Parameter(
                     description = """
                             Optional price filter. FREE returns events with a zero
-                            price; PAID returns events with a price greater than zero.
+                            price, PAID returns events with a price greater than zero,
+                            and UNKNOWN returns events whose price is unavailable.
                             """,
                     example = "FREE"
             )
@@ -171,7 +172,8 @@ public class EventController {
                             with the highest weighted popularity score based on
                             attendance and saves, PRICE_ASC returns the cheapest
                             events first, and PRICE_DESC returns the most expensive
-                            events first.
+                            events first. Events with an unknown price are placed
+                            last for both price-based ordering strategies.
                             """,
                     example = "START_TIME_ASC"
             )
