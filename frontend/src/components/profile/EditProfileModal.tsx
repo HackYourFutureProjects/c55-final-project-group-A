@@ -40,52 +40,82 @@ export function EditProfileModal({ user, onClose }: EditProfileModalProps) {
   }
 
   return (
-    <div>
-      <h2>Edit profile</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6">
+        <h2 className="font-bold text-neutral-900 text-xl">Edit profile</h2>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="name">Name</label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            minLength={2}
-            defaultValue={user.name}
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+          <div>
+            <label
+              htmlFor="name"
+              className="mb-1 block font-medium text-neutral-600 text-sm"
+            >
+              Name
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              minLength={2}
+              defaultValue={user.name}
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:border-neutral-900"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            defaultValue={user.email}
-          />
-        </div>
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-1 block font-medium text-neutral-600 text-sm"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              defaultValue={user.email}
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:border-neutral-900"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="location">Location</label>
-          <input
-            id="location"
-            name="location"
-            type="text"
-            defaultValue={user.location ?? ""}
-          />
-        </div>
+          <div>
+            <label
+              htmlFor="location"
+              className="mb-1 block font-medium text-neutral-600 text-sm"
+            >
+              Location
+            </label>
+            <input
+              id="location"
+              name="location"
+              type="text"
+              defaultValue={user.location ?? ""}
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:border-neutral-900"
+            />
+          </div>
 
-        {error && <p>{error}</p>}
+          {error && <p className="text-red-600 text-sm">{error}</p>}
 
-        <button type="button" onClick={onClose}>
-          Cancel
-        </button>
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save"}
-        </button>
-      </form>
+          <div className="mt-2 flex justify-end gap-3 border-neutral-100 border-t pt-5">
+            <button
+              className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
+              type="button"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              className="rounded-full bg-neutral-900 px-5 py-2 font-semibold text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

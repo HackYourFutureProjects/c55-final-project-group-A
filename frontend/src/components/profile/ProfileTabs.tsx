@@ -7,6 +7,10 @@ import Pagination from "@/components/Pagination";
 import { getGoingEvents, getSavedEvents } from "@/lib/api";
 import type { EventPage } from "@/types/event";
 
+const TAB_BASE = "border-b-2 pb-3 font-medium text-[15px] transition-colors";
+const TAB_ACTIVE = "border-neutral-900 text-neutral-900";
+const TAB_IDLE = "border-transparent text-neutral-500 hover:text-neutral-800";
+
 export default function ProfileTabs() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,18 +42,33 @@ export default function ProfileTabs() {
 
   return (
     <div>
-      <div>
-        <button type="button" onClick={() => changeTab("saved")}>
-          Saved
+      <div className="mb-6 flex gap-8 border-neutral-200 border-b">
+        <button
+          type="button"
+          onClick={() => changeTab("saved")}
+          className={`${TAB_BASE} ${tab === "saved" ? TAB_ACTIVE : TAB_IDLE}`}
+        >
+          Saved{" "}
+          {tab === "saved" && data && (
+            <span className="text-neutral-400">{data.totalElements}</span>
+          )}
         </button>
-        <button type="button" onClick={() => changeTab("going")}>
-          Going
+        <button
+          type="button"
+          onClick={() => changeTab("going")}
+          className={`${TAB_BASE} ${tab === "going" ? TAB_ACTIVE : TAB_IDLE}`}
+        >
+          Going{" "}
+          {tab === "going" && data && (
+            <span className="text-neutral-400">{data.totalElements}</span>
+          )}
         </button>
       </div>
 
-      {isLoading && <p>Loading...</p>}
-      {error && <p>{error}</p>}
-
+      {isLoading && (
+        <p className="py-8 text-center text-neutral-500">Loading...</p>
+      )}
+      {error && <p className="py-8 text-center text-red-600">{error}</p>}
       {!isLoading && !error && data && (
         <>
           <EventList events={data.events} />
