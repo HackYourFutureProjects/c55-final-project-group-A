@@ -48,8 +48,9 @@ public record EventSummaryResponse(
         OffsetDateTime endAt,
 
         @Schema(
-                description = "Event price in euros",
+                description = "Event price in euros; null when unknown",
                 example = "24.00",
+                nullable = true,
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         BigDecimal price,

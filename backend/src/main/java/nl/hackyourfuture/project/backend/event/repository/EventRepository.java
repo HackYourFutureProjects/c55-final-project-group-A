@@ -85,6 +85,7 @@ public class EventRepository {
               AND (
                   (:price = 'FREE' AND e.price = 0)
                   OR (:price = 'PAID' AND e.price > 0)
+                  OR (:price = 'UNKNOWN' AND e.price IS NULL)
               )
             """;
 
