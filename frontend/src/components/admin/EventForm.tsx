@@ -18,12 +18,9 @@ interface EventFormProps {
   ) => Promise<void>;
 }
 
-// Turns an ISO string into the value a datetime-local input expects
-// ("2026-09-13T21:00"), in the browser's own timezone.
+// datetime-local wants "2026-09-13T21:00" — the ISO string without the timezone part
 function toLocalInputValue(isoDate: string) {
-  const date = new Date(isoDate);
-  const offsetInMs = date.getTimezoneOffset() * 60 * 1000;
-  return new Date(date.getTime() - offsetInMs).toISOString().slice(0, 16);
+  return isoDate.slice(0, 16);
 }
 
 export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
@@ -61,44 +58,31 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
       setError("Please pick at least one category");
       return;
     }
-    // No initialEvent means "create", initialEvent means "edit".
-    // When editing we keep the existing address unless a new one is picked
-    if (!location && !initialEvent) {
-      setError("Please pick a location");
-      return;
-    }
-    // The backend requires a street, but a suggestion can come back without one
-    if (location && !location.street) {
-      setError("This location has no street. Pick a more precise address.");
-      return;
-    }
     if (!image && !initialEvent) {
       setError("Please choose an image");
       return;
     }
 
+    // Address comes from the newly picked location, or from the event being edited.
+    // Both objects use the same field names, so we only build the list once.
+    const source = location ?? initialEvent;
+    // The backend requires a street, but a suggestion can come back without one
+    if (!source || !source.street) {
+      setError("Please pick a location with a street");
+      return;
+    }
+
     const formData = new FormData(formEvent.currentTarget);
 
-    // Either the freshly picked location, or the one the event already has
-    const address = location
-      ? {
-          street: location.street as string,
-          houseNumber: location.houseNumber,
-          postalCode: location.postalCode,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          cityName: location.cityName,
-          province: location.province,
-        }
-      : {
-          street: initialEvent!.street,
-          houseNumber: initialEvent!.houseNumber,
-          postalCode: initialEvent!.postalCode,
-          latitude: initialEvent!.latitude,
-          longitude: initialEvent!.longitude,
-          cityName: initialEvent!.cityName,
-          province: initialEvent!.province,
-        };
+    const address = {
+      street: source.street,
+      houseNumber: source.houseNumber,
+      postalCode: source.postalCode,
+      latitude: source.latitude,
+      longitude: source.longitude,
+      cityName: source.cityName,
+      province: source.province,
+    };
 
     setIsSubmitting(true);
     try {
