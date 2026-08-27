@@ -207,8 +207,8 @@ public class EventRepository {
         return switch (sort) {
             case START_TIME_ASC -> " ORDER BY e.start_at ASC, e.id ASC ";
             case POPULARITY_DESC -> " ORDER BY popularity_score DESC, e.start_at ASC, e.id ASC ";
-            case PRICE_ASC -> " ORDER BY e.price ASC, e.start_at ASC, e.id ASC ";
-            case PRICE_DESC -> " ORDER BY e.price DESC, e.start_at ASC, e.id ASC ";
+            case PRICE_ASC -> " ORDER BY e.price ASC NULLS LAST, e.start_at ASC, e.id ASC ";
+            case PRICE_DESC -> " ORDER BY e.price DESC NULLS LAST, e.start_at ASC, e.id ASC ";
         };
     }
 
