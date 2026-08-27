@@ -1,4 +1,8 @@
-import type { AdminEventDetail, AdminEventPage } from "@/types/admin";
+import type {
+  AdminEventDetail,
+  AdminEventPage,
+  CreateEventRequest,
+} from "@/types/admin";
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
 import type {
   Category,
@@ -256,8 +260,6 @@ export async function getGoingEvents(
   return res.json();
 }
 
-// --- Admin events (admin role only, session cookie required) ---
-
 // --- Admin events (admin role only) ---
 
 export async function getAdminEvents(
@@ -285,5 +287,39 @@ export async function getAdminEventById(
   if (!res.ok) {
     throw new Error(`Failed to fetch admin event: ${res.status}`);
   }
+  return res.json();
+}
+
+// Creates an event as a draft, or publishes it right away when publishNow is true.
+// The request is multipart: a JSON part called "event" plus the image file.
+export async function createAdminEvent(
+  event: CreateEventRequest,
+  image: File,
+  publishNow: boolean,
+): Promise<AdminEventDetail> {
+  const formData = new FormData();
+
+  // The backend requires this part to be application/json,
+  // so we wrap the JSON in a Blob with that type. A plain string would give a 415.
+  formData.append(
+    "event",
+    new Blob([JSON.stringify(event)], { type: "application/json" }),
+  );
+  formData.append("image", image);
+
+  const res = await fetch(
+    apiUrl(`/api/admin/events?publishNow=${publishNow}`),
+    {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    },
+  );
+
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to create event: ${res.status}`);
+  }
+
   return res.json();
 }
