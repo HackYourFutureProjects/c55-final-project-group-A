@@ -1,8 +1,10 @@
 """Validation at the edge: what survives, what is rejected, what is counted."""
 
+import logging
 from datetime import UTC, date, datetime
 
 import pytest
+import requests
 from pydantic import ValidationError
 
 from src.ingestion.ingest import (
@@ -182,6 +184,25 @@ def test_fetch_raw_http_error_does_not_expose_api_key(monkeypatch):
     assert secret_key not in message
 
 
+def test_fetch_raw_request_error_is_sanitized(monkeypatch, caplog):
+    secret_key = "do-not-expose-this-key"
+
+    def fake_get(url, params, timeout):
+        raise requests.Timeout(f"request timed out with apikey={params['apikey']}")
+
+    monkeypatch.setattr("src.ingestion.ingest.requests.get", fake_get)
+    caplog.set_level(logging.INFO, logger="src.ingestion.ingest")
+
+    with pytest.raises(RuntimeError, match="Ticketmaster API request failed: Timeout") as exc_info:
+        fetch_raw(
+            url="https://example.test/events.json",
+            api_key=secret_key,
+        )
+
+    assert secret_key not in str(exc_info.value)
+    assert secret_key not in caplog.text
+
+
 def test_fetch_raw_reports_invalid_json_without_exposing_key(monkeypatch):
     class FakeResponse:
         ok = True
@@ -219,6 +240,17 @@ def test_one_bad_record_does_not_lose_the_batch():
 
     assert len(parsed) == 1
     assert rejected == 1
+
+
+def test_rejected_record_and_batch_counts_are_logged(caplog):
+    caplog.set_level(logging.INFO, logger="src.ingestion.ingest")
+
+    parsed, rejected = parse_records([GOOD, {"id": "event-bad"}])
+
+    assert len(parsed) == 1
+    assert rejected == 1
+    assert "Rejected record event-bad" in caplog.text
+    assert "Parsed 1 record(s), rejected 1" in caplog.text
 
 
 def test_missing_optional_fields_and_extra_fields_are_allowed():
