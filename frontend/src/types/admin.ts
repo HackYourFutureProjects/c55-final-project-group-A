@@ -46,3 +46,24 @@ export interface AdminEventDetail {
 
 // Status shown in the admin UI, derived from isPublished + cancelled + endAt.
 export type AdminEventStatus = "DRAFT" | "PUBLISHED" | "CANCELLED" | "ENDED";
+
+// What we send when creating an event.
+export interface EventAddressRequest {
+  street: string;
+  houseNumber: string | null;
+  postalCode: string | null;
+  latitude: number;
+  longitude: number;
+  cityName: string;
+  province: string | null;
+}
+
+export interface CreateEventRequest {
+  title: string;
+  description: string | null;
+  categoryIds: string[];
+  address: EventAddressRequest;
+  startAt: string;
+  endAt: string;
+  price: number;
+}

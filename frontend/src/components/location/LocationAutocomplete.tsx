@@ -8,6 +8,7 @@ interface LocationAutocompleteProps {
   onSelect: (suggestion: LocationSuggestion) => void;
   placeholder?: string;
   resetSignal?: number;
+  hint?: string;
 }
 
 // One value instead of three separate booleans, so the UI can never
@@ -25,6 +26,7 @@ export function LocationAutocomplete({
   onSelect,
   placeholder,
   resetSignal,
+  hint = "Enter the full city name and pick a radius",
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
@@ -118,9 +120,7 @@ export function LocationAutocomplete({
         )}
       </div>
 
-      <p className="mt-1.5 text-neutral-400 text-xs">
-        Enter the full city name and pick a radius
-      </p>
+      <p className="mt-1.5 text-neutral-400 text-xs">{hint}</p>
 
       {status === "searching" && (
         <p className="mt-1 text-neutral-400 text-xs">Searching...</p>

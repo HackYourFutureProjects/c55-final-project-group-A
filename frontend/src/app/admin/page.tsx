@@ -1,15 +1,15 @@
-// Admin dashboard: lists every event, including drafts and cancelled ones.
+// Admin home: create an event on the left, the latest events on the right.
 
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import EventForm from "@/components/admin/EventForm";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import Pagination from "@/components/Pagination";
 import { getAdminEventStatus } from "@/lib/adminEventStatus";
-import { getAdminEvents } from "@/lib/api";
-import type { AdminEventPage } from "@/types/admin";
+import { createAdminEvent, getAdminEvents } from "@/lib/api";
+import type { AdminEventSummary, CreateEventRequest } from "@/types/admin";
 
 export default function AdminPage() {
   return (
@@ -20,44 +20,48 @@ export default function AdminPage() {
 }
 
 function AdminContent() {
-  const searchParams = useSearchParams();
-  const page = Number(searchParams.get("page")) || 0;
+  const router = useRouter();
+  const [recent, setRecent] = useState<AdminEventSummary[]>([]);
 
-  const [data, setData] = useState<AdminEventPage | null>(null);
-  const [error, setError] = useState("");
+  // Wrapped in useCallback so it can be reused after creating an event
+  const loadRecent = useCallback(() => {
+    getAdminEvents(0, 5)
+      .then((data) => setRecent(data.events))
+      .catch(() => setRecent([]));
+  }, []);
 
-  // Reload the list whenever the page number in the URL changes
-  useEffect(() => {
-    getAdminEvents(page)
-      .then(setData)
-      .catch(() => setError("Could not load events"));
-  }, [page]);
+  useEffect(loadRecent, [loadRecent]);
 
-  if (error) return <p>{error}</p>;
-  if (!data) return <p>Loading...</p>;
+  async function handleCreate(
+    event: CreateEventRequest,
+    image: File | null,
+    publishNow: boolean,
+  ) {
+    // The form only allows submitting without an image when editing
+    if (!image) return;
+    await createAdminEvent(event, image, publishNow);
+    router.refresh();
+    loadRecent();
+  }
 
   return (
     <div>
-      <h1>Events</h1>
-      <Link href="/admin/events/new">Create event</Link>
+      <section>
+        <h1>Create event</h1>
+        <EventForm onSubmit={handleCreate} />
+      </section>
 
-      <p>{data.totalElements} events</p>
-
-      {data.events.map((event) => (
-        <div key={event.id}>
-          <h3>{event.title}</h3>
-          <p>{new Date(event.startAt).toLocaleString("en-GB")}</p>
-          <p>{event.cityName}</p>
-          <p>{getAdminEventStatus(event)}</p>
-        </div>
-      ))}
-
-      <Pagination
-        page={data.page}
-        totalPages={data.totalPages}
-        hasNext={data.hasNext}
-        basePath="/admin"
-      />
+      <section>
+        <h2>Recent events</h2>
+        {recent.map((event) => (
+          <div key={event.id}>
+            <h3>{event.title}</h3>
+            <p>{new Date(event.startAt).toLocaleString("en-GB")}</p>
+            <p>{getAdminEventStatus(event)}</p>
+          </div>
+        ))}
+        <Link href="/admin/events">See all events</Link>
+      </section>
     </div>
   );
 }

@@ -23,6 +23,12 @@ export function Navbar() {
           <Link href="/feedback" className="hover:text-orange-600">
             Feedback
           </Link>
+          {/* Only admins see the link back into the admin area */}
+          {user?.role === "admin" && (
+            <Link href="/admin" className="hover:text-orange-600">
+              Dashboard
+            </Link>
+          )}
         </nav>
       </div>
 

@@ -8,8 +8,8 @@ export default function AdminLayout({
   return (
     <div>
       <nav>
-        <Link href="/admin/events/edit">Edit / Delete event</Link>
-        {" | "}
+        <Link href="/admin">Create event</Link>
+        <Link href="/admin/events">All events</Link>
         <Link href="/admin/messages">Messages</Link>
       </nav>
       <main>{children}</main>
