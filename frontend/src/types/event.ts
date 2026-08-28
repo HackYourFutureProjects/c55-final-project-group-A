@@ -7,8 +7,8 @@ export interface Event {
   title: string;
   categories: Category[];
   startAt: string;
-  endAt: string;
-  price: number;
+  endAt: string | null;
+  price: number | null;
   street: string;
   houseNumber: string | null;
   postalCode: string | null;
@@ -38,8 +38,8 @@ export interface EventDetail {
   description: string | null;
   categories: Category[];
   startAt: string;
-  endAt: string;
-  price: number;
+  endAt: string | null;
+  price: number | null;
   street: string;
   houseNumber: string | null;
   postalCode: string | null;
@@ -63,9 +63,16 @@ export interface EventFilters {
   dateFrom?: string;
   dateTo?: string;
   price?: PriceFilter;
-  timesOfDay?: TimeOfDay[]; // repeated key, like categoryIds
+  timesOfDay?: TimeOfDay[]; 
+  sort?: EventSort;
 }
 
-export type PriceFilter = "FREE" | "PAID";
+export type PriceFilter = "FREE" | "PAID" | "UNKNOWN";
 
 export type TimeOfDay = "MORNING" | "AFTERNOON" | "EVENING";
+
+export type EventSort =
+  | "START_TIME_ASC"
+  | "POPULARITY_DESC"
+  | "PRICE_ASC"
+  | "PRICE_DESC";
