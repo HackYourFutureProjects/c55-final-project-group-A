@@ -51,7 +51,7 @@ def test_pipeline_lands_original_raw_events_including_rejected(monkeypatch, capl
     assert landed == 2
     assert captured == {
         "account": "teststorage",
-        "path": "mohammed/postings/ingest_date=2026-08-16/data.json",
+        "path": "mohammed/events/ingest_date=2026-08-16/data.json",
         "records": RAW_EVENTS,
         "container": "dev",
     }

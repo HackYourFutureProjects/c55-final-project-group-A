@@ -35,7 +35,7 @@ logger = logging.getLogger("pipeline")
 
 # Landing-folder name under LANDING_PREFIX (local / aca-dev / prod raw).
 # Same in every environment for a single source — not an env var.
-SOURCE_NAME = "postings"
+SOURCE_NAME = "events"
 
 
 class MissingSetting(RuntimeError):

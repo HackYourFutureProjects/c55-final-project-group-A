@@ -43,7 +43,7 @@ with
             --
             -- https://docs.databricks.com/aws/en/sql/language-manual/functions/read_files
             read_files(
-                '{{ var("landing_path") }}/postings',
+                '{{ var("landing_path") }}/events',
                 format => 'json',
                 schemahints
                 => 'slug string, title string, company_name string, location string, remote boolean, tags array<string>, created_at bigint'
