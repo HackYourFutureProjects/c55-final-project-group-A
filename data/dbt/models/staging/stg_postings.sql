@@ -1,5 +1,4 @@
 -- Staging does one job: read the raw files and clean them. No business logic.
--- SQLFluff syntax check runs in CI on changed dbt models.
 --
 -- `read_files` reads every file in the landing volume, so a new day's file is
 -- picked up without you changing anything here. `_metadata.file_path` tells you
