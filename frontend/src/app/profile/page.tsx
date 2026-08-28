@@ -9,6 +9,7 @@ import { LogoutModal } from "@/components/profile/LogoutModal";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useAuth } from "@/context/AuthContext";
 import { deleteCurrentUser, logout } from "@/lib/api";
+import Link from "next/link";
 
 // Page shell: ProtectedRoute redirects guests to /login
 // before any profile content is rendered
@@ -66,7 +67,7 @@ function ProfileContent() {
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-8">
-      <div className="mb-8 flex items-center gap-6 rounded-2xl bg-white p-6">
+      <div className="mb-8 flex items-center gap-6 rounded-2xl border border-neutral-200 bg-white p-6">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-purple-100 font-semibold text-2xl text-purple-700">
           {initials}
         </div>
@@ -96,14 +97,29 @@ function ProfileContent() {
         </button>
       </div>
 
-      <Suspense fallback={<p>Loading...</p>}>
-        <ProfileTabs />
-      </Suspense>
+      {user.role === "admin" ? (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <p className="text-neutral-600 text-sm">
+            Saved and going events are for regular accounts. Manage events from
+            the admin dashboard.
+          </p>
+          <Link
+            href="/admin"
+            className="mt-4 inline-block rounded-full bg-neutral-900 px-5 py-2 font-semibold text-sm text-white hover:bg-neutral-800"
+          >
+            Go to dashboard
+          </Link>
+        </div>
+      ) : (
+        <Suspense fallback={<p>Loading...</p>}>
+          <ProfileTabs />
+        </Suspense>
+      )}
 
       <button
         type="button"
         onClick={() => setIsDeleteOpen(true)}
-        className="mt-12 text-red-600 text-sm hover:underline"
+        className={`text-red-600 text-sm hover:underline ${user.role === "admin" ? "mt-8" : "mt-12"}`}
       >
         Delete account
       </button>

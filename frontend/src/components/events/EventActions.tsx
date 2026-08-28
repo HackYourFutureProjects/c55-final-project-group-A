@@ -77,36 +77,26 @@ export default function EventActions({
       <button
         type="button"
         onClick={handleSaveClick}
-        className="flex items-center gap-2 rounded-full bg-orange-600 px-5 py-2.5 font-semibold text-white transition-colors hover:bg-orange-700"
+        className={`flex items-center gap-2 rounded-full px-5 py-2.5 font-semibold transition-colors ${
+          isSaved
+            ? "bg-neutral-900 text-white hover:bg-neutral-800"
+            : "bg-orange-600 text-white hover:bg-orange-700"
+        }`}
       >
         <span>{isSaved ? "❤️" : "🤍"}</span>
         {isSaved ? "Saved" : "Save event"}
       </button>
-
-      <div className="flex rounded-full border border-gray-300 p-1">
-        <button
-          type="button"
-          onClick={() => handleGoingClick(true)}
-          className={`rounded-full px-4 py-2 font-semibold transition-colors ${
-            isGoing
-              ? "bg-orange-600 text-white"
-              : "text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          I'm going
-        </button>
-        <button
-          type="button"
-          onClick={() => handleGoingClick(false)}
-          className={`rounded-full px-4 py-2 font-semibold transition-colors ${
-            !isGoing
-              ? "bg-orange-600 text-white"
-              : "text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          I'm not going
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => handleGoingClick(!isGoing)}
+        className={`rounded-full px-5 py-2.5 font-semibold transition-colors ${
+          isGoing
+            ? "bg-neutral-900 text-white hover:bg-neutral-800"
+            : "bg-orange-600 text-white hover:bg-orange-700"
+        }`}
+      >
+        {isGoing ? "Going" : "Join"}
+      </button>
     </div>
   );
 }
