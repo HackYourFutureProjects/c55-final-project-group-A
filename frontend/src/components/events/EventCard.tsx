@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { Event } from "@/types/event";
 import { formatPrice } from "@/lib/formatPrice";
+import type { Event } from "@/types/event";
 
 interface EventCardProps {
   event: Event;

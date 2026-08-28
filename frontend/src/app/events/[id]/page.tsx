@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import EventActions from "@/components/events/EventActions";
 import EventMap from "@/components/events/EventMap";
 import { getEventById, getGoingEvents, getSavedEvents } from "@/lib/api";
-import type { EventStatus } from "@/types/event";
 import { formatPrice } from "@/lib/formatPrice";
+import type { EventStatus } from "@/types/event";
 
 interface EventDetailPageProps {
   params: Promise<{ id: string }>;

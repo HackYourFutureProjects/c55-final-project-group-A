@@ -63,7 +63,7 @@ export interface EventFilters {
   dateFrom?: string;
   dateTo?: string;
   price?: PriceFilter;
-  timesOfDay?: TimeOfDay[]; 
+  timesOfDay?: TimeOfDay[];
   sort?: EventSort;
 }
 
