@@ -67,6 +67,10 @@ export async function getEvents(
     query.append("timesOfDay", timeOfDay);
   }
 
+  if (filters.sort) {
+    query.set("sort", filters.sort);
+  }
+
   const response = await fetch(apiUrl(`/api/events?${query.toString()}`));
 
   if (!response.ok) {
