@@ -52,7 +52,9 @@ env:
   ACA_INGEST_JOB: job-fp-ingest
   STORAGE_ACCOUNT: sthyffpteama
   DATABRICKS_CATALOG: team_a
-  SOURCE_API_URL: https://www.arbeitnow.com/api/job-board-api
+  DATABRICKS_HOST: https://adb-7405619530719547.7.azuredatabricks.net
+  DATABRICKS_HTTP_PATH: /sql/1.0/warehouses/0aae52a375e34214
+  SOURCE_API_URL: https://app.ticketmaster.com/discovery/v2/events.json
 
 jobs:
   lint-and-test:
@@ -125,6 +127,19 @@ jobs:
           else
             printf '%s\n' "$FILES" | xargs uv run sqlfmt --check
           fi
+
+      # Catches broken Jinja, bad refs, and unresolved merge markers in dbt
+      # models. sqlfmt alone does not — team C PR #92 merged with <<<<<<< in
+      # stg_postings.sql. Compile needs warehouse credentials in GitHub secrets
+      # (DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET); parse and the
+      # conflict-marker scan always run without them.
+      - name: Parse and compile dbt
+        env:
+          DBT_SCHEMA: ci_github_actions
+          LANDING_PATH: /Volumes/${{ env.DATABRICKS_CATALOG }}/landing/prod
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+        run: bash .github/scripts/check-dbt-project.sh
 
       - name: Types
         working-directory: ./data
