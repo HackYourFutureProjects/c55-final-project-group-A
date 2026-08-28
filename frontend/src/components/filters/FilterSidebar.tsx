@@ -3,7 +3,12 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import LocationFilter from "@/components/location/LocationFilter";
-import type { Category, PriceFilter, TimeOfDay } from "@/types/event";
+import type {
+  Category,
+  EventSort,
+  PriceFilter,
+  TimeOfDay,
+} from "@/types/event";
 import DateRangeFilter from "./DateRangeFilter";
 
 // Category chips cycle through this palette by index
@@ -19,6 +24,14 @@ const CATEGORY_COLORS = [
 const PRICE_OPTIONS: { value: PriceFilter; label: string }[] = [
   { value: "FREE", label: "Free" },
   { value: "PAID", label: "Paid" },
+  { value: "UNKNOWN", label: "Unknown" },
+];
+
+const SORT_OPTIONS: { value: EventSort; label: string }[] = [
+  { value: "START_TIME_ASC", label: "Soonest" },
+  { value: "POPULARITY_DESC", label: "Popular" },
+  { value: "PRICE_ASC", label: "Cheapest" },
+  { value: "PRICE_DESC", label: "Most expensive" },
 ];
 
 const TIME_OPTIONS: { value: TimeOfDay; label: string }[] = [
@@ -52,6 +65,7 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
   const selectedCategories = searchParams.getAll("categoryIds");
   const selectedTimes = searchParams.getAll("timesOfDay");
   const selectedPrice = searchParams.get("price");
+  const selectedSort = searchParams.get("sort");
   const dateFrom = searchParams.get("dateFrom");
   const dateTo = searchParams.get("dateTo");
   const latitude = searchParams.get("latitude");
@@ -103,6 +117,19 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
       params.delete("price");
     } else {
       params.set("price", value);
+    }
+
+    apply(params);
+  }
+
+  // Clicking the active option goes back to the default order
+  function setSort(value: EventSort) {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (params.get("sort") === value) {
+      params.delete("sort");
+    } else {
+      params.set("sort", value);
     }
 
     apply(params);
@@ -265,6 +292,28 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
                 key={option.value}
                 type="button"
                 onClick={() => toggleRepeated("timesOfDay", option.value)}
+                aria-pressed={isActive}
+                className={`${CHIP_BASE} ${isActive ? CHIP_ACTIVE : CHIP_IDLE}`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+      <section>
+        <h3 className={SECTION_TITLE}>
+          <span className="h-1.5 w-1.5 rounded-full bg-neutral-400" />
+          Sort by
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {SORT_OPTIONS.map((option) => {
+            const isActive = selectedSort === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSort(option.value)}
                 aria-pressed={isActive}
                 className={`${CHIP_BASE} ${isActive ? CHIP_ACTIVE : CHIP_IDLE}`}
               >

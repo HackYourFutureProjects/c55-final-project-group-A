@@ -3,15 +3,15 @@ import { notFound } from "next/navigation";
 import EventActions from "@/components/events/EventActions";
 import EventMap from "@/components/events/EventMap";
 import { getEventById, getGoingEvents, getSavedEvents } from "@/lib/api";
+import { formatPrice } from "@/lib/formatPrice";
 import type { EventStatus } from "@/types/event";
 
 interface EventDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-function formatDateRange(startAt: string, endAt: string) {
+function formatDateRange(startAt: string, endAt: string | null) {
   const start = new Date(startAt);
-  const end = new Date(endAt);
 
   const date = start.toLocaleDateString("en-GB", {
     weekday: "long",
@@ -24,10 +24,12 @@ function formatDateRange(startAt: string, endAt: string) {
     minute: "2-digit",
   });
 
-  const endTime = end.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const endTime = endAt
+    ? new Date(endAt).toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
 
   return { date, startTime, endTime };
 }
@@ -169,7 +171,9 @@ export default async function EventDetailPage({
                 {date} · {startTime}
               </p>
               <p className="text-sm text-gray-500">
-                {startTime} – {endTime}
+                {endTime
+                  ? `${startTime} – ${endTime}`
+                  : `Starts at ${startTime}`}
               </p>
 
               <hr className="my-4" />
@@ -201,7 +205,7 @@ export default async function EventDetailPage({
                     Price
                   </p>
                   <p className="font-bold text-gray-900">
-                    {event.price === 0 ? "Free" : `€${event.price}`}
+                    {formatPrice(event.price)}
                   </p>
                 </div>
                 <div className="text-right">

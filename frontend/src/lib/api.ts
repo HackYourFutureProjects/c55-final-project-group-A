@@ -67,6 +67,10 @@ export async function getEvents(
     query.append("timesOfDay", timeOfDay);
   }
 
+  if (filters.sort) {
+    query.set("sort", filters.sort);
+  }
+
   const response = await fetch(apiUrl(`/api/events?${query.toString()}`));
 
   if (!response.ok) {
@@ -368,4 +372,35 @@ export async function deleteAdminEvent(eventId: string): Promise<void> {
     const problem = await res.json().catch(() => null);
     throw new Error(problem?.detail ?? `Failed to delete event: ${res.status}`);
   }
+}
+
+// Editing sends only the fields that changed. The image is optional here,
+// unlike creating, so it is only appended when the admin picked a new one.
+export async function updateAdminEvent(
+  eventId: string,
+  event: CreateEventRequest,
+  image: File | null,
+): Promise<AdminEventDetail> {
+  const formData = new FormData();
+
+  formData.append(
+    "event",
+    new Blob([JSON.stringify(event)], { type: "application/json" }),
+  );
+  if (image) {
+    formData.append("image", image);
+  }
+
+  const res = await fetch(apiUrl(`/api/admin/events/${eventId}`), {
+    method: "PATCH",
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to update event: ${res.status}`);
+  }
+
+  return res.json();
 }

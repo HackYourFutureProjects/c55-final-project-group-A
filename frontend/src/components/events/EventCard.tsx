@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatPrice } from "@/lib/formatPrice";
 import type { Event } from "@/types/event";
 
 interface EventCardProps {
@@ -61,7 +62,7 @@ export default function EventCard({ event }: EventCardProps) {
 
           <div className="flex items-center justify-between">
             <span className="font-bold text-gray-900">
-              {event.price === 0 ? "Free" : `€${event.price}`}
+              {formatPrice(event.price)}
             </span>
             {event.goingCount !== undefined && (
               <span className="rounded-full bg-orange-50 px-3 py-1 text-sm font-medium text-orange-600">

@@ -3,7 +3,12 @@ import FilterSidebar from "@/components/filters/FilterSidebar";
 import HomeBanner from "@/components/HomeBanner";
 import Pagination from "@/components/Pagination";
 import { getCategories, getEvents } from "@/lib/api";
-import type { EventFilters, PriceFilter, TimeOfDay } from "@/types/event";
+import type {
+  EventFilters,
+  EventSort,
+  PriceFilter,
+  TimeOfDay,
+} from "@/types/event";
 
 // Skip build-time prerendering: this page fetches live events, and the
 // Docker build has no backend to reach. Also means fresh data on every visit
@@ -39,6 +44,7 @@ function toFilters(params: {
     timesOfDay: toArray(params.timesOfDay) as TimeOfDay[] | undefined,
     dateFrom: typeof params.dateFrom === "string" ? params.dateFrom : undefined,
     dateTo: typeof params.dateTo === "string" ? params.dateTo : undefined,
+    sort: params.sort as EventSort | undefined,
   };
 }
 
