@@ -34,6 +34,7 @@ public class SecurityConfig {
                                 HttpMethod.GET,
                                 "/api/events",
                                 "/api/events/*",
+                                "/api/events/*/similar",
                                 "/api/events/*/comments"
                         )
                         .permitAll()
