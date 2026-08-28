@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -9,7 +10,6 @@ import { LogoutModal } from "@/components/profile/LogoutModal";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useAuth } from "@/context/AuthContext";
 import { deleteCurrentUser, logout } from "@/lib/api";
-import Link from "next/link";
 
 // Page shell: ProtectedRoute redirects guests to /login
 // before any profile content is rendered

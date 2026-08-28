@@ -33,7 +33,7 @@ export default function Pagination({
         type="button"
         onClick={() => goToPage(page - 1)}
         disabled={page === 0}
-        className="rounded-full border border-neutral-200 px-5 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Back
       </button>
@@ -46,7 +46,7 @@ export default function Pagination({
         type="button"
         onClick={() => goToPage(page + 1)}
         disabled={!hasNext}
-        className="rounded-full border border-neutral-200 px-5 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
       </button>
