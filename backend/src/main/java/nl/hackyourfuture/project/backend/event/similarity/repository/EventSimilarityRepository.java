@@ -19,8 +19,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EventSimilarityRepository {
 
-    private final JdbcClient jdbcClient;
+    private static final int CATEGORY_WEIGHT = 55;
+    private static final int CITY_WEIGHT = 20;
+    private static final int TIME_WEIGHT = 15;
+    private static final int WEEKDAY_WEIGHT = 7;
+    private static final int PRICE_WEIGHT = 3;
 
+    private final JdbcClient jdbcClient;
 
     private static List<Category> mapCategories(
             ResultSet rs
@@ -82,7 +87,6 @@ public class EventSimilarityRepository {
                 );
             };
 
-
     public boolean existsPublishedEvent(UUID eventId) {
         String sql = """
                 SELECT EXISTS (
@@ -105,7 +109,6 @@ public class EventSimilarityRepository {
                 SELECT e.id,
                        a.city_name,
                        e.start_at,
-                       e.price,
                        ARRAY(
                            SELECT ec.category_id
                            FROM event_categories ec
@@ -128,11 +131,16 @@ public class EventSimilarityRepository {
                            )::time < TIME '18:00'
                                THEN 'AFTERNOON'
                            ELSE 'EVENING'
-                       END AS time_bucket ,
+                       END AS time_bucket,
                        EXTRACT(
                            ISODOW FROM
                            e.start_at AT TIME ZONE 'Europe/Amsterdam'
-                       ) AS weekday
+                       ) AS weekday,
+                       CASE
+                           WHEN e.price IS NULL THEN 'UNKNOWN'
+                           WHEN e.price = 0 THEN 'FREE'
+                           ELSE 'PAID'
+                       END AS price_bucket
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
                 WHERE e.id = :eventId
@@ -145,7 +153,6 @@ public class EventSimilarityRepository {
                 SELECT e.id AS candidate_id,
                        a.city_name,
                        e.start_at,
-                       e.price,
                        ARRAY(
                            SELECT ec.category_id
                            FROM event_categories ec
@@ -177,7 +184,12 @@ public class EventSimilarityRepository {
                        EXTRACT(
                            ISODOW FROM
                            e.start_at AT TIME ZONE 'Europe/Amsterdam'
-                       ) AS weekday
+                       ) AS weekday,
+                       CASE
+                           WHEN e.price IS NULL THEN 'UNKNOWN'
+                           WHEN e.price = 0 THEN 'FREE'
+                           ELSE 'PAID'
+                       END AS price_bucket
                 FROM events e
                 JOIN addresses a ON a.id = e.address_id
                 CROSS JOIN LATERAL (
@@ -209,35 +221,28 @@ public class EventSimilarityRepository {
                                0
                            ),
                            0
-                       ) * 55 AS category_score, 
+                       ) * :categoryWeight AS category_score,
                        CASE
-                               WHEN lower(trim(ec.city_name))
-                                    = lower(trim(se.city_name))
-                                   THEN 20
-                               ELSE 0
-                           END AS city_score,
-                           CASE
-                               WHEN ec.time_bucket = se.time_bucket
-                                   THEN 15
-                               ELSE 0
-                           END AS time_score ,
-                           CASE
-                               WHEN ec.weekday = se.weekday
-                                   THEN 7
-                               ELSE 0
-                           END AS weekday_score,
-                           CASE
-                               WHEN ec.price IS NULL
-                                    AND se.price IS NULL
-                                   THEN 3
-                               WHEN ec.price = 0
-                                    AND se.price = 0
-                                   THEN 3
-                               WHEN ec.price > 0
-                                    AND se.price > 0
-                                   THEN 3
-                               ELSE 0
-                           END AS price_score
+                           WHEN lower(trim(ec.city_name))
+                                = lower(trim(se.city_name))
+                               THEN :cityWeight
+                           ELSE 0
+                       END AS city_score,
+                       CASE
+                           WHEN ec.time_bucket = se.time_bucket
+                               THEN :timeWeight
+                           ELSE 0
+                       END AS time_score,
+                       CASE
+                           WHEN ec.weekday = se.weekday
+                               THEN :weekdayWeight
+                           ELSE 0
+                       END AS weekday_score,
+                       CASE
+                           WHEN ec.price_bucket = se.price_bucket
+                               THEN :priceWeight
+                           ELSE 0
+                       END AS price_score
                 FROM eligible_candidates ec
                 CROSS JOIN source_event se
                 CROSS JOIN LATERAL (
@@ -268,11 +273,11 @@ public class EventSimilarityRepository {
                            + ss.time_score
                            + ss.weekday_score
                            + ss.price_score
-            
                        ) AS similarity_score
                 FROM signal_scores ss
             )
             """;
+
     private static final String RANKED_CANDIDATES_CTE = """
             ranked_candidates AS (
                 SELECT *
@@ -308,33 +313,33 @@ public class EventSimilarityRepository {
                        WHERE ec.event_id = e.id
                        ORDER BY c.name
                    ) AS category_names,
-                     e.start_at,
-                          e.end_at,
-                          e.price,
-                          a.street,
-                          a.house_number,
-                          a.postal_code,
-                          a.city_name,
-                          a.province,
-                          a.latitude,
-                          a.longitude,
-                          (
-                              SELECT ei.image_url
-                              FROM event_images ei
-                              WHERE ei.event_id = e.id
-                              ORDER BY ei.created_at, ei.id
-                              LIMIT 1
-                          ) AS image_url,
-                          rc.going_count,
-                          e.is_cancelled,
-                          rc.similarity_score
-                   FROM ranked_candidates rc
-                   JOIN events e ON e.id = rc.candidate_id
-                   JOIN addresses a ON a.id = e.address_id
-                   ORDER BY rc.similarity_score DESC,
-                            rc.popularity_score DESC,
-                            e.start_at ASC,
-                            e.id ASC
+                   e.start_at,
+                   e.end_at,
+                   e.price,
+                   a.street,
+                   a.house_number,
+                   a.postal_code,
+                   a.city_name,
+                   a.province,
+                   a.latitude,
+                   a.longitude,
+                   (
+                       SELECT ei.image_url
+                       FROM event_images ei
+                       WHERE ei.event_id = e.id
+                       ORDER BY ei.created_at, ei.id
+                       LIMIT 1
+                   ) AS image_url,
+                   rc.going_count,
+                   e.is_cancelled,
+                   rc.similarity_score
+            FROM ranked_candidates rc
+            JOIN events e ON e.id = rc.candidate_id
+            JOIN addresses a ON a.id = e.address_id
+            ORDER BY rc.similarity_score DESC,
+                     rc.popularity_score DESC,
+                     e.start_at ASC,
+                     e.id ASC
             """.formatted(
             SOURCE_EVENT_CTE,
             ELIGIBLE_CANDIDATES_CTE,
@@ -342,7 +347,6 @@ public class EventSimilarityRepository {
             TOTAL_SCORE_CTE,
             RANKED_CANDIDATES_CTE
     );
-
 
     public List<SimilarEventCandidate> findSimilarEvents(
             UUID eventId,
@@ -352,8 +356,12 @@ public class EventSimilarityRepository {
                 .sql(FIND_SIMILAR_EVENTS_SQL)
                 .param("eventId", eventId)
                 .param("limit", limit)
+                .param("categoryWeight", CATEGORY_WEIGHT)
+                .param("cityWeight", CITY_WEIGHT)
+                .param("timeWeight", TIME_WEIGHT)
+                .param("weekdayWeight", WEEKDAY_WEIGHT)
+                .param("priceWeight", PRICE_WEIGHT)
                 .query(SIMILAR_EVENT_ROW_MAPPER)
                 .list();
-
     }
 }
