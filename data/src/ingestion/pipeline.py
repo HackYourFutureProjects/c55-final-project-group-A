@@ -33,6 +33,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("pipeline")
 
+# Landing-folder name under LANDING_PREFIX (local / aca-dev / prod raw).
+# Same in every environment for a single source — not an env var.
+SOURCE_NAME = "events"
+
 
 class MissingSetting(RuntimeError):
     """A required environment variable is not set."""
@@ -117,7 +121,7 @@ def run(run_date: str | None = None, local_dir: Path | None = None) -> int:
 
     # Land what the source sent, not what validation produced. Parsing is a
     # gate, not a transformation. See the README, "Raw means raw".
-    path = blob_path(config.source_name, run_date, config.landing_prefix)
+    path = blob_path(SOURCE_NAME, run_date, config.landing_prefix)
 
     if local_dir is not None:
         landed = land_local_json(local_dir, path, records)
@@ -136,11 +140,15 @@ def run(run_date: str | None = None, local_dir: Path | None = None) -> int:
         container=config.landing_container,
     )
 
+    landing_root = os.getenv("LANDING_PATH")
+    # Team A LANDING_PATH is the source folder itself (…/events), matching the
+    # Ticketmaster staging contract. Do not append SOURCE_NAME again.
+    readable = landing_root or "(set LANDING_PATH so dbt reads what you just wrote)"
     logger.info(
         "Pipeline finished: %d landed, %d rejected, readable at %s",
         landed,
         rejected,
-        os.getenv("LANDING_PATH", "(set LANDING_PATH so dbt reads what you just wrote)"),
+        readable,
     )
     return landed
 
