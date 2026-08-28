@@ -2,7 +2,7 @@
 
 "use client";
 
-import { type SubmitEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 import { getCategories } from "@/lib/api";
 import type { AdminEventDetail, CreateEventRequest } from "@/types/admin";
@@ -98,7 +98,9 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
       await onSubmit(
         {
           title: String(formData.get("title")),
-          description: String(formData.get("description")) || null,
+          description: initialEvent
+            ? String(formData.get("description"))
+            : String(formData.get("description")) || null,
           categoryIds: selectedCategoryIds,
           address,
           // datetime-local has no timezone, so we convert to a full ISO string
@@ -209,7 +211,9 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
             type="datetime-local"
             required
             defaultValue={
-              initialEvent ? toLocalInputValue(initialEvent.startAt) : undefined
+              initialEvent?.endAt
+                ? toLocalInputValue(initialEvent.endAt)
+                : undefined
             }
             className={INPUT}
           />
@@ -255,7 +259,11 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
             />
           </label>
           <span className="text-neutral-500 text-sm">
-            {image ? image.name : "No image selected"}
+            {image
+              ? image.name
+              : initialEvent
+                ? "Keep current image"
+                : "No image selected"}
           </span>
         </div>
       </div>
@@ -265,23 +273,34 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
           {error}
         </p>
       )}
-
       <div className="flex justify-end gap-3 border-t pt-5">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50 disabled:opacity-50"
-        >
-          {isSubmitting ? "Saving..." : "Save as draft"}
-        </button>
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={(e) => handleSubmit(e, true)}
-          className="rounded-full bg-neutral-900 px-5 py-2 font-semibold text-white text-sm hover:bg-neutral-800 disabled:opacity-50"
-        >
-          Publish now
-        </button>
+        {initialEvent ? (
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-full bg-neutral-900 px-5 py-2 font-semibold text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
+          >
+            {isSubmitting ? "Saving..." : "Save changes"}
+          </button>
+        ) : (
+          <>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50 disabled:opacity-50"
+            >
+              {isSubmitting ? "Saving..." : "Save as draft"}
+            </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={(e) => handleSubmit(e, true)}
+              className="rounded-full bg-neutral-900 px-5 py-2 font-semibold text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
+            >
+              Publish now
+            </button>
+          </>
+        )}
       </div>
     </form>
   );
