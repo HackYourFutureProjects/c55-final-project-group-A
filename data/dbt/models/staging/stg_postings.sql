@@ -5,9 +5,8 @@
 -- which file a row came from, which is the first thing you want when one day
 -- looks wrong.
 --
--- Change: rename this model and its columns to your own domain. LANDING_PATH
--- is the parent prefix; this model hardcodes the source folder (`postings`)
--- so a second source can be another staging model on the same parent.
+-- Change: rename this model and its columns to your own domain. The folder it
+-- reads comes from LANDING_PATH in your .env, not from anything in here.
 --
 -- This model is a table, not a view, and that is a deliberate choice. A view
 -- would re-read every file in the landing folder for each model and each test
@@ -31,9 +30,19 @@ with
             _metadata.file_path as source_file,
             _metadata.file_modification_time as ingested_at
         from
+            -- You do not need a raw table. `read_files` reads the JSON straight
+            -- out of the landing folder, so there is no CREATE TABLE step to
+            -- write and nothing to keep in sync: this staging model is the
+            -- first thing that touches the data.
+            --
+            -- It handles a folder whose files do not all have the same shape:
+            -- it infers one unified schema across every file it reads. A field
+            -- only present in newer files is simply empty for the older rows
+            -- rather than failing the read, so a source that adds a field next
+            -- month needs no backfill and no change here.
+            --
+            -- https://docs.databricks.com/aws/en/sql/language-manual/functions/read_files
             read_files(
-                -- Source folder is hardcoded here (matches SOURCE_NAME in
-                -- pipeline.py). LANDING_PATH is only the parent prefix.
                 '{{ var("landing_path") }}/postings',
                 format => 'json',
                 schemahints
