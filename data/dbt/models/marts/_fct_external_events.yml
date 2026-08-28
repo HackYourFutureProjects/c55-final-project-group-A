@@ -116,6 +116,7 @@ models:
                   - offsale
                   - rescheduled
                   - cancelled
+                  - postponed
 
       - name: is_cancelled
         description: True when the Ticketmaster status is cancelled.

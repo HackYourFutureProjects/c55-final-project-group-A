@@ -38,6 +38,7 @@ models:
                   - offsale
                   - rescheduled
                   - cancelled
+                  - postponed
 
       - name: segment_name
         description: >
