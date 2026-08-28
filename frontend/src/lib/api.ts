@@ -4,17 +4,15 @@ import type {
   CreateEventRequest,
 } from "@/types/admin";
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
+import type { Comment, CommentPage, CommentRequest } from "@/types/comment";
 import type {
   Category,
   EventDetail,
   EventFilters,
   EventPage,
 } from "@/types/event";
-
 import type { LocationSuggestion } from "@/types/location";
-
 import type { UpdateUserRequest, User } from "@/types/user";
-import type { Comment, CommentPage, CommentRequest } from "@/types/comment";
 
 function apiUrl(path: string) {
   if (typeof window === "undefined") {

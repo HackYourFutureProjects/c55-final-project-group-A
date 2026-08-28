@@ -1,11 +1,11 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import CommentList from "@/components/comments/CommentList";
 import EventActions from "@/components/events/EventActions";
 import EventMap from "@/components/events/EventMap";
 import { getEventById, getGoingEvents, getSavedEvents } from "@/lib/api";
 import { formatPrice } from "@/lib/formatPrice";
 import type { EventStatus } from "@/types/event";
-import CommentList from "@/components/comments/CommentList";
 
 interface EventDetailPageProps {
   params: Promise<{ id: string }>;
