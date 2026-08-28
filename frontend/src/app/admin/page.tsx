@@ -49,7 +49,7 @@ function AdminContent() {
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
-      <h1 className="font-semibold text-3xl">Dashboard</h1>
+      <h1 className="font-semibold text-3xl">Create event</h1>
       <p className="mt-1 text-neutral-500 text-sm">
         Create a new event and review what was added recently.
       </p>

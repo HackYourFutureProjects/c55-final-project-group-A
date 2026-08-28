@@ -109,6 +109,13 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
         image,
         publishNow,
       );
+      // Only clear when creating — when editing, the values should stay
+      if (!initialEvent) {
+        form.reset();
+        setSelectedCategoryIds([]);
+        setLocation(null);
+        setImage(null);
+      }
     } catch (submitError) {
       setError(
         submitError instanceof Error
