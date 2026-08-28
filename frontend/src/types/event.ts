@@ -15,7 +15,7 @@ export interface Event {
   cityName: string;
   province: string | null;
   imageUrl: string | null;
-  goingCount: number;
+  goingCount?: number;
   cancelled: boolean;
   latitude: number;
   longitude: number;
