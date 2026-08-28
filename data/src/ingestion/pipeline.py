@@ -141,11 +141,9 @@ def run(run_date: str | None = None, local_dir: Path | None = None) -> int:
     )
 
     landing_root = os.getenv("LANDING_PATH")
-    readable = (
-        f"{landing_root.rstrip('/')}/{SOURCE_NAME}"
-        if landing_root
-        else "(set LANDING_PATH so dbt reads what you just wrote)"
-    )
+    # Team A LANDING_PATH is the source folder itself (…/events), matching the
+    # Ticketmaster staging contract. Do not append SOURCE_NAME again.
+    readable = landing_root or "(set LANDING_PATH so dbt reads what you just wrote)"
     logger.info(
         "Pipeline finished: %d landed, %d rejected, readable at %s",
         landed,

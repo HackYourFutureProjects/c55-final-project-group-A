@@ -31,8 +31,9 @@ def databricks_environment_dev() -> dict[str, str]:
     from pipeline_dag import secret, setting
 
     catalog = setting("DATABRICKS_CATALOG")
-    # Parent prefix only; staging appends /postings.
-    landing_default = f"/Volumes/{catalog}/landing/dev/aca-dev"
+    # Full source folder (events). Matches Ticketmaster staging that reads
+    # LANDING_PATH as the folder itself (see PR #58), not a parent prefix.
+    landing_default = f"/Volumes/{catalog}/landing/dev/aca-dev/events"
     where = {
         "DATABRICKS_HOST": setting("DATABRICKS_HOST"),
         "DATABRICKS_HTTP_PATH": setting("DATABRICKS_HTTP_PATH"),

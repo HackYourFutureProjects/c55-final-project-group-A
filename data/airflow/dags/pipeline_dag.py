@@ -68,7 +68,7 @@ class PipelineProfile:
     dbt_schema_var: str
     dbt_schema_default: str
     landing_path_var: str
-    landing_path_suffix: str  # landing/<volume>/<prefix> under the catalog (no source folder)
+    landing_path_suffix: str  # under catalog; Team A includes /events (PR #58 contract)
     ingest_mode_default: str
     backend_pg_user_var: str
     backend_pg_user_default: str
@@ -88,7 +88,7 @@ PROD_PROFILE = PipelineProfile(
     dbt_schema_var="DBT_SCHEMA",
     dbt_schema_default="analytics",
     landing_path_var="LANDING_PATH",
-    landing_path_suffix="landing/prod",
+    landing_path_suffix="landing/prod/events",
     ingest_mode_default="aca",
     backend_pg_user_var="BACKEND_PG_USER",
     backend_pg_user_default="analytics_user",
