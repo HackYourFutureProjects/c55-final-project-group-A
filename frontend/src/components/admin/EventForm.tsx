@@ -37,7 +37,7 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
   const [image, setImage] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [resetSignal, setResetSignal] = useState(0);
   useEffect(() => {
     getCategories()
       .then(setCategories)
@@ -111,12 +111,13 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
         image,
         publishNow,
       );
-      // Only clear when creating — when editing, the values should stay
+
       if (!initialEvent) {
         form.reset();
         setSelectedCategoryIds([]);
         setLocation(null);
         setImage(null);
+        setResetSignal((count) => count + 1);
       }
     } catch (submitError) {
       setError(
@@ -194,6 +195,7 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
             onSelect={setLocation}
             placeholder="Search for an address"
             hint="Pick the exact address of the venue"
+            resetSignal={resetSignal}
           />
         </div>
         {location && (
@@ -211,8 +213,8 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
             type="datetime-local"
             required
             defaultValue={
-              initialEvent?.endAt
-                ? toLocalInputValue(initialEvent.endAt)
+              initialEvent?.startAt
+                ? toLocalInputValue(initialEvent.startAt)
                 : undefined
             }
             className={INPUT}
@@ -226,7 +228,9 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
             type="datetime-local"
             required
             defaultValue={
-              initialEvent ? toLocalInputValue(initialEvent.endAt) : undefined
+              initialEvent?.endAt
+                ? toLocalInputValue(initialEvent.endAt)
+                : undefined
             }
             className={INPUT}
           />

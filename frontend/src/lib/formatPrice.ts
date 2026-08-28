@@ -3,5 +3,5 @@
 export function formatPrice(price: number | null) {
   if (price === null) return "Price unknown";
   if (price === 0) return "Free";
-  return `€${price}`;
+  return `€${price.toFixed(2)}`;
 }
