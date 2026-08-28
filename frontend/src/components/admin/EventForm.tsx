@@ -278,7 +278,7 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-full bg-neutral-900 px-5 py-2 font-semibold text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="rounded-full bg-orange-600 px-5 py-2 font-semibold text-sm text-white hover:bg-orange-700 disabled:opacity-50"
           >
             {isSubmitting ? "Saving..." : "Save changes"}
           </button>
@@ -295,7 +295,7 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
               type="button"
               disabled={isSubmitting}
               onClick={(e) => handleSubmit(e, true)}
-              className="rounded-full bg-neutral-900 px-5 py-2 font-semibold text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
+              className="rounded-full bg-orange-600 px-5 py-2 font-semibold text-sm text-white hover:bg-orange-700 disabled:opacity-50"
             >
               Publish now
             </button>

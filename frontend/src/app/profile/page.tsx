@@ -105,7 +105,7 @@ function ProfileContent() {
           </p>
           <Link
             href="/admin"
-            className="mt-4 inline-block rounded-full bg-neutral-900 px-5 py-2 font-semibold text-sm text-white hover:bg-neutral-800"
+            className="mt-4 inline-block rounded-full bg-orange-600 px-5 py-2 font-semibold text-sm text-white hover:bg-orange-700"
           >
             Go to dashboard
           </Link>
