@@ -5,6 +5,7 @@ import EventMap from "@/components/events/EventMap";
 import { getEventById, getGoingEvents, getSavedEvents } from "@/lib/api";
 import { formatPrice } from "@/lib/formatPrice";
 import type { EventStatus } from "@/types/event";
+import CommentList from "@/components/comments/CommentList";
 
 interface EventDetailPageProps {
   params: Promise<{ id: string }>;
@@ -218,6 +219,7 @@ export default async function EventDetailPage({
             </div>
           </div>
         </div>
+        <CommentList eventId={event.id} />
       </div>
     </main>
   );
