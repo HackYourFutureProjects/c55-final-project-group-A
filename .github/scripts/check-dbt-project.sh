@@ -13,6 +13,10 @@
 #   LANDING_PATH — optional; defaults from catalog
 #   FILES — optional; space/newline-separated SQL paths relative to data/
 #             (same as the sqlfmt step). When empty, SQLFluff is skipped.
+#
+# Expects the workflow install step to run:
+#   uv sync --extra dev --extra sync --extra dbt
+# (this script does not re-sync — a partial sync would drop psycopg before pytest).
 
 set -euo pipefail
 
@@ -44,7 +48,6 @@ export LANDING_PATH="${LANDING_PATH:-/Volumes/${DATABRICKS_CATALOG}/landing/prod
 export DATABRICKS_TOKEN="${DATABRICKS_TOKEN:-ci}"
 
 cd "${DATA}"
-uv sync --extra dev --extra dbt -q
 
 echo "Running dbt parse..."
 uv run dbt parse --project-dir dbt --profiles-dir dbt

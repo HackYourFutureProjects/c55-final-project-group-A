@@ -73,7 +73,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./data
-        run: uv sync --extra dev --extra sync
+        run: uv sync --extra dev --extra sync --extra dbt
 
       # Lint/format/types only the files this change touches under data/. A
       # full-tree `ruff check .` would fail a clean DAG PR (or merge) because of
