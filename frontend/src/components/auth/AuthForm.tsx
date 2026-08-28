@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type SubmitEvent, useState } from "react";
+import { type SubmitEvent, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { login, register } from "@/lib/api";
 
@@ -17,6 +17,13 @@ export function AuthForm() {
   const { refresh } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function switchTab(nextTab: AuthTab) {
+    setTab(nextTab);
+    setError(null);
+    formRef.current?.reset();
+  }
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,7 +60,7 @@ export function AuthForm() {
             <div className="inline-flex rounded-full bg-neutral-100 p-1">
               <button
                 type="button"
-                onClick={() => setTab("login")}
+                onClick={() => switchTab("login")}
                 className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
                   tab === "login"
                     ? "bg-orange-600 shadow text-white"
@@ -64,7 +71,7 @@ export function AuthForm() {
               </button>
               <button
                 type="button"
-                onClick={() => setTab("register")}
+                onClick={() => switchTab("register")}
                 className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
                   tab === "register"
                     ? "bg-orange-600 shadow text-white"
@@ -92,7 +99,11 @@ export function AuthForm() {
             </>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-5"
+          >
             {tab === "register" && (
               <div>
                 <label
