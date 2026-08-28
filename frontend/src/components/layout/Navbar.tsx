@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const { user } = useAuth();
+  const pathname = usePathname();
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-8">
@@ -17,15 +19,36 @@ export function Navbar() {
         </div>
 
         <nav className="flex items-center gap-6 text-sm font-medium text-neutral-600">
-          <Link href="/" className="hover:text-orange-600">
+          <Link
+            href="/"
+            className={
+              pathname === "/"
+                ? "font-semibold text-orange-600"
+                : "hover:text-orange-600"
+            }
+          >
             Home
           </Link>
-          <Link href="/feedback" className="hover:text-orange-600">
+          <Link
+            href="/feedback"
+            className={
+              pathname === "/feedback"
+                ? "font-semibold text-orange-600"
+                : "hover:text-orange-600"
+            }
+          >
             Feedback
           </Link>
           {/* Only admins see the link back into the admin area */}
           {user?.role === "admin" && (
-            <Link href="/admin" className="hover:text-orange-600">
+            <Link
+              href="/admin"
+              className={
+                pathname.startsWith("/admin")
+                  ? "font-semibold text-orange-600"
+                  : "hover:text-orange-600"
+              }
+            >
               Dashboard
             </Link>
           )}

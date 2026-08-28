@@ -18,6 +18,11 @@ interface EventFormProps {
   ) => Promise<void>;
 }
 
+// Shared classes so every field looks the same
+const LABEL = "block font-semibold text-sm";
+const INPUT =
+  "mt-2 w-full rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:border-neutral-900";
+
 // datetime-local wants "2026-09-13T21:00" — the ISO string without the timezone part
 function toLocalInputValue(isoDate: string) {
   return isoDate.slice(0, 16);
@@ -104,6 +109,13 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
         image,
         publishNow,
       );
+      // Only clear when creating — when editing, the values should stay
+      if (!initialEvent) {
+        form.reset();
+        setSelectedCategoryIds([]);
+        setLocation(null);
+        setImage(null);
+      }
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -116,8 +128,8 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
   }
 
   return (
-    <form onSubmit={(e) => handleSubmit(e, false)}>
-      <label>
+    <form className="space-y-6" onSubmit={(e) => handleSubmit(e, false)}>
+      <label className={LABEL}>
         Title
         <input
           name="title"
@@ -125,72 +137,99 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
           required
           maxLength={255}
           defaultValue={initialEvent?.title}
+          className={INPUT}
         />
       </label>
 
-      <label>
+      <label className={LABEL}>
         Description
         <textarea
           name="description"
+          rows={4}
           defaultValue={initialEvent?.description ?? ""}
+          className={`${INPUT} resize-y`}
         />
       </label>
 
       <fieldset>
-        <legend>Categories</legend>
-        {categories.map((category) => (
-          <label key={category.id}>
-            <input
-              type="checkbox"
-              checked={selectedCategoryIds.includes(category.id)}
-              onChange={() => toggleCategory(category.id)}
-            />
-            {category.name}
-          </label>
-        ))}
+        <legend className={LABEL}>Categories</legend>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {categories.map((category) => {
+            const isSelected = selectedCategoryIds.includes(category.id);
+            return (
+              <label
+                key={category.id}
+                className={`cursor-pointer rounded-full px-4 py-2 font-semibold text-sm ${
+                  isSelected
+                    ? "bg-neutral-900 text-white ring-2 ring-neutral-900 ring-offset-1"
+                    : "border border-neutral-200 hover:bg-neutral-50"
+                }`}
+              >
+                {/* The checkbox stays for keyboard and screen readers, just not visible */}
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={isSelected}
+                  onChange={() => toggleCategory(category.id)}
+                />
+                {category.name}
+              </label>
+            );
+          })}
+        </div>
       </fieldset>
 
       <div>
-        <p>Location</p>
+        <p className={LABEL}>Location</p>
         {initialEvent && !location && (
-          <p>
+          <p className="mt-2 text-neutral-500 text-sm">
             Current: {initialEvent.street} {initialEvent.houseNumber},{" "}
             {initialEvent.cityName}
           </p>
         )}
-        <LocationAutocomplete
-          onSelect={setLocation}
-          placeholder="Search for an address"
-          hint="Pick the exact address of the venue"
-        />
-        {location && <p>Selected: {location.label}</p>}
+        <div className="mt-2">
+          <LocationAutocomplete
+            onSelect={setLocation}
+            placeholder="Search for an address"
+            hint="Pick the exact address of the venue"
+          />
+        </div>
+        {location && (
+          <p className="mt-2 text-neutral-500 text-sm">
+            Selected: {location.label}
+          </p>
+        )}
       </div>
 
-      <label>
-        Starts at
-        <input
-          name="startAt"
-          type="datetime-local"
-          required
-          defaultValue={
-            initialEvent ? toLocalInputValue(initialEvent.startAt) : undefined
-          }
-        />
-      </label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className={LABEL}>
+          Starts at
+          <input
+            name="startAt"
+            type="datetime-local"
+            required
+            defaultValue={
+              initialEvent ? toLocalInputValue(initialEvent.startAt) : undefined
+            }
+            className={INPUT}
+          />
+        </label>
 
-      <label>
-        Ends at
-        <input
-          name="endAt"
-          type="datetime-local"
-          required
-          defaultValue={
-            initialEvent ? toLocalInputValue(initialEvent.endAt) : undefined
-          }
-        />
-      </label>
+        <label className={LABEL}>
+          Ends at
+          <input
+            name="endAt"
+            type="datetime-local"
+            required
+            defaultValue={
+              initialEvent ? toLocalInputValue(initialEvent.endAt) : undefined
+            }
+            className={INPUT}
+          />
+        </label>
+      </div>
 
-      <label>
+      <label className={`${LABEL} sm:max-w-xs`}>
         Price (€)
         <input
           name="price"
@@ -199,30 +238,51 @@ export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
           step="0.01"
           required
           defaultValue={initialEvent?.price ?? 0}
+          className={INPUT}
         />
       </label>
 
-      <label>
-        Image
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={(e) => setImage(e.target.files?.[0] ?? null)}
-        />
-      </label>
+      <div>
+        <p className={LABEL}>Image</p>
+        <div className="mt-2 flex items-center gap-4">
+          <label className="cursor-pointer rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50">
+            Choose image
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+              className="hidden"
+            />
+          </label>
+          <span className="text-neutral-500 text-sm">
+            {image ? image.name : "No image selected"}
+          </span>
+        </div>
+      </div>
 
-      {error && <p>{error}</p>}
+      {error && (
+        <p className="rounded-lg bg-red-50 px-4 py-3 font-semibold text-red-700 text-sm">
+          {error}
+        </p>
+      )}
 
-      <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Saving..." : "Save as draft"}
-      </button>
-      <button
-        type="button"
-        disabled={isSubmitting}
-        onClick={(e) => handleSubmit(e, true)}
-      >
-        Publish now
-      </button>
+      <div className="flex justify-end gap-3 border-t pt-5">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50 disabled:opacity-50"
+        >
+          {isSubmitting ? "Saving..." : "Save as draft"}
+        </button>
+        <button
+          type="button"
+          disabled={isSubmitting}
+          onClick={(e) => handleSubmit(e, true)}
+          className="rounded-full bg-neutral-900 px-5 py-2 font-semibold text-white text-sm hover:bg-neutral-800 disabled:opacity-50"
+        >
+          Publish now
+        </button>
+      </div>
     </form>
   );
 }

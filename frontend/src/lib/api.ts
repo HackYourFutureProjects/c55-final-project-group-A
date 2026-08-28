@@ -333,3 +333,39 @@ export async function createAdminEvent(
 
   return res.json();
 }
+
+// Publish, cancel and delete
+export async function publishAdminEvent(eventId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/admin/events/${eventId}/publish`), {
+    method: "PATCH",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(
+      problem?.detail ?? `Failed to publish event: ${res.status}`,
+    );
+  }
+}
+
+export async function cancelAdminEvent(eventId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/admin/events/${eventId}/cancel`), {
+    method: "PATCH",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to cancel event: ${res.status}`);
+  }
+}
+
+export async function deleteAdminEvent(eventId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/admin/events/${eventId}`), {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to delete event: ${res.status}`);
+  }
+}
