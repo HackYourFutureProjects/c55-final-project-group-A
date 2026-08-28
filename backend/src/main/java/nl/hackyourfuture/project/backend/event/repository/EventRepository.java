@@ -35,8 +35,19 @@ public class EventRepository {
             """;
 
     private static final String DATE_FILTER_CLAUSE = """
-              AND e.start_at < :dateToExclusive
-              AND e.end_at > :dateFromStart
+              AND (
+                  (
+                      e.end_at IS NOT NULL
+                      AND e.start_at < :dateToExclusive
+                      AND e.end_at > :dateFromStart
+                  )
+                  OR
+                  (
+                      e.end_at IS NULL
+                      AND e.start_at >= :dateFromStart
+                      AND e.start_at < :dateToExclusive
+                  )
+              )
             """;
 
     private static final ZoneId EVENT_TIME_ZONE =
@@ -85,6 +96,7 @@ public class EventRepository {
               AND (
                   (:price = 'FREE' AND e.price = 0)
                   OR (:price = 'PAID' AND e.price > 0)
+                  OR (:price = 'UNKNOWN' AND e.price IS NULL)
               )
             """;
 
@@ -112,7 +124,14 @@ public class EventRepository {
         String sql = """
                 WHERE e.is_published = TRUE
                   AND e.is_cancelled = FALSE
-                  AND e.end_at > now()
+                  AND (
+                      e.end_at > now()
+                      OR (
+                          e.end_at IS NULL
+                          AND (e.start_at AT TIME ZONE 'Europe/Amsterdam')::date
+                              >= (now() AT TIME ZONE 'Europe/Amsterdam')::date
+                      )
+                  )
                   AND (
                       e.title ILIKE '%' || COALESCE(:search, '') || '%'
                       OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
@@ -206,8 +225,8 @@ public class EventRepository {
         return switch (sort) {
             case START_TIME_ASC -> " ORDER BY e.start_at ASC, e.id ASC ";
             case POPULARITY_DESC -> " ORDER BY popularity_score DESC, e.start_at ASC, e.id ASC ";
-            case PRICE_ASC -> " ORDER BY e.price ASC, e.start_at ASC, e.id ASC ";
-            case PRICE_DESC -> " ORDER BY e.price DESC, e.start_at ASC, e.id ASC ";
+            case PRICE_ASC -> " ORDER BY e.price ASC NULLS LAST, e.start_at ASC, e.id ASC ";
+            case PRICE_DESC -> " ORDER BY e.price DESC NULLS LAST, e.start_at ASC, e.id ASC ";
         };
     }
 
