@@ -4,15 +4,14 @@ import type {
   CreateEventRequest,
 } from "@/types/admin";
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
+import type { Comment, CommentPage, CommentRequest } from "@/types/comment";
 import type {
   Category,
   EventDetail,
   EventFilters,
   EventPage,
 } from "@/types/event";
-
 import type { LocationSuggestion } from "@/types/location";
-
 import type { UpdateUserRequest, User } from "@/types/user";
 
 function apiUrl(path: string) {
@@ -374,8 +373,6 @@ export async function deleteAdminEvent(eventId: string): Promise<void> {
   }
 }
 
-// Editing sends only the fields that changed. The image is optional here,
-// unlike creating, so it is only appended when the admin picked a new one.
 export async function updateAdminEvent(
   eventId: string,
   event: CreateEventRequest,
@@ -403,4 +400,129 @@ export async function updateAdminEvent(
   }
 
   return res.json();
+}
+
+// --- Comments ---
+
+export async function getEventComments(eventId: string): Promise<CommentPage> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/comments?size=100`), {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(
+      problem?.detail ?? `Failed to load comments: ${res.status}`,
+    );
+  }
+  return res.json();
+}
+
+export async function createComment(
+  eventId: string,
+  data: CommentRequest,
+): Promise<Comment> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/comments`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to post comment: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function updateComment(
+  commentId: string,
+  data: CommentRequest,
+): Promise<Comment> {
+  const res = await fetch(apiUrl(`/api/comments/${commentId}`), {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(
+      problem?.detail ?? `Failed to update comment: ${res.status}`,
+    );
+  }
+  return res.json();
+}
+
+// 204 No Content, so there is nothing to parse
+export async function deleteComment(commentId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/comments/${commentId}`), {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(
+      problem?.detail ?? `Failed to delete comment: ${res.status}`,
+    );
+  }
+}
+
+// --- Admin comment actions ---
+
+export async function deleteCommentAsAdmin(commentId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/admin/comments/${commentId}`), {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(
+      problem?.detail ?? `Failed to delete comment: ${res.status}`,
+    );
+  }
+}
+
+export async function createAdminReply(
+  commentId: string,
+  data: CommentRequest,
+): Promise<Comment> {
+  const res = await fetch(apiUrl(`/api/admin/comments/${commentId}/reply`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to post reply: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function updateAdminReply(
+  commentId: string,
+  data: CommentRequest,
+): Promise<Comment> {
+  const res = await fetch(apiUrl(`/api/admin/comments/${commentId}/reply`), {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to update reply: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function deleteAdminReply(commentId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/admin/comments/${commentId}/reply`), {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to delete reply: ${res.status}`);
+  }
 }

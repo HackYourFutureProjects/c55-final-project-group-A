@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import CommentList from "@/components/comments/CommentList";
 import EventActions from "@/components/events/EventActions";
 import EventMap from "@/components/events/EventMap";
 import { getEventById, getGoingEvents, getSavedEvents } from "@/lib/api";
@@ -218,6 +219,7 @@ export default async function EventDetailPage({
             </div>
           </div>
         </div>
+        <CommentList eventId={event.id} />
       </div>
     </main>
   );
