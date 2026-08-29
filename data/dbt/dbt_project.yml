@@ -16,8 +16,7 @@ macro-paths: ["macros"]
 # reads a half-written file somebody else is producing. See the README,
 # "Developing locally".
 vars:
-  # Team-a default; override with LANDING_PATH in data/.env (team_b, team_c, …).
-  landing_path: "{{ env_var('LANDING_PATH', '/Volumes/team_a/landing/prod/postings') }}"
+  landing_path: "{{ env_var('LANDING_PATH', '/Volumes/team_a/landing/prod/events') }}"
 
 clean-targets:
   - "target"
@@ -26,31 +25,15 @@ clean-targets:
 models:
   final_project:
     staging:
-      # Tables, not views, because staging reads files rather than a warehouse
-      # table. A view is a stored query, not a stored result: every statement
-      # that names it re-runs its `read_files`. Nine separate queries select
-      # from this model per `dbt build` (6 column tests, 2 downstream models,
-      # 1 relationship test), so the landing folder is scanned nine times
-      # instead of once. As a table it is built once and the rest read the
-      # result. See the header of stg_postings.sql.
+      # Staging is materialized as a table because it reads every raw JSON file
+      # in the landing folder. The files are scanned once per dbt run, while
+      # downstream models and tests query the resulting table.
       +materialized: table
     intermediate:
-      # Views here: intermediate models select from the staging table, not from
-      # files, so re-running one is cheap. They cost nothing to store and you
-      # can query them while working out why a mart looks wrong. `ephemeral` is
-      # the other common choice: it pastes the SQL into whatever selects it,
-      # which is tidier in the warehouse but leaves you nothing to inspect when
-      # a number is off. While you are learning, being able to select from it
-      # is worth more.
+      # Intermediate models contain reusable business transformations between
+      # staging and the backend-facing marts. Views remain easy to inspect
+      # without storing another physical copy of the data.
       +materialized: view
+
     marts:
       +materialized: table
-      # Optional, and off. It calls an LLM, so it needs an API key in a secret
-      # scope before it can run at all, and a `dbt build` that fails for a team
-      # who never asked for it would be worse than useless. Set `enabled: true`
-      # and your own `secret_scope` when your team wants it. Disabled models are
-      # parsed and then ignored: it costs nothing to leave this here.
-      # See ../optional/README.md.
-      fct_title_discipline:
-        +enabled: false
-        +secret_scope: team_a  # your catalog name: team_b, team_c, team_d
