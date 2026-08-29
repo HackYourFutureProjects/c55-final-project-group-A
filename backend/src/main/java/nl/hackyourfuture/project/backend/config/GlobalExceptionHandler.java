@@ -7,6 +7,7 @@ import nl.hackyourfuture.project.backend.event.comment.exceptions.AdminReplyNotF
 import nl.hackyourfuture.project.backend.event.comment.exceptions.CommentNotFoundException;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
 import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
+import nl.hackyourfuture.project.backend.feedback.FeedbackNotFoundException;
 import nl.hackyourfuture.project.backend.location.ExternalServiceException;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
@@ -221,6 +222,20 @@ public class GlobalExceptionHandler {
 
         return problem;
     }
+
+    @ExceptionHandler(FeedbackNotFoundException.class)
+    public ProblemDetail handleFeedbackNotFound(
+        FeedbackNotFoundException ex
+    ) {
+        ProblemDetail problem =
+            ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+
+        problem.setTitle("Feedback not found");
+        problem.setDetail(ex.getMessage());
+
+        return problem;
+    }
+
 
     @ExceptionHandler(ExternalServiceException.class)
     public ProblemDetail handleExternalServiceError(ExternalServiceException ex) {
