@@ -1,0 +1,84 @@
+version: 2
+
+models:
+  - name: int_ticketmaster_daily_events
+    description: >
+      Eligible Ticketmaster events at one row per logical source URL, venue
+      and local date. Parking products, past dates, events without an exact
+      start timestamp, and offsale or rescheduled events are excluded.
+      Multiple booking slots are represented by the earliest occurrence.
+      The original occurrence rows remain available in
+      stg_ticketmaster_events.
+
+    columns:
+      - name: event_id
+        description: >
+          Ticketmaster ID of the earliest occurrence selected to represent
+          the logical daily event.
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_ticketmaster_events')
+                field: event_id
+
+      - name: event_name
+        description: Event name supplied by Ticketmaster.
+        tests: [not_null]
+
+      - name: start_date
+        description: Local calendar date of the logical daily event.
+        tests: [not_null]
+
+      - name: start_at
+        description: >
+          Exact timestamp of the earliest occurrence selected for this
+          logical daily event.
+        tests: [not_null]
+
+      - name: end_at
+        description: >
+          End timestamp of the selected earliest occurrence when supplied by
+          Ticketmaster. NULL when the source does not provide an exact end
+          time.
+
+      - name: status_code
+        description: >
+          Status of the selected earliest occurrence. Offsale and rescheduled
+          rows are excluded before daily occurrence grouping.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - onsale
+                  - cancelled
+                  - postponed
+
+      - name: normalized_event_url
+        description: >
+          Ticketmaster or partner event URL without referral query
+          parameters, used when grouping booking slots.
+        tests: [not_null]
+
+      - name: address_line1
+        description: Original venue address supplied by Ticketmaster.
+        tests: [not_null]
+
+      - name: street_name
+        description: >
+          Parsed street name. If the address cannot be parsed reliably, the
+          complete original address_line1 is preserved here.
+        tests: [not_null]
+
+      - name: house_number
+        description: >
+          Parsed house number as a string. NULL when it cannot be extracted
+          confidently.
+
+      - name: occurrence_count
+        description: >
+          Number of Ticketmaster occurrence IDs represented by this logical
+          daily event. One means that no additional booking slots were grouped.
+        tests: [not_null]

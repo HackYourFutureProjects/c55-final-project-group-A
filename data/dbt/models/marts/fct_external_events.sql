@@ -1,6 +1,7 @@
 -- This mart is the contract with the backend team.
 --
--- One row represents the latest version of one external Ticketmaster event.
+-- One row represents one logical Ticketmaster event per venue and local date,
+-- represented by its earliest eligible occurrence.
 -- Its columns are what the backend receives after the publishing step, so
 -- treat renaming, removing or changing the type of a column like changing a
 -- public API: agree it with the backend team first.
@@ -9,17 +10,20 @@
 -- PostgreSQL analytics schema. Whatever this model selects is what the
 -- backend can consume.
 --
--- This is the initial draft of the contract. The category mapping and final
--- column selection must be reviewed with the backend team before production
--- publishing is enabled.
+-- Reusable eligibility rules, parking exclusion, address parsing and daily
+-- occurrence grouping are applied in int_ticketmaster_daily_events. This mart
+-- maps those logical events to the backend-facing contract.
 with
-    ticketmaster_events as (select * from {{ ref("stg_ticketmaster_events") }}),
+    ticketmaster_daily_events as (
+        select * from {{ ref("int_ticketmaster_daily_events") }}
+    ),
 
     normalized as (
 
         select
-            -- Ticketmaster IDs are unique within Ticketmaster. Prefixing the ID
-            -- produces a stable cross-source key for the future second API.
+            -- The earliest occurrence keeps its original Ticketmaster ID. Prefixing
+            -- prevents collisions if another external source uses the same ID, while
+            -- the backend maintains its own internal UUID.
             concat(source, ':', event_id) as external_event_key,
             event_id as external_event_id,
             source,
@@ -64,6 +68,7 @@ with
             start_at,
             end_at,
             timezone,
+            occurrence_count,
             status_code,
             status_code = 'cancelled' as is_cancelled,
             date_tbd,
@@ -81,6 +86,8 @@ with
             venue_id as external_venue_id,
             venue_name,
             address_line1,
+            street_name,
+            house_number,
             postal_code,
             city_name,
             province,
@@ -94,7 +101,7 @@ with
             ingest_date,
             ingested_at
 
-        from ticketmaster_events
+        from ticketmaster_daily_events
 
     )
 

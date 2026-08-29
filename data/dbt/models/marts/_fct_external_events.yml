@@ -3,22 +3,24 @@ version: 2
 models:
   - name: fct_external_events
     description: >
-      One row represents the latest ingested version of one external
-      Ticketmaster event. This model is the draft contract intended for
-      publication to PostgreSQL for consumption by the backend. Renaming,
-      removing or changing the type of a column must be agreed with the
-      backend team.
+      One row represents one logical Ticketmaster event per venue and local
+      date, represented by its earliest eligible occurrence. This model is the
+      backend-facing contract intended for publication to PostgreSQL.
+      Renaming, removing or changing the type of a column must be agreed with
+      the backend team.
     columns:
       - name: external_event_key
         description: >
-          Stable cross-source identifier consisting of the source name and
-          the source event identifier.
+          Source-qualified Ticketmaster ID of the earliest occurrence selected to
+          represent the logical daily event.
         tests:
           - unique
           - not_null
 
       - name: external_event_id
-        description: Event identifier assigned by Ticketmaster.
+        description: >
+          Ticketmaster ID of the earliest occurrence selected to represent the
+          logical daily event.
         tests:
           - not_null
 
@@ -92,13 +94,23 @@ models:
 
       - name: start_at
         description: >
-          Exact start timestamp. NULL when Ticketmaster marks the event time
-          as to be announced.
+          Exact timestamp of the earliest eligible occurrence selected for the
+          logical daily event.
+        tests:
+          - not_null
+
+      - name: occurrence_count
+        description: >
+          Number of Ticketmaster occurrence IDs represented by this logical
+          daily event. One means that no additional same-day booking slots were
+          grouped.
+        tests:
+          - not_null
 
       - name: end_at
         description: >
-          Exact end timestamp when supplied by Ticketmaster. Many events do
-          not provide an end timestamp.
+          Exact end timestamp of the selected earliest occurrence when
+          supplied by Ticketmaster. NULL when the source does not provide it.
 
       - name: timezone
         description: Event timezone supplied by Ticketmaster.
@@ -106,15 +118,15 @@ models:
           - not_null
 
       - name: status_code
-        description: Current Ticketmaster sales or scheduling status.
+        description: >
+          Status of the selected earliest occurrence. Offsale and rescheduled
+          events are excluded before this mart is built.
         tests:
           - not_null
           - accepted_values:
               arguments:
                 values:
                   - onsale
-                  - offsale
-                  - rescheduled
                   - cancelled
                   - postponed
 
@@ -166,7 +178,21 @@ models:
         description: Venue name when supplied by Ticketmaster.
 
       - name: address_line1
-        description: First address line of the selected venue when available.
+        description: Original venue address supplied by Ticketmaster.
+        tests:
+          - not_null
+
+      - name: street_name
+        description: >
+          Parsed street name. If the source address cannot be parsed reliably,
+          the complete address_line1 is preserved here.
+        tests:
+          - not_null
+
+      - name: house_number
+        description: >
+          Parsed house number stored as a string. NULL when it cannot be
+          extracted confidently.
 
       - name: postal_code
         description: Postal code of the selected venue when available.

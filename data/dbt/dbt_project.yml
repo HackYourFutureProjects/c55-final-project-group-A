@@ -30,32 +30,10 @@ models:
       # downstream models and tests query the resulting table.
       +materialized: table
     intermediate:
-      # Views here: intermediate models select from the staging table, not from
-      # files, so re-running one is cheap. They cost nothing to store and you
-      # can query them while working out why a mart looks wrong. `ephemeral` is
-      # the other common choice: it pastes the SQL into whatever selects it,
-      # which is tidier in the warehouse but leaves you nothing to inspect when
-      # a number is off. While you are learning, being able to select from it
-      # is worth more.
+      # Intermediate models contain reusable business transformations between
+      # staging and the backend-facing marts. Views remain easy to inspect
+      # without storing another physical copy of the data.
       +materialized: view
-
-      # Disabled starter model from the sample job-postings pipeline.
-      int_posting_tags:
-        +enabled: false
 
     marts:
       +materialized: table
-
-      # Disabled starter models from the sample job-postings pipeline.
-
-      fct_postings_enriched:
-        +enabled: false
-
-      fct_tag_popularity:
-        +enabled: false
-
-      # Optional LLM sample model. It remains disabled because the initial
-      # Ticketmaster pipeline must not depend on an enrichment API.
-      fct_title_discipline:
-        +enabled: false
-        +secret_scope: team_a  # your catalog name: team_b, team_c, team_d
