@@ -1,4 +1,4 @@
-CREATE TABLE feedback (
+CREATE TABLE feedbacks (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     topic VARCHAR(10) NOT NULL CHECK (topic IN ('app', 'event')),
     event_title VARCHAR(255),
