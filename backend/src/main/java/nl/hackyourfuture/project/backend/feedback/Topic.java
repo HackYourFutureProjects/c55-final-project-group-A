@@ -1,4 +1,4 @@
-package nl.hackyourfuture.project.backend.feedback.dto;
+package nl.hackyourfuture.project.backend.feedback;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

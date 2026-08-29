@@ -1,7 +1,6 @@
 package nl.hackyourfuture.project.backend.feedback;
 
 import lombok.RequiredArgsConstructor;
-import nl.hackyourfuture.project.backend.feedback.dto.Topic;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
