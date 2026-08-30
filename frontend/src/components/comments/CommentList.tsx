@@ -4,20 +4,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import CommentItem from "@/components/comments/CommentItem";
 import { useAuth } from "@/context/AuthContext";
 import { createComment, getEventComments } from "@/lib/api";
 import type { CommentPage } from "@/types/comment";
 
 interface CommentListProps {
   eventId: string;
-}
-
-function formatCommentDate(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 export default function CommentList({ eventId }: CommentListProps) {
@@ -101,28 +94,13 @@ export default function CommentList({ eventId }: CommentListProps) {
           No comments yet. Be the first to ask something.
         </p>
       )}
-
-      <ul className="mt-6 space-y-6">
+      <ul className="mt-6 divide-y divide-neutral-300 border-neutral-200 border-t">
         {data?.comments.map((comment) => (
-          <li key={comment.id}>
-            <p className="font-semibold text-sm">
-              {comment.userName}{" "}
-              <span className="font-normal text-neutral-400">
-                · {formatCommentDate(comment.createdAt)}
-              </span>
-            </p>
-            <p className="mt-1 text-neutral-700">{comment.content}</p>
-
-            {/* An admin reply is plain text on the comment itself */}
-            {comment.adminReply && (
-              <div className="mt-3 ml-4 border-neutral-200 border-l-2 pl-4">
-                <p className="font-semibold text-neutral-500 text-sm">
-                  Organizer
-                </p>
-                <p className="mt-1 text-neutral-700">{comment.adminReply}</p>
-              </div>
-            )}
-          </li>
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            onChanged={loadComments}
+          />
         ))}
       </ul>
     </section>

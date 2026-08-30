@@ -18,7 +18,8 @@ export function Navbar() {
           <span className="text-lg font-bold">Loc</span>
         </div>
 
-        <nav className="flex items-center gap-6 text-sm font-medium text-neutral-600">
+        <nav className="flex items-center gap-6 text-lg font-medium text-neutral-600">
+          |
           <Link
             href="/"
             className={
@@ -29,6 +30,7 @@ export function Navbar() {
           >
             Home
           </Link>
+          |
           <Link
             href="/feedback"
             className={
@@ -39,7 +41,7 @@ export function Navbar() {
           >
             Feedback
           </Link>
-          {/* Only admins see the link back into the admin area */}
+          |{/* Only admins see the link back into the admin area */}
           {user?.role === "admin" && (
             <Link
               href="/admin"
