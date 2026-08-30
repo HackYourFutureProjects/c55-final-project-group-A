@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import CommentList from "@/components/comments/CommentList";
 import EventActions from "@/components/events/EventActions";
 import EventMap from "@/components/events/EventMap";
+import SimilarEvents from "@/components/events/SimilarEvents";
 import { getEventById, getGoingEvents, getSavedEvents } from "@/lib/api";
 import { formatPrice } from "@/lib/formatPrice";
 import type { EventStatus } from "@/types/event";
@@ -220,6 +221,7 @@ export default async function EventDetailPage({
           </div>
         </div>
         <CommentList eventId={event.id} />
+        <SimilarEvents eventId={event.id} />
       </div>
     </main>
   );
