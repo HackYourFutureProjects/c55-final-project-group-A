@@ -20,6 +20,10 @@ interface CommentItemProps {
   comment: Comment;
   onChanged: () => void;
 }
+const ACTION_BUTTON = "text-neutral-400 text-sm hover:text-neutral-900";
+const DANGER_BUTTON = "text-neutral-400 text-sm hover:text-red-600";
+const TEXTAREA =
+  "w-full resize-y rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:border-neutral-900";
 
 function formatCommentDate(isoDate: string) {
   return new Date(isoDate).toLocaleDateString("en-GB", {
@@ -75,7 +79,6 @@ export default function CommentItem({ comment, onChanged }: CommentItemProps) {
     setError("");
     setIsBusy(true);
     try {
-      // No reply yet means create, otherwise update the existing one
       if (comment.adminReply === null) {
         await createAdminReply(comment.id, { content: replyText });
       } else {
@@ -123,138 +126,152 @@ export default function CommentItem({ comment, onChanged }: CommentItemProps) {
   }
 
   return (
-    <li>
-      <p className="font-semibold text-sm">
-        {comment.userName}{" "}
-        <span className="font-normal text-neutral-400">
-          · {formatCommentDate(comment.createdAt)}
-        </span>
-      </p>
+    <li className="flex gap-3 py-5">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-semibold text-orange-700 text-sm">
+        {comment.userName.charAt(0).toUpperCase()}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm">
+          <span className="font-semibold">{comment.userName}</span>
+          <span className="text-neutral-400">
+            {" · "}
+            {formatCommentDate(comment.createdAt)}
+            {comment.updatedAt !== comment.createdAt && " · edited"}
+          </span>
+        </p>
 
-      {isEditing ? (
-        <div className="mt-2">
-          <textarea
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            maxLength={500}
-            rows={3}
-            className="w-full resize-y rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:border-neutral-900"
-          />
-          <div className="mt-2 flex items-center justify-end gap-3">
-            <span className="text-neutral-400 text-xs">{text.length}/500</span>
-            <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isBusy || text.trim().length === 0}
-              className="rounded-full bg-orange-600 px-5 py-2 font-semibold text-sm text-white hover:bg-orange-700 disabled:opacity-50"
-            >
-              {isBusy ? "Saving..." : "Save"}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p className="mt-1 text-neutral-700">{comment.content}</p>
-      )}
-
-      {!isEditing && !isReplying && (
-        <div className="mt-2 flex gap-4">
-          {isMine && (
-            <button
-              type="button"
-              onClick={startEditing}
-              className="font-semibold text-neutral-500 text-sm hover:text-neutral-900"
-            >
-              Edit
-            </button>
-          )}
-          {isAdmin && comment.adminReply === null && (
-            <button
-              type="button"
-              onClick={startReplying}
-              className="font-semibold text-neutral-500 text-sm hover:text-neutral-900"
-            >
-              Reply
-            </button>
-          )}
-          {(isMine || isAdmin) && (
-            <button
-              type="button"
-              onClick={() => setConfirming("comment")}
-              className="font-semibold text-red-600 text-sm hover:text-red-700"
-            >
-              Delete
-            </button>
-          )}
-        </div>
-      )}
-
-      {error && <p className="mt-2 text-red-700 text-sm">{error}</p>}
-
-      {isReplying && (
-        <div className="mt-3 ml-4 border-neutral-200 border-l-2 pl-4">
-          <textarea
-            value={replyText}
-            onChange={(event) => setReplyText(event.target.value)}
-            maxLength={500}
-            rows={3}
-            placeholder="Reply as organizer..."
-            className="w-full resize-y rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:border-neutral-900"
-          />
-          <div className="mt-2 flex items-center justify-end gap-3">
-            <span className="text-neutral-400 text-xs">
-              {replyText.length}/500
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsReplying(false)}
-              className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSaveReply}
-              disabled={isBusy || replyText.trim().length === 0}
-              className="rounded-full bg-orange-600 px-5 py-2 font-semibold text-sm text-white hover:bg-orange-700 disabled:opacity-50"
-            >
-              {isBusy ? "Saving..." : "Save"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* An admin reply is plain text on the comment itself */}
-      {comment.adminReply && !isReplying && (
-        <div className="mt-3 ml-4 border-neutral-200 border-l-2 pl-4">
-          <p className="font-semibold text-neutral-500 text-sm">Organizer</p>
-          <p className="mt-1 text-neutral-700">{comment.adminReply}</p>
-          {isAdmin && (
-            <div className="mt-2 flex gap-4">
+        {isEditing ? (
+          <div className="mt-2">
+            <textarea
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              maxLength={500}
+              rows={3}
+              className={TEXTAREA}
+            />
+            <div className="mt-2 flex items-center justify-end gap-3">
+              <span className="text-neutral-400 text-xs">
+                {text.length}/500
+              </span>
               <button
                 type="button"
-                onClick={startReplying}
-                className="font-semibold text-neutral-500 text-sm hover:text-neutral-900"
+                onClick={() => setIsEditing(false)}
+                className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isBusy || text.trim().length === 0}
+                className="rounded-full bg-orange-600 px-5 py-2 font-semibold text-sm text-white hover:bg-orange-700 disabled:opacity-50"
+              >
+                {isBusy ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-1 whitespace-pre-line text-neutral-700">
+            {comment.content}
+          </p>
+        )}
+
+        {!isEditing && !isReplying && (
+          <div className="mt-1 flex gap-3">
+            {isMine && (
+              <button
+                type="button"
+                onClick={startEditing}
+                className={ACTION_BUTTON}
               >
                 Edit
               </button>
+            )}
+            {isAdmin && comment.adminReply === null && (
               <button
                 type="button"
-                onClick={() => setConfirming("reply")}
-                className="font-semibold text-red-600 text-sm hover:text-red-700"
+                onClick={startReplying}
+                className={ACTION_BUTTON}
+              >
+                Reply
+              </button>
+            )}
+            {(isMine || isAdmin) && (
+              <button
+                type="button"
+                onClick={() => setConfirming("comment")}
+                className={DANGER_BUTTON}
               >
                 Delete
               </button>
+            )}
+          </div>
+        )}
+
+        {error && <p className="mt-2 text-red-700 text-sm">{error}</p>}
+
+        {isReplying && (
+          <div className="mt-3 rounded-xl bg-neutral-50 p-4">
+            <textarea
+              value={replyText}
+              onChange={(event) => setReplyText(event.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="Reply as organizer..."
+              className={TEXTAREA}
+            />
+            <div className="mt-2 flex items-center justify-end gap-3">
+              <span className="text-neutral-400 text-xs">
+                {replyText.length}/500
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsReplying(false)}
+                className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveReply}
+                disabled={isBusy || replyText.trim().length === 0}
+                className="rounded-full bg-orange-600 px-5 py-2 font-semibold text-sm text-white hover:bg-orange-700 disabled:opacity-50"
+              >
+                {isBusy ? "Saving..." : "Save"}
+              </button>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {comment.adminReply && !isReplying && (
+          <div className="mt-3 rounded-xl bg-neutral-100 p-4">
+            <p className="font-semibold text-neutral-700 text-xs uppercase tracking-wide">
+              Organizer
+            </p>
+            <p className="mt-1 whitespace-pre-line text-neutral-700">
+              {comment.adminReply}
+            </p>
+            {isAdmin && (
+              <div className="mt-1 flex gap-3">
+                <button
+                  type="button"
+                  onClick={startReplying}
+                  className={ACTION_BUTTON}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirming("reply")}
+                  className={DANGER_BUTTON}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {confirming && (
         <ConfirmModal

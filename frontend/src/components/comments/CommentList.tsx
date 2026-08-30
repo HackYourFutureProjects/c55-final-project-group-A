@@ -94,7 +94,7 @@ export default function CommentList({ eventId }: CommentListProps) {
           No comments yet. Be the first to ask something.
         </p>
       )}
-      <ul className="mt-6 space-y-6">
+      <ul className="mt-6 divide-y divide-neutral-300 border-neutral-200 border-t">
         {data?.comments.map((comment) => (
           <CommentItem
             key={comment.id}
