@@ -7,6 +7,7 @@ import type { LoginRequest, RegisterRequest } from "@/types/auth";
 import type { Comment, CommentPage, CommentRequest } from "@/types/comment";
 import type {
   Category,
+  Event,
   EventDetail,
   EventFilters,
   EventPage,
@@ -525,4 +526,15 @@ export async function deleteAdminReply(commentId: string): Promise<void> {
     const problem = await res.json().catch(() => null);
     throw new Error(problem?.detail ?? `Failed to delete reply: ${res.status}`);
   }
+}
+
+export async function getSimilarEvents(eventId: string): Promise<Event[]> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/similar`));
+  if (!res.ok) {
+    const problem = await res.json().catch(() => null);
+    throw new Error(
+      problem?.detail ?? `Failed to load similar events: ${res.status}`,
+    );
+  }
+  return res.json();
 }
