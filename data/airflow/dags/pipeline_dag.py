@@ -3,9 +3,8 @@
     ingest -> list_landing_files (SPIKE) -> dbt_build -> publish_to_backend
 
 Each step is separate so that when dbt fails you re-run dbt, not the fetch, and
-so the publish cannot run on a mart that failed its own tests. Enrichment is
-not a task here: it is a dbt Python model, so `dbt_build` already runs it in
-the right order. See data/dbt/models/marts/fct_postings_enriched.py.
+so the publish cannot run on a mart that failed its own tests. The transformed
+Ticketmaster mart is built by dbt as `fct_external_events` before publishing.
 
 `list_landing_files` is a temporary SPIKE: it logs every file under
 LANDING_PATH via `read_files(..., format => 'binaryFile')` because dbt does
@@ -222,7 +221,7 @@ def make_pipeline(profile: PipelineProfile):
         catchup=False,
         # One run at a time. Airflow allows sixteen by default, and two runs would
         # build into the same dbt schema and both publish through the same
-        # `fct_postings__staging` table, so whichever finished second would win and
+        # `external_events__staging` table, so whichever finished second would win and
         # the loser's rows would vanish. Triggering by hand while the scheduled run
         # is going is the normal way to meet this.
         max_active_runs=1,
