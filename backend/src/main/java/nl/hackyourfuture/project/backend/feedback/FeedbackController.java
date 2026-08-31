@@ -22,7 +22,9 @@ public class FeedbackController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @Operation(summary = "Submit feedback", description = "Submits feedback about the app or a specific event. Available to anyone, no authentication required.")
+  @Operation(summary = "Submit feedback", description = """
+      Submits feedback about the app or a specific event.
+      Available to anyone, no authentication required.""")
   @ApiResponse(responseCode = "201", description = "Feedback submitted successfully")
   @ApiResponse(
       responseCode = "400",
