@@ -2,12 +2,11 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import Pagination from "@/components/Pagination";
 import FeedbackCard from "@/components/admin/FeedbackCard";
+import EmptyState from "@/components/EmptyState";
+import Pagination from "@/components/Pagination";
 import { getAdminFeedback } from "@/lib/api";
 import type { Feedback, FeedbackPage } from "@/types/feedback";
-import EmptyState from "@/components/EmptyState";
-
 
 function MessagesContent() {
   const searchParams = useSearchParams();
@@ -33,17 +32,22 @@ function MessagesContent() {
     );
   }
 
-    return (
-    <div>
-      <p>Total: {data?.totalElements}</p>
+  return (
+    <div className="mx-auto max-w-3xl px-6 py-8">
+      <h1 className="font-bold text-2xl">Feedback</h1>
+      <p className="mt-1 text-neutral-400 text-sm">
+        {data?.totalElements} total
+      </p>
 
-      {data?.feedbacks.map((feedback) => (
-        <FeedbackCard
-          key={feedback.id}
-          feedback={feedback}
-          onUpdated={handleUpdated}
-        />
-      ))}
+      <div className="mt-6 space-y-4">
+        {data?.feedbacks.map((feedback) => (
+          <FeedbackCard
+            key={feedback.id}
+            feedback={feedback}
+            onUpdated={handleUpdated}
+          />
+        ))}
+      </div>
 
       {data?.feedbacks.length === 0 && (
         <EmptyState
