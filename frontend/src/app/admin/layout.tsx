@@ -39,7 +39,7 @@ export default function AdminLayout({
             href="/admin/messages"
             className={pathname === "/admin/messages" ? activeTab : idleTab}
           >
-            Messages
+            Feedback
           </Link>
         </nav>
       </div>
