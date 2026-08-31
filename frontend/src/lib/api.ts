@@ -12,6 +12,11 @@ import type {
   EventFilters,
   EventPage,
 } from "@/types/event";
+import type {
+  Feedback,
+  FeedbackPage,
+  PostFeedbackRequest,
+} from "@/types/feedback";
 import type { LocationSuggestion } from "@/types/location";
 import type { UpdateUserRequest, User } from "@/types/user";
 
@@ -536,5 +541,54 @@ export async function getSimilarEvents(eventId: string): Promise<Event[]> {
       problem?.detail ?? `Failed to load similar events: ${res.status}`,
     );
   }
+  return res.json();
+}
+
+//-----Feedback------
+
+export async function submitFeedback(data: PostFeedbackRequest): Promise<void> {
+  const res = await fetch(apiUrl("api/feedback"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to submit feedback");
+  }
+}
+
+export async function getAdminFeedback(
+  page = 0,
+  size = 9,
+): Promise<FeedbackPage> {
+  const res = await fetch(
+    apiUrl(`/api/admin/feedback?page=${page}&size=${size}`),
+    {
+      credentials: "include",
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to load feedback");
+  }
+
+  return res.json();
+}
+
+export async function updateFeedbackReviewed(
+  id: string,
+  isReviewed: boolean,
+): Promise<Feedback> {
+  const res = await fetch(apiUrl(`/api/admin/feedback/${id}`), {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isReviewed }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to update feedback");
+  }
+
   return res.json();
 }
