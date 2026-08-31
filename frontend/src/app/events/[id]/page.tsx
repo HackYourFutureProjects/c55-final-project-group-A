@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import CommentList from "@/components/comments/CommentList";
 import EventActions from "@/components/events/EventActions";
 import EventMap from "@/components/events/EventMap";
+import EventWeather from "@/components/events/EventWeather";
 import SimilarEvents from "@/components/events/SimilarEvents";
 import { getEventById, getGoingEvents, getSavedEvents } from "@/lib/api";
 import { formatPrice } from "@/lib/formatPrice";
@@ -217,6 +218,16 @@ export default async function EventDetailPage({
                   <p className="font-bold text-gray-900">{event.goingCount}</p>
                 </div>
               </div>
+              {event.eventStatus !== "PAST" && (
+                <>
+                  <hr className="my-4" />
+                  <EventWeather
+                    latitude={event.latitude}
+                    longitude={event.longitude}
+                    startAt={event.startAt}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>
