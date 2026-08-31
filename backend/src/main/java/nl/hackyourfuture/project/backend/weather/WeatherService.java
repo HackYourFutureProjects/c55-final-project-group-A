@@ -25,8 +25,14 @@ public class WeatherService {
       .build();
 
   public WeatherResponse getWeather(BigDecimal latitude, BigDecimal longitude, OffsetDateTime eventTime){
-    if (latitude == null || latitude.isBlank() ) {
-      throw new BadRequestException("Please write your query");
+    if (latitude == null) {
+      throw new BadRequestException("Latitude must be provided");
+    }
+    if (longitude == null) {
+      throw new BadRequestException("Longitude must be provided");
+    }
+    if (eventTime == null) {
+      throw new BadRequestException("Event time must be provided");
     }
 
     ZoneId zone = ZoneId.of("Europe/Amsterdam");
