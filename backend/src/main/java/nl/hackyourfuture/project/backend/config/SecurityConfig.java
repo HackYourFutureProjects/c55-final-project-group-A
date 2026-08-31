@@ -42,6 +42,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/locations/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/weather")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/feedback")
                         .permitAll()
 
