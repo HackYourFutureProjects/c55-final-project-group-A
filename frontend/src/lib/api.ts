@@ -19,6 +19,7 @@ import type {
 } from "@/types/feedback";
 import type { LocationSuggestion } from "@/types/location";
 import type { UpdateUserRequest, User } from "@/types/user";
+import type { Weather } from "@/types/weather";
 
 function apiUrl(path: string) {
   if (typeof window === "undefined") {
@@ -588,6 +589,24 @@ export async function updateFeedbackReviewed(
 
   if (!res.ok) {
     throw new Error("Failed to update feedback");
+  }
+
+  return res.json();
+}
+
+export async function getWeather(
+  latitude: number,
+  longitude: number,
+  time: string,
+): Promise<Weather> {
+  const res = await fetch(
+    apiUrl(
+      `/api/weather?latitude=${latitude}&longitude=${longitude}&time=${time}`,
+    ),
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to load weather");
   }
 
   return res.json();

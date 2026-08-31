@@ -78,7 +78,7 @@ export default function FeedbackPage() {
   }
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <div className="rounded-3xl bg-gradient-to-br from-orange-500 to-orange-600 p-10 shadow-lg shadow-orange-200">
+      <div className="rounded-3xl bg-linear-to-br from-orange-500 to-orange-600 p-10 shadow-lg shadow-orange-200">
         <p className="inline-block rounded-full bg-white/20 px-3 py-1 font-semibold text-white text-xs tracking-widest">
           FEEDBACK
         </p>
