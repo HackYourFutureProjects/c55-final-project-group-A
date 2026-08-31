@@ -64,7 +64,7 @@ public class WeatherService {
     int index = result.hourly().time().indexOf(targetHour);
 
     if (index == -1) {
-      throw new ExternalServiceException("Weather forecast unavailable for the requested time");
+      return WeatherResponse.unavailable();
     }
 
     return WeatherResponse.from(result.hourly(), index);
