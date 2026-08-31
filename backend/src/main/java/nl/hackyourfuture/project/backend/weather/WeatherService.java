@@ -67,8 +67,16 @@ public class WeatherService {
       return WeatherResponse.unavailable();
     }
 
+    var h = result.hourly();
+
+    if (h.temperature().get(index) == null ||
+        h.precipitationProbability().get(index) == null ||
+        h.windSpeed().get(index) == null ||
+        h.weatherCode().get(index) == null) {
+
+      return WeatherResponse.unavailable();
+    }
+
     return WeatherResponse.from(result.hourly(), index);
-
-
   }
 }
