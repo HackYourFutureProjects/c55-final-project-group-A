@@ -19,7 +19,7 @@ public record WeatherResponse(
         example = "17",
         nullable = true
     )
-    int temperature,
+    Integer temperature,
     @Schema(
         description = "Short textual description of the current weather conditions",
         example = "Partly cloudy",
@@ -31,13 +31,13 @@ public record WeatherResponse(
         example = "12",
         nullable = true
     )
-    int precipitationChance,
+    Integer precipitationChance,
     @Schema(
         description = "Wind speed in meters per second",
         example = "9",
         nullable = true
     )
-    int windSpeed
+    Integer windSpeed
 ) {
   public static WeatherResponse from(OpenMeteoResult.Hourly hourly, int index) {
     return new WeatherResponse(
@@ -46,6 +46,16 @@ public record WeatherResponse(
         weatherCodeToDescription(hourly.weatherCode().get(index)),
         hourly.precipitationProbability().get(index),
         hourly.windSpeed().get(index).intValue()
+    );
+  }
+
+  public static WeatherResponse unavailable() {
+    return new WeatherResponse(
+        false,
+        null,
+        null,
+        null,
+        null
     );
   }
 
