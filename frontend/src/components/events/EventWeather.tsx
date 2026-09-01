@@ -70,6 +70,7 @@ export default async function EventWeather({
       <p className="font-semibold text-gray-400 text-xs uppercase tracking-widest">
         Weather at start
       </p>
+
       <div className="mt-3 flex items-center gap-3">
         <span className="text-4xl">{getWeatherEmoji(weather.condition)}</span>
         <div>
@@ -78,12 +79,6 @@ export default async function EventWeather({
           </p>
           <p className="text-gray-600">{weather.condition}</p>
         </div>
-      </div>
-      <div className="mt-3 flex items-baseline gap-3">
-        <p className="font-bold text-4xl text-gray-900">
-          {weather.temperature}°
-        </p>
-        <p className="text-gray-600">{weather.condition}</p>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
