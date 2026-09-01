@@ -1,8 +1,7 @@
-"""The publish step: type mapping, and the order of the swap.
+"""The publish step: type mapping and transactional full refresh.
 
-The ordering test is the one that matters. Every other bug here shows up the
-first time you run it; getting the swap wrong shows up as a backend reading a
-table that is briefly missing, which nobody reproduces on demand.
+The ordering test is the one that matters: staging must be complete before the
+published table is refreshed, and the published table must never be dropped.
 """
 
 import pytest
@@ -109,31 +108,45 @@ def index_of(statements: list[str], fragment: str) -> int:
     raise AssertionError(f"no statement contained {fragment!r}: {statements}")
 
 
-def test_publish_swaps_in_the_right_order(connection):
+def test_publish_refreshes_existing_table_in_the_right_order(connection):
     count = sync.publish("dsn", "analytics", "external_events", COLUMNS, ROWS)
     assert count == 1
 
     statements = connection.log
-    staging_created = index_of(statements, "create table")
-    inserted = index_of(statements, "INSERT")
-    dropped = index_of(statements, 'drop table if exists "analytics"."external_events"')
-    renamed = index_of(statements, "rename to")
+    staging_created = index_of(statements, 'create table "analytics"."external_events__staging"')
+    staged = index_of(statements, "INSERT x1")
+    target_created = index_of(
+        statements, 'create table if not exists "analytics"."external_events"'
+    )
+    truncated = index_of(statements, 'truncate table "analytics"."external_events"')
+    refreshed = index_of(statements, 'insert into "analytics"."external_events"')
+    staging_dropped = index_of(statements, 'drop table "analytics"."external_events__staging"')
 
-    # Load first, swap last. Anything else means a reader can see a table that
-    # is only half there.
-    assert staging_created < inserted < dropped < renamed
+    assert staging_created < staged < target_created < truncated < refreshed < staging_dropped
     assert connection.committed
 
 
 def test_first_publish_works_with_no_existing_table(connection):
-    """The `if exists` subtlety. The obvious version of this pattern renames the
-    current table out of the way first, which cannot work the very first time,
-    on exactly the run you most want to succeed."""
+    """The target is created only when the first publish has no table yet."""
     sync.publish("dsn", "analytics", "external_events", COLUMNS, ROWS)
-    drop = connection.log[
-        index_of(connection.log, 'drop table if exists "analytics"."external_events"')
+    create = connection.log[
+        index_of(
+            connection.log,
+            'create table if not exists "analytics"."external_events"',
+        )
     ]
-    assert "if exists" in drop
+    assert "if not exists" in create
+
+
+def test_published_table_is_never_dropped_or_renamed(connection):
+    """The backend view depends on this exact table object."""
+    sync.publish("dsn", "analytics", "external_events", COLUMNS, ROWS)
+
+    assert not any(
+        'drop table if exists "analytics"."external_events"' in statement
+        for statement in connection.log
+    )
+    assert not any("rename to" in statement for statement in connection.log)
 
 
 def test_publishing_zero_rows_is_refused(connection):
@@ -160,11 +173,12 @@ def test_the_source_schema_is_stamped_on_the_table(connection):
     assert "from team_a.dev_alex at " in comment
 
 
-def test_the_stamp_lands_after_the_swap(connection):
-    """Comment the published table, not the staging one: the rename would carry
-    the comment across, but only by accident of ordering."""
+def test_the_stamp_lands_after_the_refresh(connection):
+    """Stamp the published table only after all new rows are inserted."""
     sync.publish("dsn", "analytics_dev", "external_events", COLUMNS, ROWS, source="s")
-    assert index_of(connection.log, "rename to") < index_of(connection.log, "comment on table")
+    assert index_of(connection.log, 'insert into "analytics_dev"."external_events"') < index_of(
+        connection.log, "comment on table"
+    )
 
 
 def test_no_source_means_no_comment(connection):
