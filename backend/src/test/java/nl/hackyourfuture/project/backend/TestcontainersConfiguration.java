@@ -12,7 +12,9 @@ class TestcontainersConfiguration {
   @Bean
   @ServiceConnection
   PostgreSQLContainer postgresContainer() {
-    return new PostgreSQLContainer(DockerImageName.parse("postgres:18.4-alpine"));
+    // CI starts an empty database; create the data team's source table before Flyway builds event_feed.
+    return new PostgreSQLContainer(DockerImageName.parse("postgres:18.4-alpine"))
+        .withInitScript("db/test-init.sql");
   }
 
 }
