@@ -123,6 +123,16 @@ public record EventDetailResponse(
         String imageUrl,
 
         @Schema(
+                description = """
+                        Public Ticketmaster or partner page for this event.
+                        Null for events created in the app.
+                        """,
+                example = "https://www.ticketmaster.nl/event/example-tickets/123",
+                nullable = true
+        )
+        String sourceUrl,
+
+        @Schema(
                 description = "Number of users attending the event",
                 example = "328",
                 minimum = "0",
@@ -171,6 +181,7 @@ public record EventDetailResponse(
                 event.latitude(),
                 event.longitude(),
                 event.imageUrl(),
+                event.sourceUrl(),
                 event.goingCount(),
                 status
         );
