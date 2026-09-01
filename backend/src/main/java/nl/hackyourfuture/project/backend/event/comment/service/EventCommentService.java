@@ -10,6 +10,7 @@ import nl.hackyourfuture.project.backend.event.comment.exceptions.CommentNotFoun
 import nl.hackyourfuture.project.backend.event.comment.model.EventComment;
 import nl.hackyourfuture.project.backend.event.comment.repository.EventCommentRepository;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
+import nl.hackyourfuture.project.backend.event.repository.EventRegistryRepository;
 import nl.hackyourfuture.project.backend.event.repository.EventRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class EventCommentService {
 
     private final EventCommentRepository eventCommentRepository;
     private final EventRepository eventRepository;
+    private final EventRegistryRepository eventRegistryRepository;
 
     private void validateEventExists(UUID eventId) {
         eventRepository
@@ -90,6 +92,8 @@ public class EventCommentService {
             CreateCommentRequest request
     ) {
         validateEventExists(eventId);
+
+        eventRegistryRepository.registerEventIfMissing(eventId);
 
         EventComment comment = eventCommentRepository.createComment(
                 eventId,

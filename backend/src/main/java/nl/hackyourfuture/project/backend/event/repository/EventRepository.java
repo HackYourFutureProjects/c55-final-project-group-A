@@ -28,9 +28,8 @@ public class EventRepository {
     private static final String CATEGORY_FILTER_CLAUSE = """
               AND EXISTS (
                   SELECT 1
-                  FROM event_categories filter_ec
-                  WHERE filter_ec.event_id = e.id
-                    AND filter_ec.category_id IN (:categoryIds)
+                  FROM unnest(e.category_ids) AS category_id
+                  WHERE category_id IN (:categoryIds)
               )
             """;
 
@@ -62,7 +61,7 @@ public class EventRepository {
                               POWER(
                                   SIN(
                                       RADIANS(
-                                          CAST(a.latitude AS DOUBLE PRECISION)
+                                          CAST(e.latitude AS DOUBLE PRECISION)
                                           - CAST(:latitude AS DOUBLE PRECISION)
                                       ) / 2
                                   ),
@@ -75,13 +74,13 @@ public class EventRepository {
                               )
                               * COS(
                                   RADIANS(
-                                      CAST(a.latitude AS DOUBLE PRECISION)
+                                      CAST(e.latitude AS DOUBLE PRECISION)
                                   )
                               )
                               * POWER(
                                   SIN(
                                       RADIANS(
-                                          CAST(a.longitude AS DOUBLE PRECISION)
+                                          CAST(e.longitude AS DOUBLE PRECISION)
                                           - CAST(:longitude AS DOUBLE PRECISION)
                                       ) / 2
                                   ),
@@ -135,13 +134,11 @@ public class EventRepository {
                   AND (
                       e.title ILIKE '%' || COALESCE(:search, '') || '%'
                       OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR a.city_name ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR e.city_name ILIKE '%' || COALESCE(:search, '') || '%'
                       OR EXISTS (
                           SELECT 1
-                          FROM event_categories ec
-                          JOIN categories c ON c.id = ec.category_id
-                          WHERE ec.event_id = e.id
-                            AND c.name ILIKE '%' || COALESCE(:search, '') || '%'
+                          FROM unnest(e.category_names) AS category_name(name)
+                          WHERE category_name.name ILIKE '%' || COALESCE(:search, '') || '%'
                       )
                   )
                 """;
@@ -281,60 +278,27 @@ public class EventRepository {
         String sql = """
                 SELECT e.id,
                        e.title,
-                       ARRAY(
-                           SELECT c.id
-                           FROM event_categories ec
-                           JOIN categories c ON c.id = ec.category_id
-                           WHERE ec.event_id = e.id
-                           ORDER BY c.name
-                       ) AS category_ids,
-                       ARRAY(
-                           SELECT c.name
-                           FROM event_categories ec
-                           JOIN categories c ON c.id = ec.category_id
-                           WHERE ec.event_id = e.id
-                           ORDER BY c.name
-                       ) AS category_names,
+                       e.category_ids,
+                       e.category_names,
                        e.start_at,
                        e.end_at,
                        e.price,
-                       a.street,
-                       a.house_number,
-                       a.postal_code,
-                       a.city_name,
-                       a.province,
-                       a.latitude,
-                       a.longitude,
-                       (
-                           SELECT ei.image_url
-                           FROM event_images ei
-                           WHERE ei.event_id = e.id
-                           ORDER BY ei.created_at, ei.id
-                           LIMIT 1
-                       ) AS image_url,
-                       attendee_stats.going_count AS going_count,
-                       (
-                           3 * attendee_stats.going_count
-                           + saved_stats.saved_count
-                       ) AS popularity_score,
+                       e.street,
+                       e.house_number,
+                       e.postal_code,
+                       e.city_name,
+                       e.province,
+                       e.latitude,
+                       e.longitude,
+                       e.image_url,
+                       e.going_count,
+                       e.popularity_score,
                        e.is_cancelled
-                FROM events e
-                JOIN addresses a ON a.id = e.address_id
-                CROSS JOIN LATERAL (
-                    SELECT COUNT(*) AS going_count
-                    FROM event_attendees ea
-                    WHERE ea.event_id = e.id
-                ) attendee_stats
-                CROSS JOIN LATERAL (
-                    SELECT COUNT(*) AS saved_count
-                    FROM saved_events se
-                    WHERE se.event_id = e.id
-                ) saved_stats
+                FROM event_feed e
                 """ + buildFilterClauses(criteria) + orderBy + """
                 LIMIT :limit
                 OFFSET :offset
                 """;
-
         var statement = jdbcClient
                 .sql(sql)
                 .param("limit", limit)
@@ -349,8 +313,7 @@ public class EventRepository {
     public long countEvents(EventQueryCriteria criteria) {
         String sql = """
                 SELECT COUNT(*)
-                FROM events e
-                JOIN addresses a ON a.id = e.address_id
+                FROM event_feed e
                 """ + buildFilterClauses(criteria);
 
         var statement = jdbcClient.sql(sql);
@@ -387,45 +350,22 @@ public class EventRepository {
                 SELECT e.id,
                        e.title,
                        e.description,
-                       ARRAY(
-                           SELECT c.id
-                           FROM event_categories ec
-                           JOIN categories c ON c.id = ec.category_id
-                           WHERE ec.event_id = e.id
-                           ORDER BY c.name
-                       ) AS category_ids,
-                       ARRAY(
-                           SELECT c.name
-                           FROM event_categories ec
-                           JOIN categories c ON c.id = ec.category_id
-                           WHERE ec.event_id = e.id
-                           ORDER BY c.name
-                       ) AS category_names,
+                       e.category_ids,
+                       e.category_names,
                        e.start_at,
                        e.end_at,
                        e.price,
-                       a.street,
-                       a.house_number,
-                       a.postal_code,
-                       a.city_name,
-                       a.province,
-                       a.latitude,
-                       a.longitude,
-                       (
-                           SELECT ei.image_url
-                           FROM event_images ei
-                           WHERE ei.event_id = e.id
-                           ORDER BY ei.created_at, ei.id
-                           LIMIT 1
-                       ) AS image_url,
-                       (
-                           SELECT COUNT(*)
-                           FROM event_attendees ea
-                           WHERE ea.event_id = e.id
-                       ) AS going_count,
+                       e.street,
+                       e.house_number,
+                       e.postal_code,
+                       e.city_name,
+                       e.province,
+                       e.latitude,
+                       e.longitude,
+                       e.image_url,
+                       e.going_count,
                        e.is_cancelled
-                FROM events e
-                JOIN addresses a ON a.id = e.address_id
+                FROM event_feed e
                 WHERE e.id = :eventId
                   AND e.is_published = TRUE
                 """;

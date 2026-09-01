@@ -91,7 +91,7 @@ public class EventSimilarityRepository {
         String sql = """
                 SELECT EXISTS (
                     SELECT 1
-                    FROM events
+                    FROM event_feed
                     WHERE id = :eventId
                       AND is_published = TRUE
                 )
@@ -107,14 +107,9 @@ public class EventSimilarityRepository {
     private static final String SOURCE_EVENT_CTE = """
             source_event AS (
                 SELECT e.id,
-                       a.city_name,
+                       e.city_name,
                        e.start_at,
-                       ARRAY(
-                           SELECT ec.category_id
-                           FROM event_categories ec
-                           WHERE ec.event_id = e.id
-                           ORDER BY ec.category_id
-                       ) AS category_ids,
+                       e.category_ids,
                        CASE
                            WHEN (
                                e.start_at AT TIME ZONE 'Europe/Amsterdam'
@@ -141,8 +136,7 @@ public class EventSimilarityRepository {
                            WHEN e.price = 0 THEN 'FREE'
                            ELSE 'PAID'
                        END AS price_bucket
-                FROM events e
-                JOIN addresses a ON a.id = e.address_id
+                FROM event_feed e
                 WHERE e.id = :eventId
                   AND e.is_published = TRUE
             )
@@ -151,19 +145,11 @@ public class EventSimilarityRepository {
     private static final String ELIGIBLE_CANDIDATES_CTE = """
             eligible_candidates AS (
                 SELECT e.id AS candidate_id,
-                       a.city_name,
+                       e.city_name,
                        e.start_at,
-                       ARRAY(
-                           SELECT ec.category_id
-                           FROM event_categories ec
-                           WHERE ec.event_id = e.id
-                           ORDER BY ec.category_id
-                       ) AS candidate_category_ids,
-                       attendee_stats.going_count,
-                       (
-                           3 * attendee_stats.going_count
-                           + saved_stats.saved_count
-                       ) AS popularity_score,
+                       e.category_ids AS candidate_category_ids,
+                       e.going_count,
+                       e.popularity_score,
                        CASE
                            WHEN (
                                e.start_at AT TIME ZONE 'Europe/Amsterdam'
@@ -190,22 +176,18 @@ public class EventSimilarityRepository {
                            WHEN e.price = 0 THEN 'FREE'
                            ELSE 'PAID'
                        END AS price_bucket
-                FROM events e
-                JOIN addresses a ON a.id = e.address_id
-                CROSS JOIN LATERAL (
-                    SELECT COUNT(*) AS going_count
-                    FROM event_attendees ea
-                    WHERE ea.event_id = e.id
-                ) attendee_stats
-                CROSS JOIN LATERAL (
-                    SELECT COUNT(*) AS saved_count
-                    FROM saved_events se
-                    WHERE se.event_id = e.id
-                ) saved_stats
+                FROM event_feed e
                 WHERE e.id <> :eventId
                   AND e.is_published = TRUE
                   AND e.is_cancelled = FALSE
-                  AND e.end_at > now()
+                  AND (
+                      e.end_at > now()
+                      OR (
+                          e.end_at IS NULL
+                          AND (e.start_at AT TIME ZONE 'Europe/Amsterdam')::date
+                              >= (now() AT TIME ZONE 'Europe/Amsterdam')::date
+                      )
+                  )
             )
             """;
 
@@ -299,43 +281,24 @@ public class EventSimilarityRepository {
             %s
             SELECT e.id,
                    e.title,
-                   ARRAY(
-                       SELECT c.id
-                       FROM event_categories ec
-                       JOIN categories c ON c.id = ec.category_id
-                       WHERE ec.event_id = e.id
-                       ORDER BY c.name
-                   ) AS category_ids,
-                   ARRAY(
-                       SELECT c.name
-                       FROM event_categories ec
-                       JOIN categories c ON c.id = ec.category_id
-                       WHERE ec.event_id = e.id
-                       ORDER BY c.name
-                   ) AS category_names,
+                   e.category_ids,
+                   e.category_names,
                    e.start_at,
                    e.end_at,
                    e.price,
-                   a.street,
-                   a.house_number,
-                   a.postal_code,
-                   a.city_name,
-                   a.province,
-                   a.latitude,
-                   a.longitude,
-                   (
-                       SELECT ei.image_url
-                       FROM event_images ei
-                       WHERE ei.event_id = e.id
-                       ORDER BY ei.created_at, ei.id
-                       LIMIT 1
-                   ) AS image_url,
+                   e.street,
+                   e.house_number,
+                   e.postal_code,
+                   e.city_name,
+                   e.province,
+                   e.latitude,
+                   e.longitude,
+                   e.image_url,
                    rc.going_count,
                    e.is_cancelled,
                    rc.similarity_score
             FROM ranked_candidates rc
-            JOIN events e ON e.id = rc.candidate_id
-            JOIN addresses a ON a.id = e.address_id
+            JOIN event_feed e ON e.id = rc.candidate_id
             ORDER BY rc.similarity_score DESC,
                      rc.popularity_score DESC,
                      e.start_at ASC,
