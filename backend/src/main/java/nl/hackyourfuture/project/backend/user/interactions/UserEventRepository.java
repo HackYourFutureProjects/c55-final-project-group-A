@@ -87,7 +87,7 @@ public class UserEventRepository {
 
   public boolean eventExists(UUID eventId) {
     return jdbcClient
-        .sql("SELECT EXISTS(SELECT 1 FROM events WHERE id = :eventId)")
+        .sql("SELECT EXISTS(SELECT 1 FROM event_feed WHERE id = :eventId AND is_published = TRUE)")
         .param("eventId", eventId)
         .query(Boolean.class)
         .single();
@@ -96,38 +96,13 @@ public class UserEventRepository {
   public List<SavedGoingEventCard> getSavedEvents(UUID userId, int limit, int offset) {
     return jdbcClient
         .sql("""
-            SELECT e.id, e.title,
-            (SELECT ei.image_url
-            FROM event_images ei
-            WHERE ei.event_id = e.id
-            ORDER BY ei.created_at
-            LIMIT 1
-            ) AS image_url,
-            ARRAY(
-            SELECT c.id
-            FROM event_categories ec
-            JOIN categories c ON c.id = ec.category_id
-            WHERE ec.event_id = e.id
-            ORDER BY c.name
-            ) AS category_ids,
-            ARRAY(
-            SELECT c.name
-            FROM event_categories ec
-            JOIN categories c ON c.id = ec.category_id
-            WHERE ec.event_id = e.id
-            ORDER BY c.name
-            ) AS category_names,
-            e.start_at,
-            e.end_at,
-            e.price,
-            a.street,
-            a.house_number,
-            a.city_name,
-            a.province,
+            SELECT e.id, e.title, e.image_url,
+            e.category_ids, e,category_names,
+            e.start_at, e.end_at, e.price,
+            e.street, e.house_number, e.city_name, e.province,
             e.is_cancelled
             FROM saved_events se
-            JOIN events e ON e.id = se.event_id
-            JOIN addresses a ON a.id = e.address_id
+            JOIN event_feed e ON e.id = se.event_id
             WHERE se.user_id = :userId
             ORDER BY e.start_at
             LIMIT :limit
@@ -154,38 +129,13 @@ public class UserEventRepository {
   public List<SavedGoingEventCard> getGoingEvents(UUID userId, int limit, int offset) {
     return jdbcClient
         .sql("""
-            SELECT e.id, e.title,
-            (SELECT ei.image_url
-            FROM event_images ei
-            WHERE ei.event_id = e.id
-            ORDER BY ei.created_at
-            LIMIT 1
-            ) AS image_url,
-            ARRAY (
-            SELECT c.id
-            FROM event_categories ec
-            JOIN categories c ON c.id = ec.category_id 
-            WHERE ec.event_id = e.id
-            ORDER BY c.name
-            ) AS category_ids,
-            ARRAY(
-            SELECT c.name
-            FROM event_categories ec
-            JOIN categories c ON c.id = ec.category_id
-            WHERE ec.event_id = e.id
-            ORDER BY c.name
-            ) AS category_names,
-            e.start_at,
-            e.end_at,
-            e.price,
-            a.street,
-            a.house_number,
-            a.city_name,
-            a.province,
+            SELECT e.id, e.title, e.image_url,
+            e.category_ids, e.category_names,
+            e.start_at, e.end_at, e.price,
+            e.street, e.house_number, e.city_name, e.province, 
             e.is_cancelled
             FROM event_attendees ea
-            JOIN events e ON e.id = ea.event_id
-            JOIN addresses a ON a.id = e.address_id
+            JOIN event_feed e ON e.id = ea.event_id
             WHERE ea.user_id = :userId
             ORDER BY e.start_at
             LIMIT :limit

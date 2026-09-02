@@ -45,31 +45,54 @@ public record SavedGoingEventCardResponse(
     OffsetDateTime startAt,
 
     @Schema(
-        description = "Date and time when the event ends",
+        description = "Date and time when the event ends; null when unknown",
         example = "2026-09-12T21:30:00Z",
+        nullable = true,
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     OffsetDateTime endAt,
 
     @Schema(
-        description = "Event price in euros",
+        description = "Event price in euros; null when unknown",
         example = "24.00",
+        nullable = true,
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     BigDecimal price,
 
     @Schema(
-        description = "Location where the event takes place",
+        description = "Street where the event takes place",
+        example = "Weteringschans",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    AddressSummaryResponse address,
+    String street,
+
+    @Schema(
+        description = "House or building number",
+        example = "6",
+        nullable = true
+    )
+    String houseNumber,
+
+    @Schema(
+        description = "City name",
+        example = "Amsterdam",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    String cityName,
+    @Schema(
+        description = "Province",
+        example = "North Holland",
+        nullable = true
+    )
+    String province,
 
     @Schema(
         description = "Whether the event has been cancelled by an admin",
         example = "false",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    boolean isCancelled
+    boolean cancelled
 ) {
   public static SavedGoingEventCardResponse from(SavedGoingEventCard e) {
     return new SavedGoingEventCardResponse(
@@ -80,8 +103,11 @@ public record SavedGoingEventCardResponse(
         e.startAt(),
         e.endAt(),
         e.price(),
-        new AddressSummaryResponse(e.street(), e.houseNumber(), e.cityName(), e.province()),
-        e.isCancelled()
+        e.street(),
+        e.houseNumber(),
+        e.cityName(),
+        e.province(),
+        e.cancelled()
     );
 
   }
@@ -103,33 +129,5 @@ public record SavedGoingEventCardResponse(
       String name) {
   }
 
-  @Schema(description = "Short address summary shown on an event card")
-  public record AddressSummaryResponse(
-      @Schema(
-          description = "Street name",
-          example = "Weteringschans",
-          requiredMode = Schema.RequiredMode.REQUIRED
-      )
-      String street,
-      @Schema(
-          description = "House or building number",
-          example = "6",
-          nullable = true
-      )
-      String houseNumber,
-      @Schema(
-          description = "City name",
-          example = "Amsterdam",
-          requiredMode = Schema.RequiredMode.REQUIRED
-      )
-      String cityName,
-      @Schema(
-          description = "Province",
-          example = "North Holland",
-          nullable = true
-      )
-      String province
-  ) {
-  }
 }
 

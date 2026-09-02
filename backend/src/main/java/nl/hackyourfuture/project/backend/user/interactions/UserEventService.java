@@ -2,12 +2,14 @@ package nl.hackyourfuture.project.backend.user.interactions;
 
 import lombok.RequiredArgsConstructor;
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
+import nl.hackyourfuture.project.backend.event.repository.EventRegistryRepository;
 import nl.hackyourfuture.project.backend.user.UserRepository;
 import nl.hackyourfuture.project.backend.user.UserService;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
 import nl.hackyourfuture.project.backend.user.interactions.dto.SavedGoingEventCardPageResponse;
 import nl.hackyourfuture.project.backend.user.interactions.dto.SavedGoingEventCardResponse;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,14 +21,19 @@ public class UserEventService {
   private final UserEventRepository userEventRepository;
   private final UserRepository userRepository;
   private final UserService userService;
+  private final EventRegistryRepository eventRegistryRepository;
 
+  @Transactional
   public void addEventToSaved(UUID userId, UUID eventId) {
     validateUserAndEvent(userId, eventId);
+    eventRegistryRepository.registerEventIfMissing(eventId);
     userEventRepository.addEventToSaved(userId, eventId);
   }
 
+  @Transactional
   public void addEventToGoing(UUID userId, UUID eventId) {
     validateUserAndEvent(userId, eventId);
+    eventRegistryRepository.registerEventIfMissing(eventId);
     userEventRepository.addEventToGoing(userId, eventId);
   }
 
