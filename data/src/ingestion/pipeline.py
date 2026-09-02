@@ -19,7 +19,7 @@ from typing import Any
 from dotenv import load_dotenv
 
 from .ingest import fetch_raw, parse_records
-from .price_enrichment import enrich_event_prices
+from .price_enrichment import Provider, enrich_event_prices
 from .storage import (
     LOCAL_LANDING_DIR,
     PRODUCTION_CONTAINER,
@@ -38,7 +38,11 @@ logger = logging.getLogger("pipeline")
 # Landing-folder name under LANDING_PREFIX (local / aca-dev / prod raw).
 # Same in every environment for a single source — not an env var.
 SOURCE_NAME = "events"
-PRICE_ENRICHMENT_SOURCE_NAME = "enrichment/prices"
+PRICE_ENRICHMENT_SOURCE_NAMES = {
+    "ticketmaster": "enrichment/prices/ticketmaster",
+    "universe": "enrichment/prices/universe",
+}
+DEFAULT_PRICE_ENRICHMENT_PROVIDERS: frozenset[Provider] = frozenset({"ticketmaster", "universe"})
 
 
 class MissingSetting(RuntimeError):
@@ -57,6 +61,7 @@ class Config:
     databricks_catalog: str
     landing_container: str
     landing_prefix: str
+    price_enrichment_providers: frozenset[Provider] = DEFAULT_PRICE_ENRICHMENT_PROVIDERS
 
 
 def _land_price_enrichment(
@@ -66,29 +71,67 @@ def _land_price_enrichment(
     run_date: str,
     local_dir: Path | None,
 ) -> int:
-    """Extract and separately land price enrichment records."""
+    """Extract and land each price provider in its own raw dataset."""
 
-    enriched = enrich_event_prices(records)
+    enriched = enrich_event_prices(
+        records,
+        providers=set(config.price_enrichment_providers),
+    )
 
     if not enriched:
         logger.warning("Price enrichment skipped: no supported external event URLs")
         return 0
 
-    serialized = [record.model_dump(mode="json") for record in enriched]
-    path = blob_path(
-        PRICE_ENRICHMENT_SOURCE_NAME,
-        run_date,
-        config.landing_prefix,
+    total_landed = 0
+
+    for provider, source_name in PRICE_ENRICHMENT_SOURCE_NAMES.items():
+        if provider not in config.price_enrichment_providers:
+            continue
+
+        serialized = [
+            record.model_dump(mode="json") for record in enriched if record.provider == provider
+        ]
+
+        if not serialized:
+            logger.warning(
+                "Price enrichment produced no records for provider=%s",
+                provider,
+            )
+            continue
+
+        path = blob_path(
+            source_name,
+            run_date,
+            config.landing_prefix,
+        )
+
+        if local_dir is not None:
+            total_landed += land_local_json(local_dir, path, serialized)
+        else:
+            total_landed += land_raw_json(
+                account=config.storage_account,
+                path=path,
+                records=serialized,
+                container=config.landing_container,
+            )
+
+    return total_landed
+
+
+def _configured_price_enrichment_providers() -> frozenset[Provider]:
+    raw_value = os.getenv(
+        "PRICE_ENRICHMENT_PROVIDERS",
+        "ticketmaster,universe",
     )
+    requested = {value.strip().lower() for value in raw_value.split(",") if value.strip()}
+    unsupported = requested - DEFAULT_PRICE_ENRICHMENT_PROVIDERS
 
-    if local_dir is not None:
-        return land_local_json(local_dir, path, serialized)
+    if unsupported:
+        names = ", ".join(sorted(unsupported))
+        raise MissingSetting(f"Unsupported PRICE_ENRICHMENT_PROVIDERS value(s): {names}")
 
-    return land_raw_json(
-        account=config.storage_account,
-        path=path,
-        records=serialized,
-        container=config.landing_container,
+    return frozenset(
+        provider for provider in DEFAULT_PRICE_ENRICHMENT_PROVIDERS if provider in requested
     )
 
 
@@ -117,6 +160,7 @@ def load_config(local: bool = False) -> Config:
         # `dev/<your name>`, a different container that you alone can write.
         landing_container=os.getenv("LANDING_CONTAINER", PRODUCTION_CONTAINER),
         landing_prefix=os.getenv("LANDING_PREFIX", PRODUCTION_PREFIX),
+        price_enrichment_providers=_configured_price_enrichment_providers(),
     )
 
 

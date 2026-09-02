@@ -301,6 +301,7 @@ jobs:
                     STORAGE_ACCOUNT=${{ env.STORAGE_ACCOUNT }} \
                     LANDING_CONTAINER=prod \
                     LANDING_PREFIX=raw \
+                    PRICE_ENRICHMENT_PROVIDERS=universe \
                     DATABRICKS_CATALOG=${{ env.DATABRICKS_CATALOG }} \
                     AZURE_CLIENT_ID=$client_id"
 
@@ -362,6 +363,7 @@ jobs:
                     STORAGE_ACCOUNT=${{ env.STORAGE_ACCOUNT }} \
                     LANDING_CONTAINER=dev \
                     LANDING_PREFIX=aca-dev \
+                    PRICE_ENRICHMENT_PROVIDERS=universe \
                     DATABRICKS_CATALOG=${{ env.DATABRICKS_CATALOG }} \
                     AZURE_CLIENT_ID=$client_id"
 

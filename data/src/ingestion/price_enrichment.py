@@ -178,6 +178,7 @@ def _enrich_target_safely(
 def enrich_event_prices(
     records: list[Any],
     *,
+    providers: set[Provider] | None = None,
     session: requests.Session | None = None,
     extracted_at: datetime | None = None,
 ) -> list[PriceEnrichmentRecord]:
@@ -185,6 +186,10 @@ def enrich_event_prices(
 
     timestamp = extracted_at or datetime.now(tz=UTC)
     targets = build_price_targets(records)
+
+    if providers is not None:
+        targets = [target for target in targets if target.provider in providers]
+
     enriched: list[PriceEnrichmentRecord] = []
 
     if session is not None:
