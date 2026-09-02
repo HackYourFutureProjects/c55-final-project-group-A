@@ -155,13 +155,25 @@ export default async function EventDetailPage({
             <h2 className="mb-4 text-xl font-bold text-gray-900">
               About this event
             </h2>
-            {event.description ? (
+            {event.description?.trim() ? (
               <p className="whitespace-pre-line text-gray-700">
                 {event.description}
               </p>
             ) : (
               <p className="text-gray-400">No description provided.</p>
             )}
+
+            {/* External page for imported events; null for app-created ones */}
+            {event.sourceUrl ? (
+              <a
+                href={event.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-block rounded-full border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+              >
+                View event page
+              </a>
+            ) : null}
           </div>
 
           {/* Right column: info card — sticky so it stays visible while scrolling a long description */}
