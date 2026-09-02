@@ -63,7 +63,11 @@ public class NotificationRepository {
     private static final String ON_CONFLICT_EVENT_UPDATED_UNREAD = """
             ON CONFLICT (user_id, type, resource_id)
             WHERE type = 'EVENT_UPDATED' AND read_at IS NULL
-            DO NOTHING
+            DO UPDATE SET
+                title = EXCLUDED.title,
+                body = EXCLUDED.body,
+                link_path = EXCLUDED.link_path,
+                created_at = now()
             """;
 
     public static final RowMapper<Notification> NOTIFICATION_ROW_MAPPER = (rs, _) ->
@@ -139,15 +143,21 @@ public class NotificationRepository {
         return unreadOnly ? "AND read_at IS NULL\n" : "";
     }
 
+    private static String excludeNewFeedbackUnlessAdminClause(boolean includeNewFeedback) {
+        return includeNewFeedback ? "" : "AND type <> 'NEW_FEEDBACK'\n";
+    }
+
     public List<Notification> findNotificationsByUserId(
             UUID userId,
             int limit,
-            int offset,
-            boolean unreadOnly
+            long offset,
+            boolean unreadOnly,
+            boolean includeNewFeedback
     ) {
         String sql = selectNotificationFrom() + """
                 WHERE user_id = :userId
-                """ + unreadFilterClause(unreadOnly) + """
+                """ + unreadFilterClause(unreadOnly)
+                + excludeNewFeedbackUnlessAdminClause(includeNewFeedback) + """
                 ORDER BY created_at DESC, id DESC
                 LIMIT :limit
                 OFFSET :offset
@@ -162,17 +172,83 @@ public class NotificationRepository {
                 .list();
     }
 
-    public long countNotificationsByUserId(UUID userId, boolean unreadOnly) {
+    public long countNotificationsByUserId(
+            UUID userId,
+            boolean unreadOnly,
+            boolean includeNewFeedback
+    ) {
         String sql = """
                 SELECT COUNT(*)
                 FROM notifications
                 WHERE user_id = :userId
-                """ + unreadFilterClause(unreadOnly);
+                """ + unreadFilterClause(unreadOnly)
+                + excludeNewFeedbackUnlessAdminClause(includeNewFeedback);
 
         return jdbcClient
                 .sql(sql)
                 .param("userId", userId)
                 .query(Long.class)
                 .single();
+    }
+
+    public Optional<Notification> findNotificationByIdAndUserId(
+            UUID id,
+            UUID userId,
+            boolean includeNewFeedback
+    ) {
+        return jdbcClient
+                .sql(selectNotificationFrom() + """
+                        WHERE id = :id
+                          AND user_id = :userId
+                        """ + excludeNewFeedbackUnlessAdminClause(includeNewFeedback))
+                .param("id", id)
+                .param("userId", userId)
+                .query(NOTIFICATION_ROW_MAPPER)
+                .optional();
+    }
+
+    public Optional<Notification> markAsRead(
+            UUID id,
+            UUID userId,
+            boolean includeNewFeedback
+    ) {
+        return jdbcClient
+                .sql("""
+                        UPDATE notifications
+                        SET read_at = now()
+                        WHERE id = :id
+                          AND user_id = :userId
+                          AND read_at IS NULL
+                        """ + excludeNewFeedbackUnlessAdminClause(includeNewFeedback) + """
+                        RETURNING
+                        """ + NOTIFICATION_COLUMNS)
+                .param("id", id)
+                .param("userId", userId)
+                .query(NOTIFICATION_ROW_MAPPER)
+                .optional();
+    }
+
+    public int markAllAsRead(UUID userId, boolean includeNewFeedback) {
+        return jdbcClient
+                .sql("""
+                        UPDATE notifications
+                        SET read_at = now()
+                        WHERE user_id = :userId
+                          AND read_at IS NULL
+                        """ + excludeNewFeedbackUnlessAdminClause(includeNewFeedback))
+                .param("userId", userId)
+                .update();
+    }
+
+    public int deleteRemindersByEventId(UUID eventId) {
+        return jdbcClient
+                .sql("""
+                        DELETE FROM notifications
+                        WHERE type = :type
+                          AND resource_id = :eventId
+                        """)
+                .param("type", NotificationType.EVENT_REMINDER.toDbValue())
+                .param("eventId", eventId)
+                .update();
     }
 }

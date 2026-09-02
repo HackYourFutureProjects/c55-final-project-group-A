@@ -53,6 +53,13 @@ public record NotificationResponse(
         String linkPath,
 
         @Schema(
+                description = "Whether the notification has been read",
+                example = "false",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        boolean read,
+
+        @Schema(
                 description = "When the notification was marked as read; null while unread",
                 example = "2026-09-02T14:30:00Z",
                 nullable = true
@@ -75,6 +82,7 @@ public record NotificationResponse(
                 notification.body(),
                 notification.resourceId(),
                 notification.linkPath(),
+                notification.isRead(),
                 notification.readAt(),
                 notification.createdAt()
         );

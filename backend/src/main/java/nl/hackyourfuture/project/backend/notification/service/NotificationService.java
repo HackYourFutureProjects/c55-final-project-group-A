@@ -2,9 +2,14 @@ package nl.hackyourfuture.project.backend.notification.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nl.hackyourfuture.project.backend.notification.NotificationNotFoundException;
 import nl.hackyourfuture.project.backend.notification.dto.response.NotificationPageResponse;
 import nl.hackyourfuture.project.backend.notification.dto.response.NotificationResponse;
+import nl.hackyourfuture.project.backend.notification.dto.response.NotificationUnreadCountResponse;
+import nl.hackyourfuture.project.backend.notification.model.Notification;
 import nl.hackyourfuture.project.backend.notification.repository.NotificationRepository;
+import nl.hackyourfuture.project.backend.user.Role;
+import nl.hackyourfuture.project.backend.user.User;
 import nl.hackyourfuture.project.backend.user.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +25,10 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserService userService;
 
+    private static boolean isAdmin(User user) {
+        return user.getRole() == Role.ADMIN;
+    }
+
     @Transactional(readOnly = true)
     public NotificationPageResponse getNotificationPage(
             UUID userId,
@@ -27,7 +36,8 @@ public class NotificationService {
             int size,
             boolean unreadOnly
     ) {
-        userService.getUserOrThrow(userId);
+        User user = userService.getUserOrThrow(userId);
+        boolean includeNewFeedback = isAdmin(user);
 
         log.debug(
                 "Fetching notification page for user {}, page={}, size={}, unreadOnly={}",
@@ -37,14 +47,15 @@ public class NotificationService {
                 unreadOnly
         );
 
-        int offset = page * size;
+        long offset = (long) page * size;
 
         List<NotificationResponse> notifications =
                 notificationRepository.findNotificationsByUserId(
                                 userId,
                                 size,
                                 offset,
-                                unreadOnly
+                                unreadOnly,
+                                includeNewFeedback
                         )
                         .stream()
                         .map(NotificationResponse::from)
@@ -52,7 +63,8 @@ public class NotificationService {
 
         long totalElements = notificationRepository.countNotificationsByUserId(
                 userId,
-                unreadOnly
+                unreadOnly,
+                includeNewFeedback
         );
         int totalPages = (int) Math.ceil(
                 (double) totalElements / size
@@ -73,6 +85,60 @@ public class NotificationService {
                 totalElements,
                 totalPages,
                 hasNext
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationUnreadCountResponse getUnreadCount(UUID userId) {
+        User user = userService.getUserOrThrow(userId);
+
+        long count = notificationRepository.countNotificationsByUserId(
+                userId,
+                true,
+                isAdmin(user)
+        );
+
+        return new NotificationUnreadCountResponse(count);
+    }
+
+    @Transactional
+    public NotificationResponse openNotification(UUID userId, UUID notificationId) {
+        User user = userService.getUserOrThrow(userId);
+        boolean includeNewFeedback = isAdmin(user);
+
+        log.debug(
+                "Opening notification {} for user {}",
+                notificationId,
+                userId
+        );
+
+        Notification notification = notificationRepository
+                .markAsRead(notificationId, userId, includeNewFeedback)
+                .or(() -> notificationRepository.findNotificationByIdAndUserId(
+                        notificationId,
+                        userId,
+                        includeNewFeedback
+                ))
+                .orElseThrow(() -> new NotificationNotFoundException(
+                        "Notification not found: " + notificationId
+                ));
+
+        return NotificationResponse.from(notification);
+    }
+
+    @Transactional
+    public void markAllAsRead(UUID userId) {
+        User user = userService.getUserOrThrow(userId);
+
+        int markedCount = notificationRepository.markAllAsRead(
+                userId,
+                isAdmin(user)
+        );
+
+        log.debug(
+                "Marked {} notifications as read for user {}",
+                markedCount,
+                userId
         );
     }
 }
