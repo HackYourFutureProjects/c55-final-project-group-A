@@ -136,6 +136,45 @@ def _enrich_target(
     )
 
 
+def _enrich_target_safely(
+    target: PriceEnrichmentTarget,
+    *,
+    session: requests.Session | None,
+    extracted_at: datetime,
+) -> PriceEnrichmentRecord:
+    """Convert an unexpected provider error into a failed enrichment record."""
+
+    try:
+        return _enrich_target(
+            target,
+            session=session,
+            extracted_at=extracted_at,
+        )
+    except Exception:
+        logger.exception(
+            "Unexpected price enrichment error: provider=%s, listing_key=%s",
+            target.provider,
+            target.listing_key,
+        )
+
+        extraction_method = (
+            "ticketmaster_ticketselection"
+            if target.provider == "ticketmaster"
+            else "universe_graphql"
+        )
+
+        return PriceEnrichmentRecord(
+            provider=target.provider,
+            listing_key=target.listing_key,
+            normalized_source_url=target.normalized_source_url,
+            external_event_ids=target.external_event_ids,
+            extraction_status="failed",
+            extraction_method=extraction_method,
+            error_code="unexpected_error",
+            extracted_at=extracted_at,
+        )
+
+
 def enrich_event_prices(
     records: list[Any],
     *,
@@ -150,7 +189,7 @@ def enrich_event_prices(
 
     if session is not None:
         enriched = [
-            _enrich_target(
+            _enrich_target_safely(
                 target,
                 session=session,
                 extracted_at=timestamp,
@@ -159,7 +198,7 @@ def enrich_event_prices(
         ]
     else:
         worker = partial(
-            _enrich_target,
+            _enrich_target_safely,
             session=None,
             extracted_at=timestamp,
         )

@@ -220,3 +220,59 @@ def test_enrichment_without_session_uses_worker_path_and_keeps_order(
     ]
     assert len(calls) == 2
     assert all(call["session"] is None for call in calls)
+
+
+def test_unexpected_target_error_does_not_stop_remaining_enrichment(monkeypatch):
+    records = [
+        {
+            "id": "broken-event",
+            "url": "https://www.ticketmaster.nl/event/broken/1111111111",
+        },
+        {
+            "id": "working-event",
+            "url": "https://www.ticketmaster.nl/event/working/2222222222",
+        },
+    ]
+
+    def fake_ticketmaster(**kwargs):
+        if kwargs["listing_key"] == "1111111111":
+            raise ValueError("unexpected parser error")
+
+        return PriceEnrichmentRecord(
+            provider="ticketmaster",
+            listing_key=kwargs["listing_key"],
+            normalized_source_url=kwargs["normalized_source_url"],
+            external_event_ids=kwargs["external_event_ids"],
+            price_min=Decimal(10),
+            price_max=Decimal(20),
+            currency="EUR",
+            is_price_known=True,
+            extraction_status="success",
+            extraction_method="ticketmaster_ticketselection",
+            extracted_at=kwargs["extracted_at"],
+        )
+
+    monkeypatch.setattr(
+        price_enrichment,
+        "fetch_ticketmaster_price",
+        fake_ticketmaster,
+    )
+
+    enriched = price_enrichment.enrich_event_prices(
+        records,
+        session=requests.Session(),
+        extracted_at=EXTRACTED_AT,
+    )
+
+    assert len(enriched) == 2
+
+    failed, successful = enriched
+
+    assert failed.listing_key == "1111111111"
+    assert failed.extraction_status == "failed"
+    assert failed.error_code == "unexpected_error"
+    assert failed.is_price_known is False
+
+    assert successful.listing_key == "2222222222"
+    assert successful.extraction_status == "success"
+    assert successful.is_price_known is True
