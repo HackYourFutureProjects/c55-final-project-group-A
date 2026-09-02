@@ -82,3 +82,37 @@ models:
           Number of Ticketmaster occurrence IDs represented by this logical
           daily event. One means that no additional booking slots were grouped.
         tests: [not_null]
+
+      - name: enriched_price_min
+        description: >
+          Minimum listing price extracted deterministically from the event's
+          Ticketmaster or Universe source page.
+
+      - name: enriched_price_max
+        description: Maximum deterministically extracted listing price.
+
+      - name: enriched_currency
+        description: Currency of the deterministically extracted price range.
+
+      - name: is_enriched_price_known
+        description: >
+          True when deterministic enrichment produced a complete valid price.
+        tests: [not_null]
+
+      - name: price_provider
+        description: Provider used for deterministic price extraction.
+
+      - name: provider_age_limit
+        description: Age restriction supplied by the price provider when available.
+
+      - name: price_extraction_status
+        description: Latest price extraction status used for monitoring.
+
+      - name: price_extraction_method
+        description: Provider-specific deterministic extraction method.
+
+      - name: price_error_code
+        description: Monitoring code when the price is unavailable or extraction failed.
+
+      - name: price_extracted_at
+        description: UTC timestamp of the latest price extraction attempt.

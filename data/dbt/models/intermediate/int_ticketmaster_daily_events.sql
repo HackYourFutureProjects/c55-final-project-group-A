@@ -6,6 +6,7 @@
 -- logical daily event.
 with
     ticketmaster_events as (select * from {{ ref("stg_ticketmaster_events") }}),
+    price_enrichment as (select * from {{ ref("stg_event_price_enrichment") }}),
 
     eligible_events as (
 
@@ -120,7 +121,32 @@ with
             )
             = 1
 
+    ),
+
+    price_enriched_daily_events as (
+
+        -- Join after daily grouping: every source occurrence ID has already
+        -- received its listing price in staging, so the selected earliest
+        -- occurrence can be enriched directly by event_id.
+        select
+            daily_events.*,
+
+            price_enrichment.price_min as enriched_price_min,
+            price_enrichment.price_max as enriched_price_max,
+            price_enrichment.currency as enriched_currency,
+            coalesce(price_enrichment.is_price_known, false) as is_enriched_price_known,
+
+            price_enrichment.price_provider,
+            price_enrichment.age_limit as provider_age_limit,
+            price_enrichment.extraction_status as price_extraction_status,
+            price_enrichment.extraction_method as price_extraction_method,
+            price_enrichment.error_code as price_error_code,
+            price_enrichment.extracted_at as price_extracted_at
+
+        from daily_events
+        left join price_enrichment using (event_id)
+
     )
 
 select *
-from daily_events
+from price_enriched_daily_events

@@ -159,17 +159,23 @@ models:
 
       - name: price_min
         description: >
-          Minimum advertised price when supplied. NULL means unavailable and
-          does not mean that the event is free.
+          Minimum current advertised listing price including known service
+          fees. Deterministic listing enrichment is preferred, with the
+          Ticketmaster Discovery API price range as fallback. Zero means that
+          at least one free option is advertised; NULL means unavailable.
 
       - name: price_max
-        description: Maximum advertised price when supplied.
+        description: >
+          Maximum current advertised listing price including known service
+          fees. The range may include premium or VIP ticket options.
 
       - name: currency
-        description: Currency of the advertised price range when supplied.
+        description: Three-letter currency code when a complete price is known.
 
       - name: is_price_known
-        description: True when Ticketmaster supplied a minimum price.
+        description: >
+          True when price_min, price_max and currency form a complete valid
+          advertised price range.
         tests:
           - not_null
 

@@ -14,10 +14,12 @@ import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 
 from .ingest import fetch_raw, parse_records
+from .price_enrichment import enrich_event_prices
 from .storage import (
     LOCAL_LANDING_DIR,
     PRODUCTION_CONTAINER,
@@ -36,6 +38,7 @@ logger = logging.getLogger("pipeline")
 # Landing-folder name under LANDING_PREFIX (local / aca-dev / prod raw).
 # Same in every environment for a single source — not an env var.
 SOURCE_NAME = "events"
+PRICE_ENRICHMENT_SOURCE_NAME = "enrichment/prices"
 
 
 class MissingSetting(RuntimeError):
@@ -54,6 +57,39 @@ class Config:
     databricks_catalog: str
     landing_container: str
     landing_prefix: str
+
+
+def _land_price_enrichment(
+    *,
+    records: list[Any],
+    config: Config,
+    run_date: str,
+    local_dir: Path | None,
+) -> int:
+    """Extract and separately land price enrichment records."""
+
+    enriched = enrich_event_prices(records)
+
+    if not enriched:
+        logger.warning("Price enrichment skipped: no supported external event URLs")
+        return 0
+
+    serialized = [record.model_dump(mode="json") for record in enriched]
+    path = blob_path(
+        PRICE_ENRICHMENT_SOURCE_NAME,
+        run_date,
+        config.landing_prefix,
+    )
+
+    if local_dir is not None:
+        return land_local_json(local_dir, path, serialized)
+
+    return land_raw_json(
+        account=config.storage_account,
+        path=path,
+        records=serialized,
+        container=config.landing_container,
+    )
 
 
 def load_config(local: bool = False) -> Config:
@@ -125,6 +161,16 @@ def run(run_date: str | None = None, local_dir: Path | None = None) -> int:
 
     if local_dir is not None:
         landed = land_local_json(local_dir, path, records)
+        price_landed = _land_price_enrichment(
+            records=records,
+            config=config,
+            run_date=run_date,
+            local_dir=local_dir,
+        )
+        logger.info(
+            "Price enrichment finished: %d record(s) written locally",
+            price_landed,
+        )
         logger.info(
             "Pipeline finished: %d written locally, %d rejected. Open the file, decide "
             "what the staging model should keep, then re-run without --local.",
@@ -138,6 +184,17 @@ def run(run_date: str | None = None, local_dir: Path | None = None) -> int:
         path=path,
         records=records,
         container=config.landing_container,
+    )
+
+    price_landed = _land_price_enrichment(
+        records=records,
+        config=config,
+        run_date=run_date,
+        local_dir=None,
+    )
+    logger.info(
+        "Price enrichment finished: %d record(s) landed",
+        price_landed,
     )
 
     landing_root = os.getenv("LANDING_PATH")
