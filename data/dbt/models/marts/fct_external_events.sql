@@ -53,10 +53,7 @@ with
             source,
 
             event_name as title,
-            coalesce(
-                nullif(trim(event_info), ''),
-                'No description available. Visit the event page for more information.'
-            ) as description,
+            nullif(trim(event_info), '') as description,
             event_url as source_url,
 
             -- Draft mapping from Ticketmaster classifications to the current

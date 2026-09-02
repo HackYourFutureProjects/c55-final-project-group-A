@@ -40,10 +40,8 @@ models:
 
       - name: description
         description: >
-          Event description supplied by Ticketmaster, or a fallback message
-          directing users to the event page when no description is available.
-        tests:
-          - not_null
+          Event description supplied by Ticketmaster. NULL means that the
+          source did not provide a usable description.
 
       - name: source_url
         description: Ticketmaster or partner page where the event can be viewed.
