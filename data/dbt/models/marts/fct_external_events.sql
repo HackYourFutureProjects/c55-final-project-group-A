@@ -18,6 +18,30 @@ with
         select * from {{ ref("int_ticketmaster_daily_events") }}
     ),
 
+    effective_prices as (
+
+        -- Prefer the deterministic listing enrichment. Keep the Discovery API
+        -- price range as a fallback in case an event has no enrichment record
+        -- or the provider reports that its current price is unavailable.
+        select
+            *,
+
+            case
+                when is_enriched_price_known then enriched_price_min else price_min
+            end as effective_price_min,
+
+            case
+                when is_enriched_price_known then enriched_price_max else price_max
+            end as effective_price_max,
+
+            case
+                when is_enriched_price_known then enriched_currency else currency
+            end as effective_currency
+
+        from ticketmaster_daily_events
+
+    ),
+
     normalized as (
 
         select
@@ -29,10 +53,7 @@ with
             source,
 
             event_name as title,
-            coalesce(
-                nullif(trim(event_info), ''),
-                'No description available. Visit the event page for more information.'
-            ) as description,
+            nullif(trim(event_info), '') as description,
             event_url as source_url,
 
             -- Draft mapping from Ticketmaster classifications to the current
@@ -81,10 +102,13 @@ with
 
             -- NULL means Ticketmaster did not supply a price. It does not mean
             -- that the event is free.
-            price_min,
-            price_max,
-            currency,
-            price_min is not null as is_price_known,
+            effective_price_min as price_min,
+            effective_price_max as price_max,
+            effective_currency as currency,
+
+            effective_price_min is not null
+            and effective_price_max is not null
+            and effective_currency is not null as is_price_known,
 
             venue_id as external_venue_id,
             venue_name,
@@ -104,7 +128,7 @@ with
             ingest_date,
             ingested_at
 
-        from ticketmaster_daily_events
+        from effective_prices
 
     )
 
