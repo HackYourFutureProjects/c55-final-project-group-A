@@ -50,6 +50,7 @@ export interface EventDetail {
   eventStatus: EventStatus;
   latitude: number;
   longitude: number;
+  sourceUrl?: string | null;
 }
 
 export interface EventFilters {
