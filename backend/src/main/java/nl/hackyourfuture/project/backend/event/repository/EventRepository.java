@@ -341,6 +341,7 @@ public class EventRepository {
                     rs.getBigDecimal("latitude"),
                     rs.getBigDecimal("longitude"),
                     rs.getString("image_url"),
+                    rs.getString("source_url"),
                     rs.getLong("going_count"),
                     rs.getBoolean("is_cancelled")
             );
@@ -363,6 +364,7 @@ public class EventRepository {
                        e.latitude,
                        e.longitude,
                        e.image_url,
+                       e.source_url,
                        e.going_count,
                        e.is_cancelled
                 FROM event_feed e

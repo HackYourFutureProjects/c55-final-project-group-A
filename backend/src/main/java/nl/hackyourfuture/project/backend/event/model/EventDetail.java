@@ -22,6 +22,7 @@ public record EventDetail(UUID id,
                           BigDecimal latitude,
                           BigDecimal longitude,
                           String imageUrl,
+                          String sourceUrl,
                           long goingCount,
                           boolean cancelled) {
 }
