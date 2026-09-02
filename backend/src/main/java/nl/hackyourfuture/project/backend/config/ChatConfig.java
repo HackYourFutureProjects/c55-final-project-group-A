@@ -1,4 +1,4 @@
-package nl.hackyourfuture.project.backend.chat;
+package nl.hackyourfuture.project.backend.config;
 
 import com.google.genai.Client;
 import org.springframework.beans.factory.annotation.Value;

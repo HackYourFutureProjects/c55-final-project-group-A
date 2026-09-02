@@ -38,6 +38,7 @@ public class SecurityConfig {
                                 "/api/events/*/comments"
                         )
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/chat").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/locations/**")
