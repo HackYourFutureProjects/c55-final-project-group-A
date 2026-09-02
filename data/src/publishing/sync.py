@@ -5,8 +5,8 @@ Airflow runs this after dbt succeeds, and you run it by hand with
 scheduled publish and your own use one connection string and one set of
 defaults rather than two that drift.
 
-See the README, "The two schemas" and "The write-then-swap", for why it works
-the way it does.
+See the README, "The two schemas", for how development and production targets
+stay separated.
 """
 
 import argparse
@@ -82,10 +82,11 @@ def publish(
     rows: list[list],
     source: str | None = None,
 ) -> int:
-    """Replace the backend's copy of the table, return the row count written.
+    """Refresh the backend's table in place, return the row count written.
 
-    Load into staging, then swap inside one transaction, so a reader sees the
-    whole old version or the whole new one and never a half-written table.
+    Load into staging, then truncate and refill the published table inside one
+    transaction. Keeping the published table itself preserves backend views,
+    grants, and indexes while still removing rows absent from the latest mart.
 
     `source` is the warehouse schema the rows came from, and it is recorded as a
     comment on the table. One shared `analytics_dev` means the last publish wins,
@@ -104,6 +105,7 @@ def publish(
         SQL("{} {}").format(Identifier(name), SQL(postgres_type(type_text)))
         for name, type_text in columns
     )
+    column_names = SQL(", ").join(Identifier(name) for name, _ in columns)
 
     connection = psycopg.connect(dsn, autocommit=False)
     try:
@@ -113,19 +115,24 @@ def publish(
             cursor.executemany(
                 SQL("insert into {} ({}) values ({})").format(
                     staging,
-                    SQL(", ").join(Identifier(name) for name, _ in columns),
+                    column_names,
                     SQL(", ").join([Placeholder()] * len(columns)),
                 ),
                 rows,
             )
-            # The swap. `if exists` is what makes the very first publish work,
-            # when there is nothing to replace yet.
-            cursor.execute(SQL("drop table if exists {}").format(published))
-            cursor.execute(SQL("alter table {} rename to {}").format(staging, Identifier(table)))
+            # Create only on the first publish. Later runs preserve this table
+            # so backend views, grants, and indexes remain attached to it.
+            cursor.execute(SQL("create table if not exists {} ({})").format(published, definition))
+            cursor.execute(SQL("truncate table {}").format(published))
+            cursor.execute(
+                SQL("insert into {} ({}) select {} from {}").format(
+                    published, column_names, column_names, staging
+                )
+            )
+            cursor.execute(SQL("drop table {}").format(staging))
             if source:
                 # A comment, not a column: it describes the table rather than
-                # every row in it, and it survives the swap without widening
-                # what the backend has to select.
+                # every row in it without widening what the backend selects.
                 stamp = datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%MZ")
                 cursor.execute(
                     SQL("comment on table {} is {}").format(
@@ -157,7 +164,7 @@ def dsn_from_env() -> str:
 
 
 def run(mart: str = DEFAULT_MART, table: str = DEFAULT_TABLE, schema: str | None = None) -> int:
-    """Read one mart out of the warehouse and replace the backend's copy."""
+    """Read one mart out of the warehouse and refresh the backend's copy."""
     warehouse_schema = os.environ["DBT_SCHEMA"]
     columns, rows = read_mart(Warehouse.from_env(), warehouse_schema, mart)
     target_schema = schema or os.environ.get("BACKEND_PG_PUBLISH_SCHEMA", "analytics")

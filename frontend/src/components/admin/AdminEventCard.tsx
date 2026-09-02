@@ -42,6 +42,7 @@ export default function AdminEventCard({
         </div>
         <p className="mt-1 text-neutral-500 text-sm">
           {new Date(event.startAt).toLocaleString("en-GB", {
+            timeZone: "Europe/Amsterdam",
             day: "2-digit",
             month: "short",
             year: "numeric",

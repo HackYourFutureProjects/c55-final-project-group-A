@@ -23,9 +23,11 @@ const LABEL = "block font-semibold text-sm";
 const INPUT =
   "mt-2 w-full rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:border-neutral-900";
 
-// datetime-local wants "2026-09-13T21:00" — the ISO string without the timezone part
+// datetime-local wants local time as "2026-09-04T21:00", but the API sends UTC
 function toLocalInputValue(isoDate: string) {
-  return isoDate.slice(0, 16);
+  const date = new Date(isoDate);
+  const offsetMs = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
 export default function EventForm({ initialEvent, onSubmit }: EventFormProps) {
