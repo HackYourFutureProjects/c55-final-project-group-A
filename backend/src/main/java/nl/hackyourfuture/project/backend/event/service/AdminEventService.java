@@ -1,6 +1,10 @@
 package nl.hackyourfuture.project.backend.event.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import nl.hackyourfuture.project.backend.notification.model.OutboxPayload;
+import nl.hackyourfuture.project.backend.notification.service.NotificationOutboxService;
+import nl.hackyourfuture.project.backend.notification.service.NotificationReminderService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminEventService {
@@ -41,6 +46,8 @@ public class AdminEventService {
     private final ImageService imageService;
     private final AddressRepository addressRepository;
     private final AdminEventRepository adminEventRepository;
+    private final NotificationOutboxService notificationOutboxService;
+    private final NotificationReminderService notificationReminderService;
 
     @Transactional
     public CreateEventResponse createEvent(
@@ -49,6 +56,12 @@ public class AdminEventService {
             UUID createdByUserId,
             boolean publishNow
     ) {
+        log.debug(
+                "Creating event for user {}, publishNow={}",
+                createdByUserId,
+                publishNow
+        );
+
         validateEventDates(
                 request.startAt(),
                 request.endAt()
@@ -85,11 +98,20 @@ public class AdminEventService {
             }
         }
 
+        log.debug(
+                "Created event {} for user {}, published={}",
+                eventId,
+                createdByUserId,
+                publishNow
+        );
+
         return new CreateEventResponse(eventId, publishNow, imageUrl);
     }
 
     @Transactional
     public void publish(UUID eventId) {
+        log.debug("Publishing event {}", eventId);
+
         AdminEventDetail event = findAdminEvent(eventId);
 
         if (event.cancelled()) {
@@ -99,6 +121,7 @@ public class AdminEventService {
         }
 
         if (event.published()) {
+            log.debug("Event {} is already published", eventId);
             return;
         }
 
@@ -117,6 +140,8 @@ public class AdminEventService {
                             + "end time changed. Refresh the event and try again."
             );
         }
+
+        log.debug("Published event {}", eventId);
     }
 
     private void validateEventCanBePublished(OffsetDateTime endAt) {
@@ -243,6 +268,8 @@ public class AdminEventService {
             UpdateEventRequest request,
             MultipartFile image
     ) {
+        log.debug("Updating event {}", eventId);
+
         AdminEventDetail existingEvent = findAdminEvent(eventId);
 
         if (existingEvent.cancelled()) {
@@ -275,6 +302,10 @@ public class AdminEventService {
         EventUpdate eventUpdate =
                 buildEventUpdate(existingEvent, request);
 
+        boolean startTimeChanged =
+                request.startAt() != null
+                        && !request.startAt().equals(existingEvent.startAt());
+
         if (!adminEventRepository.updateEvent(eventUpdate)) {
             throw new EventNotFoundException(
                     "Event not found: " + eventId
@@ -302,13 +333,41 @@ public class AdminEventService {
             imageService.upload(eventId, image);
         }
 
-        return AdminEventDetailResponse.from(
-                findAdminEvent(eventId)
-        );
+        AdminEventDetail updatedEvent = findAdminEvent(eventId);
+
+        if (startTimeChanged) {
+            int deletedReminders = notificationReminderService.deleteRemindersForEvent(eventId);
+            log.info(
+                    "Deleted {} EVENT_REMINDER notifications for event {} after start time change",
+                    deletedReminders,
+                    eventId
+            );
+        }
+
+        if (existingEvent.published()) {
+            log.info(
+                    "Updated published event {}, enqueuing EVENT_UPDATED notification",
+                    eventId
+            );
+            notificationOutboxService.enqueueEventUpdated(
+                    eventId,
+                    new OutboxPayload(
+                            updatedEvent.title(),
+                            "/events/" + eventId
+                    )
+            );
+        }
+
+        log.debug("Updated event {}", eventId);
+
+        return AdminEventDetailResponse.from(updatedEvent);
+
     }
 
     @Transactional
     public void unpublish(UUID eventId) {
+        log.debug("Unpublishing event {}", eventId);
+
         AdminEventDetail event = findAdminEvent(eventId);
 
         if (!event.published()) {
@@ -328,10 +387,14 @@ public class AdminEventService {
                     "Event not found: " + eventId
             );
         }
+
+        log.debug("Unpublished event {}", eventId);
     }
 
     @Transactional
     public void uncancel(UUID eventId) {
+        log.debug("Uncancelling event {}", eventId);
+
         AdminEventDetail event = findAdminEvent(eventId);
 
         if (!event.cancelled()) {
@@ -357,11 +420,15 @@ public class AdminEventService {
                     "Event not found: " + eventId
             );
         }
+
+        log.debug("Uncancelled event {}", eventId);
     }
 
 
     @Transactional
     public void cancel(UUID eventId) {
+        log.debug("Cancelling event {}", eventId);
+
         AdminEventDetail event = findAdminEvent(eventId);
 
         if (!event.published()) {
@@ -371,6 +438,7 @@ public class AdminEventService {
         }
 
         if (event.cancelled()) {
+            log.debug("Event {} is already cancelled", eventId);
             return;
         }
 
@@ -386,10 +454,26 @@ public class AdminEventService {
                             + "changed. Refresh the event and try again."
             );
         }
+
+        log.info(
+                "Cancelled event {}, enqueuing EVENT_CANCELLED notification",
+                eventId
+        );
+        notificationOutboxService.enqueueEventCancelled(
+                eventId,
+                new OutboxPayload(
+                        event.title(),
+                        "/events/" + eventId
+                )
+        );
+
+        log.debug("Cancelled event {}", eventId);
     }
 
     @Transactional
     public void deleteDraft(UUID eventId) {
+        log.debug("Deleting draft event {}", eventId);
+
         AdminEventDetail event = findAdminEvent(eventId);
 
         if (event.published()) {
@@ -407,5 +491,7 @@ public class AdminEventService {
                 );
 
         addressRepository.deleteIfUnused(addressId);
+
+        log.debug("Deleted draft event {}", eventId);
     }
 }
