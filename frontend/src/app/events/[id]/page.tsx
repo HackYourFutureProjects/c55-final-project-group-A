@@ -17,18 +17,21 @@ function formatDateRange(startAt: string, endAt: string | null) {
   const start = new Date(startAt);
 
   const date = start.toLocaleDateString("en-GB", {
+    timeZone: "Europe/Amsterdam",
     weekday: "long",
     day: "numeric",
     month: "long",
   });
 
   const startTime = start.toLocaleTimeString("en-GB", {
+    timeZone: "Europe/Amsterdam",
     hour: "2-digit",
     minute: "2-digit",
   });
 
   const endTime = endAt
     ? new Date(endAt).toLocaleTimeString("en-GB", {
+        timeZone: "Europe/Amsterdam",
         hour: "2-digit",
         minute: "2-digit",
       })

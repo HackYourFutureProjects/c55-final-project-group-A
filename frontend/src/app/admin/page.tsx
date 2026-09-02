@@ -77,6 +77,7 @@ function AdminContent() {
                     <div className="mt-2 flex items-center justify-between gap-3">
                       <p className="text-neutral-500 text-sm">
                         {new Date(event.startAt).toLocaleString("en-GB", {
+                          timeZone: "Europe/Amsterdam",
                           day: "2-digit",
                           month: "short",
                           year: "numeric",

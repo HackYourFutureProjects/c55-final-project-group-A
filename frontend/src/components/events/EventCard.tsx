@@ -9,11 +9,13 @@ interface EventCardProps {
 function formatEventDate(startAt: string) {
   const date = new Date(startAt);
   const day = date.toLocaleDateString("en-GB", {
+    timeZone: "Europe/Amsterdam",
     weekday: "short",
     day: "numeric",
     month: "short",
   });
   const time = date.toLocaleTimeString("en-GB", {
+    timeZone: "Europe/Amsterdam",
     hour: "2-digit",
     minute: "2-digit",
   });
