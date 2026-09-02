@@ -28,4 +28,4 @@ image:
   private-key: ${IMAGEKIT_PRIVATE_KEY}
 
 gemini:
-  api-key: ${GEMINI_API_KEY}
+  api-key: ${GEMINI_API_KEY:}
