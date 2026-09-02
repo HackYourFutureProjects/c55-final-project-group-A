@@ -54,10 +54,10 @@ export default async function EventWeather({
           Weather at start
         </p>
         <p className="mt-3 font-bold text-gray-900 text-lg">
-          Forecast not ready
+          Too far ahead for a forecast
         </p>
         <p className="mt-1 text-gray-500 text-sm">
-          Check back closer to the event date
+          Weather appears about two weeks before the event
         </p>
       </div>
     );
