@@ -1,12 +1,12 @@
 version: 2
 
 models:
-  - name: stg_event_price_enrichment
+  - name: stg_ticketmaster_price_enrichment
     description: >
-      Latest deterministic price-enrichment result for each Ticketmaster
-      occurrence ID. Ingestion extracts one record per unique source listing;
-      staging expands its external_event_ids array so event models can join
-      prices by event_id.
+      Latest deterministic Ticketmaster internal price result for each
+      Ticketmaster occurrence ID. Ingestion extracts one record per unique
+      Ticketmaster listing; staging expands its external_event_ids array so
+      event models can join prices by event_id.
 
     columns:
       - name: event_id
@@ -27,7 +27,6 @@ models:
               arguments:
                 values:
                   - ticketmaster
-                  - universe
 
       - name: listing_key
         description: Provider-specific identifier used to request the listing price.

@@ -22,6 +22,16 @@ RAW_EVENTS = [
 ]
 
 
+def test_load_config_reads_enabled_price_enrichment_providers(monkeypatch):
+    monkeypatch.setenv("SOURCE_API_URL", "https://example.test/events.json")
+    monkeypatch.setenv("TICKETMASTER_API_KEY", "test-api-key")
+    monkeypatch.setenv("PRICE_ENRICHMENT_PROVIDERS", " universe ")
+
+    config = pipeline.load_config(local=True)
+
+    assert config.price_enrichment_providers == frozenset({"universe"})
+
+
 def test_pipeline_lands_original_raw_events_including_rejected(monkeypatch, caplog):
     config = pipeline.Config(
         source_api_url="https://example.test/events.json",
@@ -88,7 +98,7 @@ def test_pipeline_rejects_an_empty_extraction_before_landing(monkeypatch):
         pipeline.run("2026-08-16")
 
 
-def test_pipeline_lands_price_enrichment_in_separate_folder(
+def test_pipeline_lands_price_providers_in_separate_folders(
     monkeypatch,
 ):
     config = pipeline.Config(
@@ -105,7 +115,12 @@ def test_pipeline_lands_price_enrichment_in_separate_folder(
             "id": "event-1",
             "name": "Example Event",
             "url": ("https://www.ticketmaster.nl/event/" "example-event/1234567890"),
-        }
+        },
+        {
+            "id": "event-2",
+            "name": "Universe Event",
+            "url": ("https://www.universe.com/events/" "example-event-ABC123"),
+        },
     ]
     enrichment_record = PriceEnrichmentRecord(
         provider="ticketmaster",
@@ -118,6 +133,19 @@ def test_pipeline_lands_price_enrichment_in_separate_folder(
         is_price_known=True,
         extraction_status="success",
         extraction_method="ticketmaster_ticketselection",
+        extracted_at=datetime(2026, 9, 1, 12, 0, tzinfo=UTC),
+    )
+    universe_enrichment_record = PriceEnrichmentRecord(
+        provider="universe",
+        listing_key="example-event-ABC123",
+        normalized_source_url=("https://www.universe.com/events/example-event-ABC123"),
+        external_event_ids=["event-2"],
+        price_min=Decimal("5.00"),
+        price_max=Decimal("15.00"),
+        currency="EUR",
+        is_price_known=True,
+        extraction_status="success",
+        extraction_method="universe_graphql",
         extracted_at=datetime(2026, 9, 1, 12, 0, tzinfo=UTC),
     )
     writes = []
@@ -145,10 +173,16 @@ def test_pipeline_lands_price_enrichment_in_separate_folder(
         "fetch_raw",
         lambda url, api_key: raw_events,
     )
+
+    def fake_enrich_event_prices(records, providers):
+        assert records == raw_events
+        assert providers == {"ticketmaster", "universe"}
+        return [enrichment_record, universe_enrichment_record]
+
     monkeypatch.setattr(
         pipeline,
         "enrich_event_prices",
-        lambda records: [enrichment_record],
+        fake_enrich_event_prices,
     )
     monkeypatch.setattr(
         pipeline,
@@ -158,12 +192,16 @@ def test_pipeline_lands_price_enrichment_in_separate_folder(
 
     landed = pipeline.run("2026-09-01")
 
-    assert landed == 1
+    assert landed == 2
     assert [write["path"] for write in writes] == [
         "pavel/events/ingest_date=2026-09-01/data.json",
-        ("pavel/enrichment/prices/" "ingest_date=2026-09-01/data.json"),
+        ("pavel/enrichment/prices/ticketmaster/" "ingest_date=2026-09-01/data.json"),
+        ("pavel/enrichment/prices/universe/" "ingest_date=2026-09-01/data.json"),
     ]
     assert writes[0]["records"] == raw_events
     assert writes[1]["records"][0]["listing_key"] == "1234567890"
     assert writes[1]["records"][0]["price_min"] == "10.50"
     assert writes[1]["records"][0]["currency"] == "EUR"
+    assert writes[2]["records"][0]["listing_key"] == "example-event-ABC123"
+    assert writes[2]["records"][0]["price_min"] == "5.00"
+    assert writes[2]["records"][0]["currency"] == "EUR"

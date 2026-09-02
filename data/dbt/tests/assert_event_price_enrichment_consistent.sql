@@ -1,7 +1,7 @@
 -- A known price must be complete, an unknown price must not be partially
 -- populated, and every range must be ordered from minimum to maximum.
 select *
-from {{ ref("stg_event_price_enrichment") }}
+from {{ ref("int_event_price_enrichment") }}
 where
     (is_price_known and (price_min is null or price_max is null or currency is null))
     or (

@@ -17,13 +17,22 @@ macro-paths: ["macros"]
 # "Developing locally".
 vars:
   landing_path: "{{ env_var('LANDING_PATH', '/Volumes/team_a/landing/prod/events') }}"
-  price_enrichment_path: >-
+  ticketmaster_price_enrichment_path: >-
     {{ env_var(
-      'PRICE_ENRICHMENT_PATH',
+      'TICKETMASTER_PRICE_ENRICHMENT_PATH',
       env_var(
         'LANDING_PATH',
         '/Volumes/team_a/landing/prod/events'
-      ) | replace('/events', '/enrichment/prices')
+      ) | replace('/events', '/enrichment/prices/ticketmaster')
+    ) }}
+
+  universe_price_enrichment_path: >-
+    {{ env_var(
+      'UNIVERSE_PRICE_ENRICHMENT_PATH',
+      env_var(
+        'LANDING_PATH',
+        '/Volumes/team_a/landing/prod/events'
+      ) | replace('/events', '/enrichment/prices/universe')
     ) }}
 
 clean-targets:

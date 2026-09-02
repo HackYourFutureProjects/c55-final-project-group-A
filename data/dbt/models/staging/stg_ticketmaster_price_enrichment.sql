@@ -1,5 +1,5 @@
--- One row represents the latest price-enrichment result for one external
--- Ticketmaster occurrence ID.
+-- One row represents the latest Ticketmaster internal price result for one
+-- external Ticketmaster occurrence ID.
 --
 -- Ingestion stores one enrichment record per unique source listing and keeps
 -- all Ticketmaster occurrence IDs associated with that listing in an array.
@@ -27,7 +27,9 @@ with
 
         from
             read_files(
-                '{{ var("price_enrichment_path") }}', format => 'json', schemahints => '
+                '{{ var("ticketmaster_price_enrichment_path") }}',
+                format => 'json',
+                schemahints => '
                     provider STRING,
                     listing_key STRING,
                     normalized_source_url STRING,

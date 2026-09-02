@@ -6,7 +6,7 @@
 -- logical daily event.
 with
     ticketmaster_events as (select * from {{ ref("stg_ticketmaster_events") }}),
-    price_enrichment as (select * from {{ ref("stg_event_price_enrichment") }}),
+    price_enrichment as (select * from {{ ref("int_event_price_enrichment") }}),
 
     eligible_events as (
 

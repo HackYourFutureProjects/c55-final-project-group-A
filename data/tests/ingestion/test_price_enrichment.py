@@ -276,3 +276,50 @@ def test_unexpected_target_error_does_not_stop_remaining_enrichment(monkeypatch)
     assert successful.listing_key == "2222222222"
     assert successful.extraction_status == "success"
     assert successful.is_price_known is True
+
+
+def test_enrichment_runs_only_enabled_providers(monkeypatch):
+    records = [
+        {
+            "id": "ticketmaster-event",
+            "url": "https://www.ticketmaster.nl/event/example/1234567890",
+        },
+        {
+            "id": "universe-event",
+            "url": "https://www.universe.com/events/example-event-ABC123",
+        },
+    ]
+    calls = []
+
+    def fake_enrich_target_safely(
+        target,
+        *,
+        session,
+        extracted_at,
+    ):
+        calls.append(target.provider)
+        return PriceEnrichmentRecord(
+            provider=target.provider,
+            listing_key=target.listing_key,
+            normalized_source_url=target.normalized_source_url,
+            external_event_ids=target.external_event_ids,
+            extraction_status="success",
+            extraction_method="universe_graphql",
+            extracted_at=extracted_at,
+        )
+
+    monkeypatch.setattr(
+        price_enrichment,
+        "_enrich_target_safely",
+        fake_enrich_target_safely,
+    )
+
+    enriched = price_enrichment.enrich_event_prices(
+        records,
+        providers={"universe"},
+        session=requests.Session(),
+        extracted_at=EXTRACTED_AT,
+    )
+
+    assert calls == ["universe"]
+    assert [record.provider for record in enriched] == ["universe"]
