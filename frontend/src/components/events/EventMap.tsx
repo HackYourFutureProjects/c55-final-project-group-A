@@ -1,9 +1,9 @@
 // Leaflet map showing a single pin at the event's location.
+// Loaded only in the browser via EventMapClient — Leaflet touches window on import.
 
 "use client";
 
 import L from "leaflet";
-import { useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -28,15 +28,6 @@ export default function EventMap({
   longitude,
   title,
 }: EventMapProps) {
-  // Leaflet needs the browser, so we wait until the component is mounted.
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
-
-  // Placeholder with the same height, so the layout doesn't jump.
-  if (!isMounted) {
-    return <div className="h-48 w-full rounded-xl bg-gray-100" />;
-  }
-
   return (
     <MapContainer
       center={[latitude, longitude]}
