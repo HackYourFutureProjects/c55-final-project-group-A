@@ -160,6 +160,123 @@ def test_fetch_raw_stops_at_deep_paging_limit(monkeypatch):
     assert requested_pages == list(range(MAX_PAGES))
 
 
+def test_fetch_raw_uses_five_date_windows(monkeypatch):
+    requested_params = []
+
+    class FakeResponse:
+        ok = True
+        status_code = 200
+
+        def json(self):
+            request_number = len(requested_params)
+            return {
+                "_embedded": {
+                    "events": [
+                        {
+                            "id": f"event-{request_number}",
+                            "name": f"Event {request_number}",
+                        }
+                    ]
+                },
+                "page": {"number": 0, "totalPages": 1},
+            }
+
+    def fake_get(url, params, timeout):
+        requested_params.append(params)
+        return FakeResponse()
+
+    monkeypatch.setattr("src.ingestion.ingest.requests.get", fake_get)
+
+    fetch_raw(
+        url="https://example.test/events.json",
+        api_key="test-api-key",
+        start_date=date(2026, 9, 3),
+    )
+
+    assert len(requested_params) == 5
+    assert [(params["startDateTime"], params["endDateTime"]) for params in requested_params] == [
+        ("2026-09-03T00:00:00Z", "2026-10-03T00:00:00Z"),
+        ("2026-10-03T00:00:00Z", "2026-11-02T00:00:00Z"),
+        ("2026-11-02T00:00:00Z", "2026-12-02T00:00:00Z"),
+        ("2026-12-02T00:00:00Z", "2027-01-01T00:00:00Z"),
+        ("2027-01-01T00:00:00Z", "2027-01-31T00:00:00Z"),
+    ]
+    assert all(params["sort"] == "date,asc" for params in requested_params)
+
+
+def test_each_date_window_respects_deep_paging_limit(monkeypatch):
+    requested_params = []
+
+    class FakeResponse:
+        ok = True
+        status_code = 200
+
+        def __init__(self, page_number):
+            self.page_number = page_number
+
+        def json(self):
+            request_number = len(requested_params)
+            return {
+                "_embedded": {
+                    "events": [
+                        {
+                            "id": f"event-{request_number}",
+                            "name": f"Event {request_number}",
+                        }
+                    ]
+                },
+                "page": {"number": self.page_number, "totalPages": 100},
+            }
+
+    def fake_get(url, params, timeout):
+        requested_params.append(params)
+        return FakeResponse(params["page"])
+
+    monkeypatch.setattr("src.ingestion.ingest.requests.get", fake_get)
+
+    fetch_raw(
+        url="https://example.test/events.json",
+        api_key="test-api-key",
+        start_date=date(2026, 9, 3),
+    )
+
+    assert len(requested_params) == 25
+    assert [params["page"] for params in requested_params] == list(range(MAX_PAGES)) * 5
+
+
+def test_fetch_raw_deduplicates_events_across_date_windows(monkeypatch):
+    class FakeResponse:
+        ok = True
+        status_code = 200
+
+        def json(self):
+            return {
+                "_embedded": {
+                    "events": [
+                        {"id": "shared-event", "name": "Shared Event"},
+                        {"name": "Missing ID"},
+                    ]
+                },
+                "page": {"number": 0, "totalPages": 1},
+            }
+
+    monkeypatch.setattr(
+        "src.ingestion.ingest.requests.get",
+        lambda url, params, timeout: FakeResponse(),
+    )
+
+    records = fetch_raw(
+        url="https://example.test/events.json",
+        api_key="test-api-key",
+        start_date=date(2026, 9, 3),
+    )
+
+    assert [record for record in records if record.get("id") == "shared-event"] == [
+        {"id": "shared-event", "name": "Shared Event"}
+    ]
+    assert len([record for record in records if "id" not in record]) == 5
+
+
 def test_fetch_raw_http_error_does_not_expose_api_key(monkeypatch):
     class FakeResponse:
         ok = False

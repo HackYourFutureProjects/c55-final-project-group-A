@@ -12,7 +12,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -185,7 +185,11 @@ def run(run_date: str | None = None, local_dir: Path | None = None) -> int:
         destination,
     )
 
-    records = fetch_raw(config.source_api_url, api_key=config.ticketmaster_api_key)
+    records = fetch_raw(
+        config.source_api_url,
+        api_key=config.ticketmaster_api_key,
+        start_date=date.fromisoformat(run_date),
+    )
     parsed, rejected = parse_records(records)
 
     # An empty batch is a failed extraction, not a quiet success: it would

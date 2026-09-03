@@ -1,7 +1,7 @@
 """Tests for the complete Ticketmaster ingestion flow."""
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -44,7 +44,8 @@ def test_pipeline_lands_original_raw_events_including_rejected(monkeypatch, capl
     )
     captured = {}
 
-    def fake_fetch_raw(url, api_key):
+    def fake_fetch_raw(url, api_key, start_date):
+        captured["start_date"] = start_date
         return RAW_EVENTS
 
     def fake_land_raw_json(*, account, path, records, container):
@@ -63,6 +64,7 @@ def test_pipeline_lands_original_raw_events_including_rejected(monkeypatch, capl
 
     assert landed == 2
     assert captured == {
+        "start_date": date(2026, 8, 16),
         "account": "teststorage",
         "path": "mohammed/events/ingest_date=2026-08-16/data.json",
         "records": RAW_EVENTS,
@@ -87,7 +89,7 @@ def test_pipeline_rejects_an_empty_extraction_before_landing(monkeypatch):
     )
 
     monkeypatch.setattr(pipeline, "load_config", lambda local=False: config)
-    monkeypatch.setattr(pipeline, "fetch_raw", lambda url, api_key: [])
+    monkeypatch.setattr(pipeline, "fetch_raw", lambda url, api_key, start_date: [])
 
     def unexpected_land(**kwargs):
         pytest.fail("an empty extraction must not be landed")
@@ -171,7 +173,7 @@ def test_pipeline_lands_price_providers_in_separate_folders(
     monkeypatch.setattr(
         pipeline,
         "fetch_raw",
-        lambda url, api_key: raw_events,
+        lambda url, api_key, start_date: raw_events,
     )
 
     def fake_enrich_event_prices(records, providers):
