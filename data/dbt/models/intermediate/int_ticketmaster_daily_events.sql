@@ -34,6 +34,35 @@ with
 
     ),
 
+    non_auxiliary_listing_events as (
+
+        -- Ticketmaster also exposes upgrades, premium packages, accessibility
+        -- tickets and hospitality add-ons as separate event records. These are
+        -- purchasable products associated with an event, not standalone events
+        -- for the backend catalogue.
+        select *
+        from non_parking_events
+        where
+            not lower(event_name) rlike (
+                'venue premium packages?'
+                || '|premium seats'
+                || '|vip packages?'
+                || '|vinyl room upgrades?'
+                || '|vinyl room package'
+                || '|ticket not included'
+                || '|arrangement strandclub'
+                || '|strandclub arrangement'
+                || '|comfort seats'
+                || '|vip upgrades?'
+                || '|accessible tickets'
+                || '|rolstoel[[:space:]]*/?[[:space:]]*begeleider'
+                || '|after-show meet & greet'
+                || '|[|][[:space:]]*vip[[:space:]]*$'
+                || '|[|][[:space:]]*sky lounge[[:space:]]*$'
+            )
+
+    ),
+
     parsed_addresses as (
 
         select
@@ -73,7 +102,7 @@ with
                 ''
             ) as house_number
 
-        from non_parking_events
+        from non_auxiliary_listing_events
 
     ),
 
@@ -93,8 +122,8 @@ with
     daily_events as (
 
         -- Ticketmaster may expose each booking slot as a separate event ID.
-        -- The backend contract uses one logical event per source page, venue
-        -- and local date, represented by the earliest available slot.
+        -- The backend contract uses one logical event per normalized title,
+        -- venue and local date, represented by the earliest available slot.
         select
             *,
 
@@ -104,7 +133,11 @@ with
             count(*) over (
                 partition by
                     source,
-                    coalesce(normalized_event_url, concat('event-id:', event_id)),
+                    coalesce(
+                        nullif(lower(trim(event_name)), ''),
+                        normalized_event_url,
+                        concat('event-id:', event_id)
+                    ),
                     coalesce(venue_id, ''),
                     start_date
             ) as occurrence_count
@@ -114,7 +147,11 @@ with
             row_number() over (
                 partition by
                     source,
-                    coalesce(normalized_event_url, concat('event-id:', event_id)),
+                    coalesce(
+                        nullif(lower(trim(event_name)), ''),
+                        normalized_event_url,
+                        concat('event-id:', event_id)
+                    ),
                     coalesce(venue_id, ''),
                     start_date
                 order by start_at, event_id

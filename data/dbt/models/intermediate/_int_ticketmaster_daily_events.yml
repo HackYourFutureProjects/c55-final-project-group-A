@@ -3,12 +3,13 @@ version: 2
 models:
   - name: int_ticketmaster_daily_events
     description: >
-      Eligible Ticketmaster events at one row per logical source URL, venue
-      and local date. Parking products, past dates, events without an exact
-      start timestamp, and offsale or rescheduled events are excluded.
+      Eligible Ticketmaster events at one row per normalized title, venue
+      and local date. Parking products and auxiliary listings such as premium
+      packages, upgrades, hospitality add-ons, and accessibility-only ticket
+      variants are excluded. Past dates, events without an exact start
+      timestamp, and offsale or rescheduled events are also excluded.
       Multiple booking slots are represented by the earliest occurrence.
-      The original occurrence rows remain available in
-      stg_ticketmaster_events.
+      The original source rows remain available in stg_ticketmaster_events.
 
     columns:
       - name: event_id
