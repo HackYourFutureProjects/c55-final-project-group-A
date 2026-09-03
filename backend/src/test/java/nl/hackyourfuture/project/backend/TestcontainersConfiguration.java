@@ -14,6 +14,7 @@ class TestcontainersConfiguration {
   PostgreSQLContainer postgresContainer() {
     // CI starts an empty database; create the data team's source table before Flyway builds event_feed.
     return new PostgreSQLContainer(DockerImageName.parse("postgres:18.4-alpine"))
+        .withUrlParam("currentSchema", "app")
         .withInitScript("db/test-init.sql");
   }
 

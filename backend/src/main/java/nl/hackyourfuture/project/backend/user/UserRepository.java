@@ -83,4 +83,17 @@ public class UserRepository {
         .param("id", id)
         .update();
   }
+
+  public Optional<UUID> findAdminUserId() {
+    return jdbcClient
+        .sql("""
+            SELECT id
+            FROM users
+            WHERE role = :role
+            LIMIT 1
+            """)
+        .param("role", Role.ADMIN.toDbValue())
+        .query((rs, _) -> rs.getObject("id", UUID.class))
+        .optional();
+  }
 }

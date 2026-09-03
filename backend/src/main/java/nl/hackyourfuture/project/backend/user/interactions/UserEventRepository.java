@@ -97,7 +97,7 @@ public class UserEventRepository {
     return jdbcClient
         .sql("""
             SELECT e.id, e.title, e.image_url,
-            e.category_ids, e,category_names,
+            e.category_ids, e.category_names,
             e.start_at, e.end_at, e.price,
             e.street, e.house_number, e.city_name, e.province,
             e.is_cancelled
@@ -158,6 +158,17 @@ public class UserEventRepository {
         .single();
   }
 
+  public List<UUID> findUserIdsInterestedInEvent(UUID eventId) {
+    return jdbcClient
+        .sql("""
+            SELECT user_id FROM event_attendees WHERE event_id = :eventId
+            UNION
+            SELECT user_id FROM saved_events WHERE event_id = :eventId
+            """)
+        .param("eventId", eventId)
+        .query(UUID.class)
+        .list();
+  }
+
 
 }
-

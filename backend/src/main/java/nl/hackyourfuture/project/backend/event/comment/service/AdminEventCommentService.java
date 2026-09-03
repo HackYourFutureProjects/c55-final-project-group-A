@@ -1,6 +1,7 @@
 package nl.hackyourfuture.project.backend.event.comment.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import nl.hackyourfuture.project.backend.event.comment.dto.request.AdminReplyRequest;
 import nl.hackyourfuture.project.backend.event.comment.dto.response.EventCommentResponse;
 import nl.hackyourfuture.project.backend.event.comment.exceptions.AdminReplyAlreadyExistsException;
@@ -8,16 +9,23 @@ import nl.hackyourfuture.project.backend.event.comment.exceptions.AdminReplyNotF
 import nl.hackyourfuture.project.backend.event.comment.exceptions.CommentNotFoundException;
 import nl.hackyourfuture.project.backend.event.comment.model.EventComment;
 import nl.hackyourfuture.project.backend.event.comment.repository.EventCommentRepository;
+import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
+import nl.hackyourfuture.project.backend.event.repository.EventRepository;
+import nl.hackyourfuture.project.backend.notification.model.OutboxPayload;
+import nl.hackyourfuture.project.backend.notification.service.NotificationOutboxService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminEventCommentService {
 
     private final EventCommentRepository eventCommentRepository;
+    private final NotificationOutboxService notificationOutboxService;
+    private final EventRepository eventRepository;
 
     @Transactional
     public EventCommentResponse createAdminReply(
@@ -25,6 +33,12 @@ public class AdminEventCommentService {
             UUID adminUserId,
             AdminReplyRequest request
     ) {
+        log.debug(
+                "Creating admin reply for comment {} by admin {}",
+                commentId,
+                adminUserId
+        );
+
         EventComment existingComment = eventCommentRepository
                 .findCommentById(commentId)
                 .orElseThrow(() ->
@@ -51,6 +65,30 @@ public class AdminEventCommentService {
                         )
                 );
 
+        UUID eventId = repliedComment.eventId();
+        String eventTitle = eventRepository
+                .findEventDetailById(eventId)
+                .orElseThrow(() ->
+                        new EventNotFoundException(
+                                "Event not found: " + eventId
+                        )
+                )
+                .title();
+
+        log.info(
+                "Created admin reply for comment {}, enqueuing COMMENT_REPLY notification",
+                commentId
+        );
+        notificationOutboxService.enqueueCommentReply(
+                commentId,
+                new OutboxPayload(
+                        eventTitle,
+                        "/events/" + eventId
+                )
+        );
+
+        log.debug("Created admin reply for comment {}", commentId);
+
         return EventCommentResponse.from(repliedComment);
     }
 
@@ -59,6 +97,8 @@ public class AdminEventCommentService {
             UUID commentId,
             AdminReplyRequest request
     ) {
+        log.debug("Updating admin reply for comment {}", commentId);
+
         EventComment existingComment = eventCommentRepository
                 .findCommentById(commentId)
                 .orElseThrow(() ->
@@ -84,11 +124,15 @@ public class AdminEventCommentService {
                         )
                 );
 
+        log.debug("Updated admin reply for comment {}", commentId);
+
         return EventCommentResponse.from(updatedComment);
     }
 
     @Transactional
     public void deleteAdminReply(UUID commentId) {
+        log.debug("Deleting admin reply for comment {}", commentId);
+
         EventComment existingComment = eventCommentRepository
                 .findCommentById(commentId)
                 .orElseThrow(() ->
@@ -111,10 +155,14 @@ public class AdminEventCommentService {
                     "Admin reply not found for comment: " + commentId
             );
         }
+
+        log.debug("Deleted admin reply for comment {}", commentId);
     }
 
     @Transactional
     public void deleteComment(UUID commentId) {
+        log.debug("Deleting comment {}", commentId);
+
         boolean deleted =
                 eventCommentRepository.deleteCommentById(commentId);
 
@@ -123,5 +171,7 @@ public class AdminEventCommentService {
                     "Comment not found: " + commentId
             );
         }
+
+        log.debug("Deleted comment {}", commentId);
     }
 }

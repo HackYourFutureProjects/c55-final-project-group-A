@@ -8,6 +8,7 @@ import nl.hackyourfuture.project.backend.event.comment.exceptions.CommentNotFoun
 import nl.hackyourfuture.project.backend.event.exceptions.EventNotFoundException;
 import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
 import nl.hackyourfuture.project.backend.feedback.FeedbackNotFoundException;
+import nl.hackyourfuture.project.backend.notification.NotificationNotFoundException;
 import nl.hackyourfuture.project.backend.location.ExternalServiceException;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
 import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
@@ -232,6 +233,19 @@ public class GlobalExceptionHandler {
             ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
 
         problem.setTitle("Feedback not found");
+        problem.setDetail(ex.getMessage());
+
+        return problem;
+    }
+
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ProblemDetail handleNotificationNotFound(
+            NotificationNotFoundException ex
+    ) {
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+
+        problem.setTitle("Notification not found");
         problem.setDetail(ex.getMessage());
 
         return problem;
