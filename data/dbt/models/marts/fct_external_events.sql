@@ -51,6 +51,7 @@ with
             concat(source, ':', event_id) as external_event_key,
             event_id as external_event_id,
             source,
+            true as is_published,
 
             event_name as title,
             nullif(trim(event_info), '') as description,
