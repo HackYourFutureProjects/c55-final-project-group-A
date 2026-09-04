@@ -1,4 +1,4 @@
--- One row will represent one logical Ticketmaster event per venue and day.
+-- One row will represent one logical Ticketmaster source page per venue and day.
 --
 -- This intermediate model applies reusable business rules before the final
 -- backend contract is created. It excludes records that cannot currently be
@@ -31,6 +31,35 @@ with
         select *
         from eligible_events
         where not lower(event_name) rlike '(parking|parkeer|parkeren)'
+
+    ),
+
+    non_auxiliary_listing_events as (
+
+        -- Ticketmaster also exposes upgrades, premium packages, accessibility
+        -- tickets and hospitality add-ons as separate event records. These are
+        -- purchasable products associated with an event, not standalone events
+        -- for the backend catalogue.
+        select *
+        from non_parking_events
+        where
+            not lower(event_name) rlike (
+                'venue premium packages?'
+                || '|premium seats'
+                || '|vip packages?'
+                || '|vinyl room upgrades?'
+                || '|vinyl room package'
+                || '|ticket not included'
+                || '|arrangement strandclub'
+                || '|strandclub arrangement'
+                || '|comfort seats'
+                || '|vip upgrades?'
+                || '|accessible tickets'
+                || '|rolstoel[[:space:]]*/?[[:space:]]*begeleider'
+                || '|after-show meet & greet'
+                || '|[|][[:space:]]*vip[[:space:]]*$'
+                || '|[|][[:space:]]*sky lounge[[:space:]]*$'
+            )
 
     ),
 
@@ -73,7 +102,7 @@ with
                 ''
             ) as house_number
 
-        from non_parking_events
+        from non_auxiliary_listing_events
 
     ),
 
