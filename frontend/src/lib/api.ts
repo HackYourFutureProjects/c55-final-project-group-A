@@ -19,6 +19,11 @@ import type {
   PostFeedbackRequest,
 } from "@/types/feedback";
 import type { LocationSuggestion } from "@/types/location";
+import type {
+  AppNotification,
+  NotificationPage,
+  UnreadCount,
+} from "@/types/notification";
 import type { UpdateUserRequest, User } from "@/types/user";
 import type { Weather } from "@/types/weather";
 
@@ -633,4 +638,50 @@ export async function sendChatMessage(
 
   const data: ChatReply = await res.json();
   return data.reply;
+}
+
+export async function getNotifications(
+  page = 0,
+  size = 20,
+): Promise<NotificationPage> {
+  const res = await fetch(
+    apiUrl(`/api/notifications?page=${page}&size=${size}`),
+    { credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to fetch notifications: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getUnreadCount(): Promise<number> {
+  const res = await fetch(apiUrl("/api/notifications/unread-count"), {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch unread count: ${res.status}`);
+  }
+  const data: UnreadCount = await res.json();
+  return data.count;
+}
+
+export async function openNotification(id: string): Promise<AppNotification> {
+  const res = await fetch(apiUrl(`/api/notifications/${id}/open`), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to open notification: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  const res = await fetch(apiUrl("/api/notifications/read-all"), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to mark notifications read: ${res.status}`);
+  }
 }
