@@ -33,6 +33,18 @@ models:
                 values:
                   - ticketmaster
 
+      - name: is_published
+        description: >
+          True for events present in the current dbt mart. The publisher may
+          retain previously published events with active Saved or Going
+          references and mark those retained rows as false.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+
       - name: title
         description: Event title supplied by Ticketmaster.
         tests:

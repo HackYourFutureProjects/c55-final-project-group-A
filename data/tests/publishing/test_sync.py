@@ -1,4 +1,4 @@
-"""The publish step: type mapping and transactional full refresh.
+"""The publish step: type mapping and transactional refresh with retention.
 
 The ordering test is the one that matters: staging must be complete before the
 published table is refreshed, and the published table must never be dropped.
@@ -13,7 +13,11 @@ COLUMNS = [
     ("external_event_key", "STRING"),
     ("external_event_id", "STRING"),
     ("source", "STRING"),
+    ("is_published", "BOOLEAN"),
     ("title", "STRING"),
+    ("source_url", "STRING"),
+    ("external_venue_id", "STRING"),
+    ("start_date", "DATE"),
     ("start_at", "TIMESTAMP"),
     ("end_at", "TIMESTAMP"),
     ("occurrence_count", "BIGINT"),
@@ -25,7 +29,11 @@ ROWS = [
         "ticketmaster:a1",
         "a1",
         "ticketmaster",
+        True,
         "Example event",
+        "https://www.ticketmaster.nl/event/example/123",
+        "venue-1",
+        "2026-09-01",
         "2026-09-01T18:00:00Z",
         None,
         1,
@@ -43,6 +51,7 @@ def test_ticketmaster_event_publish_defaults():
 class FakeCursor:
     def __init__(self, log: list[str]) -> None:
         self.log = log
+        self.rowcount = 0
 
     def execute(self, statement, params=None):
         # Statements are psycopg SQL objects now, not strings. as_string()
@@ -118,12 +127,64 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
     target_created = index_of(
         statements, 'create table if not exists "analytics"."external_events"'
     )
+    publication_flag_added = index_of(
+        statements,
+        'alter table "analytics"."external_events" '
+        'add column if not exists "is_published" boolean not null default true',
+    )
+    publication_flag_defaulted = index_of(
+        statements,
+        'alter table "analytics"."external_events" ' 'alter column "is_published" set default true',
+    )
+    publication_flag_required = index_of(
+        statements,
+        'alter table "analytics"."external_events" ' 'alter column "is_published" set not null',
+    )
+    referenced_rows_retained = index_of(
+        statements,
+        'insert into "analytics"."external_events__staging"',
+    )
     truncated = index_of(statements, 'truncate table "analytics"."external_events"')
     refreshed = index_of(statements, 'insert into "analytics"."external_events"')
     staging_dropped = index_of(statements, 'drop table "analytics"."external_events__staging"')
 
-    assert staging_created < staged < target_created < truncated < refreshed < staging_dropped
+    assert (
+        staging_created
+        < staged
+        < target_created
+        < publication_flag_added
+        < publication_flag_defaulted
+        < publication_flag_required
+        < referenced_rows_retained
+        < truncated
+        < refreshed
+        < staging_dropped
+    )
     assert connection.committed
+
+
+def test_publish_retains_referenced_external_events(connection):
+    sync.publish("dsn", "analytics", "external_events", COLUMNS, ROWS)
+
+    statement = connection.log[
+        index_of(
+            connection.log,
+            'insert into "analytics"."external_events__staging"',
+        )
+    ]
+
+    assert "false" in statement
+    assert "from app.event_registry as registry" in statement
+    assert "from app.saved_events as saved" in statement
+    assert "from app.event_attendees as attendee" in statement
+    assert "registry.external_event_key = app.build_stable_key" in statement
+    assert "and not exists" in statement
+
+
+def test_reference_retention_is_limited_to_external_events(connection):
+    sync.publish("dsn", "analytics", "another_table", COLUMNS, ROWS)
+
+    assert not any("app.event_registry" in statement for statement in connection.log)
 
 
 def test_first_publish_works_with_no_existing_table(connection):

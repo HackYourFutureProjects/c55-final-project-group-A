@@ -82,17 +82,17 @@ def publish(
     rows: list[list],
     source: str | None = None,
 ) -> int:
-    """Refresh the backend's table in place, return the row count written.
+    """Refresh the backend's table in place, return the total row count written.
 
-    Load into staging, then truncate and refill the published table inside one
-    transaction. Keeping the published table itself preserves backend views,
-    grants, and indexes while still removing rows absent from the latest mart.
+    Load the current mart into staging and retain previously published external
+    events that still have active Saved or Going references. Then truncate and
+    refill the published table inside one transaction. Keeping the published
+    table itself preserves backend views, grants, and indexes. Rows absent from
+    the current mart are removed unless the backend still references them.
 
     `source` is the warehouse schema the rows came from, and it is recorded as a
     comment on the table. One shared `analytics_dev` means the last publish wins,
-    which is the right behaviour for a place two tracks meet but leaves nobody
-    able to say why the columns changed this morning. The comment answers it in
-    any client: `from team_a.dev_alex at 2026-08-13T11:02Z`.
+    while the comment records which warehouse schema supplied the latest data.
     """
     if not rows:
         raise ValueError("refusing to publish zero rows over an existing table")
@@ -106,6 +106,20 @@ def publish(
         for name, type_text in columns
     )
     column_names = SQL(", ").join(Identifier(name) for name, _ in columns)
+    available_columns = {name for name, _ in columns}
+    retention_columns = {
+        "source",
+        "source_url",
+        "external_event_id",
+        "external_venue_id",
+        "start_date",
+        "is_published",
+    }
+    retained_values = SQL(", ").join(
+        SQL("false") if name == "is_published" else SQL("previous.{}").format(Identifier(name))
+        for name, _ in columns
+    )
+    retained_count = 0
 
     connection = psycopg.connect(dsn, autocommit=False)
     try:
@@ -123,6 +137,83 @@ def publish(
             # Create only on the first publish. Later runs preserve this table
             # so backend views, grants, and indexes remain attached to it.
             cursor.execute(SQL("create table if not exists {} ({})").format(published, definition))
+            if any(name == "is_published" for name, _ in columns):
+                cursor.execute(
+                    SQL(
+                        "alter table {} add column if not exists {} "
+                        "boolean not null default true"
+                    ).format(published, Identifier("is_published"))
+                )
+                cursor.execute(
+                    SQL("alter table {} alter column {} set default true").format(
+                        published, Identifier("is_published")
+                    )
+                )
+                cursor.execute(
+                    SQL("alter table {} alter column {} set not null").format(
+                        published, Identifier("is_published")
+                    )
+                )
+            # Carry forward the complete card data for events that disappeared
+            # from the current mart but still have active Saved or Going
+            # references. Current mart rows always take precedence.
+            if table == DEFAULT_TABLE and retention_columns <= available_columns:
+                cursor.execute(
+                    SQL(
+                        """
+                        insert into {} ({})
+                        select {}
+                        from {} as previous
+                        where exists (
+                            select 1
+                            from app.event_registry as registry
+                            where registry.external_event_key = app.build_stable_key(
+                                previous.source,
+                                previous.source_url,
+                                previous.external_event_id,
+                                previous.external_venue_id,
+                                previous.start_date
+                            )
+                            and (
+                                exists (
+                                    select 1
+                                    from app.saved_events as saved
+                                    where saved.event_id = registry.id
+                                )
+                                or exists (
+                                    select 1
+                                    from app.event_attendees as attendee
+                                    where attendee.event_id = registry.id
+                                )
+                            )
+                        )
+                        and not exists (
+                            select 1
+                            from {} as current
+                            where app.build_stable_key(
+                                current.source,
+                                current.source_url,
+                                current.external_event_id,
+                                current.external_venue_id,
+                                current.start_date
+                            ) = app.build_stable_key(
+                                previous.source,
+                                previous.source_url,
+                                previous.external_event_id,
+                                previous.external_venue_id,
+                                previous.start_date
+                            )
+                        )
+                        """
+                    ).format(
+                        staging,
+                        column_names,
+                        retained_values,
+                        published,
+                        staging,
+                    )
+                )
+                retained_count = cursor.rowcount
             cursor.execute(SQL("truncate table {}").format(published))
             cursor.execute(
                 SQL("insert into {} ({}) select {} from {}").format(
@@ -143,8 +234,16 @@ def publish(
     finally:
         connection.close()
 
-    logger.info("published %d rows to %s.%s", len(rows), schema, table)
-    return len(rows)
+    published_count = len(rows) + retained_count
+    logger.info(
+        "published %d rows to %s.%s: %d current, %d retained",
+        published_count,
+        schema,
+        table,
+        len(rows),
+        retained_count,
+    )
+    return published_count
 
 
 def dsn_from_env() -> str:
