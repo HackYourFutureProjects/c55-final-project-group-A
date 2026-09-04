@@ -1,6 +1,7 @@
 package nl.hackyourfuture.project.backend.event.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import nl.hackyourfuture.project.backend.event.dto.response.EventDetailResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.dto.response.EventSummaryResponse;
@@ -23,6 +24,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventService {
@@ -87,6 +89,14 @@ public class EventService {
 
         boolean hasNext = page + 1 < totalPages;
 
+        log.debug(
+                "Returning {} events for page {} with size {} (totalElements={})",
+                events.size(),
+                page,
+                size,
+                totalElements
+        );
+
         return new EventPageResponse(
                 events,
                 page,
@@ -131,6 +141,8 @@ public class EventService {
     }
 
     public EventDetailResponse getEventDetail(UUID eventId) {
+        log.debug("Fetching event detail for event {}", eventId);
+
         EventDetail event = eventRepository
                 .findEventDetailById(eventId)
                 .orElseThrow(() ->
@@ -138,6 +150,13 @@ public class EventService {
                 );
 
         EventStatus status = determineStatus(event);
+
+        log.debug(
+                "Found event detail for event {} with status {}",
+                eventId,
+                status
+        );
+
         return EventDetailResponse.from(event, status);
     }
 }
