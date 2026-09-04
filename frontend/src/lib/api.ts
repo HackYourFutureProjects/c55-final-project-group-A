@@ -4,6 +4,7 @@ import type {
   CreateEventRequest,
 } from "@/types/admin";
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
+import type { ChatMessage, ChatReply } from "@/types/chat";
 import type { Comment, CommentPage, CommentRequest } from "@/types/comment";
 import type {
   Category,
@@ -18,6 +19,11 @@ import type {
   PostFeedbackRequest,
 } from "@/types/feedback";
 import type { LocationSuggestion } from "@/types/location";
+import type {
+  AppNotification,
+  NotificationPage,
+  UnreadCount,
+} from "@/types/notification";
 import type { UpdateUserRequest, User } from "@/types/user";
 import type { Weather } from "@/types/weather";
 
@@ -610,4 +616,72 @@ export async function getWeather(
   }
 
   return res.json();
+}
+
+export async function sendChatMessage(
+  eventId: string,
+  messages: ChatMessage[],
+): Promise<string> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/chat`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      res.status === 503
+        ? "Chat is temporarily unavailable. Please try again in a moment."
+        : "Something went wrong. Please try again.",
+    );
+  }
+
+  const data: ChatReply = await res.json();
+  return data.reply;
+}
+
+export async function getNotifications(
+  page = 0,
+  size = 20,
+): Promise<NotificationPage> {
+  const res = await fetch(
+    apiUrl(`/api/notifications?page=${page}&size=${size}`),
+    { credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to fetch notifications: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getUnreadCount(): Promise<number> {
+  const res = await fetch(apiUrl("/api/notifications/unread-count"), {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch unread count: ${res.status}`);
+  }
+  const data: UnreadCount = await res.json();
+  return data.count;
+}
+
+export async function openNotification(id: string): Promise<AppNotification> {
+  const res = await fetch(apiUrl(`/api/notifications/${id}/open`), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to open notification: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  const res = await fetch(apiUrl("/api/notifications/read-all"), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to mark notifications read: ${res.status}`);
+  }
 }

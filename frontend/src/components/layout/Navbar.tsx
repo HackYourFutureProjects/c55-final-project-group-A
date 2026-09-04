@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import NotificationBell from "@/components/layout/NotificationBell";
 import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
@@ -59,17 +60,22 @@ export function Navbar() {
 
       <div className="flex items-center gap-4">
         {user ? (
-          <Link
-            href="/profile"
-            className="flex items-center gap-2 hover:opacity-80"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-700">
-              {user.role === "admin" ? "A" : user.name.charAt(0).toUpperCase()}
-            </span>
-            <span className="text-sm font-semibold text-neutral-700">
-              {user.name.split(" ")[0]}
-            </span>
-          </Link>
+          <>
+            <NotificationBell />
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 hover:opacity-80"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-700">
+                {user.role === "admin"
+                  ? "A"
+                  : user.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="text-sm font-semibold text-neutral-700">
+                {user.name.split(" ")[0]}
+              </span>
+            </Link>
+          </>
         ) : (
           <>
             <Link
