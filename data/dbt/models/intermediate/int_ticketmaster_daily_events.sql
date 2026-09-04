@@ -1,4 +1,4 @@
--- One row will represent one logical Ticketmaster event per venue and day.
+-- One row will represent one logical Ticketmaster source page per venue and day.
 --
 -- This intermediate model applies reusable business rules before the final
 -- backend contract is created. It excludes records that cannot currently be
@@ -122,8 +122,8 @@ with
     daily_events as (
 
         -- Ticketmaster may expose each booking slot as a separate event ID.
-        -- The backend contract uses one logical event per normalized title,
-        -- venue and local date, represented by the earliest available slot.
+        -- The backend contract uses one logical event per source page, venue
+        -- and local date, represented by the earliest available slot.
         select
             *,
 
@@ -133,11 +133,7 @@ with
             count(*) over (
                 partition by
                     source,
-                    coalesce(
-                        nullif(lower(trim(event_name)), ''),
-                        normalized_event_url,
-                        concat('event-id:', event_id)
-                    ),
+                    coalesce(normalized_event_url, concat('event-id:', event_id)),
                     coalesce(venue_id, ''),
                     start_date
             ) as occurrence_count
@@ -147,11 +143,7 @@ with
             row_number() over (
                 partition by
                     source,
-                    coalesce(
-                        nullif(lower(trim(event_name)), ''),
-                        normalized_event_url,
-                        concat('event-id:', event_id)
-                    ),
+                    coalesce(normalized_event_url, concat('event-id:', event_id)),
                     coalesce(venue_id, ''),
                     start_date
                 order by start_at, event_id

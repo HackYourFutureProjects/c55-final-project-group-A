@@ -3,7 +3,7 @@ version: 2
 models:
   - name: int_ticketmaster_daily_events
     description: >
-      Eligible Ticketmaster events at one row per normalized title, venue
+      Eligible Ticketmaster events at one row per normalized source URL, venue
       and local date. Parking products and auxiliary listings such as premium
       packages, upgrades, hospitality add-ons, and accessibility-only ticket
       variants are excluded. Past dates, events without an exact start
