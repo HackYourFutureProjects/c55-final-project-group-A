@@ -89,13 +89,27 @@ public class EventService {
 
         boolean hasNext = page + 1 < totalPages;
 
-        log.debug(
-                "Returning {} events for page {} with size {} (totalElements={})",
-                events.size(),
-                page,
-                size,
-                totalElements
-        );
+        if (events.isEmpty()) {
+            log.info(
+                    "Empty event list page={}, size={}, totalElements={},"
+                            + " search={}, categoryIds={}, price={}, sort={}",
+                    page,
+                    size,
+                    totalElements,
+                    search,
+                    categoryIds,
+                    price,
+                    sort
+            );
+        } else {
+            log.debug(
+                    "Returning {} events for page {} with size {} (totalElements={})",
+                    events.size(),
+                    page,
+                    size,
+                    totalElements
+            );
+        }
 
         return new EventPageResponse(
                 events,
@@ -145,9 +159,12 @@ public class EventService {
 
         EventDetail event = eventRepository
                 .findEventDetailById(eventId)
-                .orElseThrow(() ->
-                        new EventNotFoundException("Event not found: " + eventId)
-                );
+                .orElseThrow(() -> {
+                    log.warn("Event detail not found for event {}", eventId);
+                    return new EventNotFoundException(
+                            "Event not found: " + eventId
+                    );
+                });
 
         EventStatus status = determineStatus(event);
 

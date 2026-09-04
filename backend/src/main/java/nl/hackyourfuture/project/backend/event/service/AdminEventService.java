@@ -438,7 +438,10 @@ public class AdminEventService {
         }
 
         if (event.cancelled()) {
-            log.debug("Event {} is already cancelled", eventId);
+            log.warn(
+                    "Cancel no-op: event {} is already cancelled",
+                    eventId
+            );
             return;
         }
 
@@ -449,6 +452,10 @@ public class AdminEventService {
         }
 
         if (!adminEventRepository.cancelEvent(eventId)) {
+            log.warn(
+                    "Cancel race/failure: event {} could not be cancelled",
+                    eventId
+            );
             throw new BadRequestException(
                     "The event could not be cancelled because its status "
                             + "changed. Refresh the event and try again."
