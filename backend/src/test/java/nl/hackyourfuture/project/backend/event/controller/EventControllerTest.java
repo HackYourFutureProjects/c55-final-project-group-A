@@ -1,9 +1,11 @@
 package nl.hackyourfuture.project.backend.event.controller;
 
+import nl.hackyourfuture.project.backend.auth.helpers.SessionAuthFilter;
 import nl.hackyourfuture.project.backend.event.dto.response.EventPageResponse;
 import nl.hackyourfuture.project.backend.event.model.EventSort;
 import nl.hackyourfuture.project.backend.event.service.EventService;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,6 +29,10 @@ class EventControllerTest {
     @MockitoBean
     private EventService eventService;
 
+    @MockitoBean
+    private SessionAuthFilter sessionAuthFilter;
+
+    @Autowired
     EventControllerTest(MockMvc mockMvc) {
         this.mockMvc = mockMvc;
     }
