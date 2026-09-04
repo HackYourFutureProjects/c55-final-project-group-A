@@ -34,6 +34,10 @@ public class EventSimilarityService {
         );
 
         if (!eventSimilarityRepository.existsPublishedEvent(eventId)) {
+            log.warn(
+                    "Published source event not found for similarity: {}",
+                    eventId
+            );
             throw new EventNotFoundException(
                     "Event not found: " + eventId
             );
@@ -48,11 +52,15 @@ public class EventSimilarityService {
                         )
                         .toList();
 
-        log.debug(
-                "Found {} similar events for event {}",
-                similarEvents.size(),
-                eventId
-        );
+        if (similarEvents.isEmpty()) {
+            log.info("No similar events found for event {}", eventId);
+        } else {
+            log.debug(
+                    "Found {} similar events for event {}",
+                    similarEvents.size(),
+                    eventId
+            );
+        }
 
         return similarEvents;
     }
