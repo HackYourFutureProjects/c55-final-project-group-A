@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import CommentList from "@/components/comments/CommentList";
 import EventActions from "@/components/events/EventActions";
+import EventChat from "@/components/events/EventChat";
 import EventMap from "@/components/events/EventMapClient";
 import EventWeather from "@/components/events/EventWeather";
 import SimilarEvents from "@/components/events/SimilarEvents";
@@ -151,29 +152,38 @@ export default async function EventDetailPage({
         {/* Two-column layout: description on the left, info sidebar on the right */}
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left column: About this event */}
-          <div className="self-start rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
-            <h2 className="mb-4 text-xl font-bold text-gray-900">
-              About this event
-            </h2>
-            {event.description?.trim() ? (
-              <p className="whitespace-pre-line text-gray-700">
-                {event.description}
-              </p>
-            ) : (
-              <p className="text-gray-400">No description provided.</p>
-            )}
+          <div className="space-y-6 self-start lg:col-span-2">
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-bold text-gray-900">
+                About this event
+              </h2>
+              {event.description?.trim() ? (
+                <p className="whitespace-pre-line text-gray-700">
+                  {event.description}
+                </p>
+              ) : event.sourceUrl ? (
+                <p className="text-gray-500">
+                  This event was imported and doesn't include a description. The
+                  organizer's page has the full details.
+                </p>
+              ) : (
+                <p className="text-gray-400">No description yet.</p>
+              )}
 
-            {/* External page for imported events; null for app-created ones */}
-            {event.sourceUrl ? (
-              <a
-                href={event.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-block rounded-full border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50"
-              >
-                View event page
-              </a>
-            ) : null}
+              {/* External page for imported events; null for app-created ones */}
+              {event.sourceUrl ? (
+                <a
+                  href={event.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-block rounded-full border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                >
+                  View event page
+                </a>
+              ) : null}
+            </div>
+            <EventChat eventId={event.id} />
+            <CommentList eventId={event.id} />
           </div>
 
           {/* Right column: info card — sticky so it stays visible while scrolling a long description */}
@@ -246,7 +256,6 @@ export default async function EventDetailPage({
             </div>
           </div>
         </div>
-        <CommentList eventId={event.id} />
         <SimilarEvents eventId={event.id} />
       </div>
     </main>

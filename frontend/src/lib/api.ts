@@ -4,6 +4,7 @@ import type {
   CreateEventRequest,
 } from "@/types/admin";
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
+import type { ChatMessage, ChatReply } from "@/types/chat";
 import type { Comment, CommentPage, CommentRequest } from "@/types/comment";
 import type {
   Category,
@@ -610,4 +611,26 @@ export async function getWeather(
   }
 
   return res.json();
+}
+
+export async function sendChatMessage(
+  eventId: string,
+  messages: ChatMessage[],
+): Promise<string> {
+  const res = await fetch(apiUrl(`/api/events/${eventId}/chat`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      res.status === 503
+        ? "Chat is temporarily unavailable. Please try again in a moment."
+        : "Something went wrong. Please try again.",
+    );
+  }
+
+  const data: ChatReply = await res.json();
+  return data.reply;
 }
