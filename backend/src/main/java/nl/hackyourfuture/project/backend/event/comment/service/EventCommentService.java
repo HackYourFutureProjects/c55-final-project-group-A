@@ -2,6 +2,7 @@ package nl.hackyourfuture.project.backend.event.comment.service;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import nl.hackyourfuture.project.backend.event.comment.dto.request.CreateCommentRequest;
 import nl.hackyourfuture.project.backend.event.comment.dto.request.UpdateCommentRequest;
 import nl.hackyourfuture.project.backend.event.comment.dto.response.EventCommentPageResponse;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventCommentService {
@@ -101,6 +103,13 @@ public class EventCommentService {
                 request.content().trim()
         );
 
+        log.debug(
+                "Created comment {} for event {} by user {}",
+                comment.id(),
+                eventId,
+                userId
+        );
+
         return EventCommentResponse.from(comment);
     }
 
@@ -124,6 +133,12 @@ public class EventCommentService {
                         )
                 );
 
+        log.debug(
+                "Updated comment {} by user {}",
+                commentId,
+                userId
+        );
+
         return EventCommentResponse.from(comment);
     }
 
@@ -142,5 +157,11 @@ public class EventCommentService {
                     "Comment not found: " + commentId
             );
         }
+
+        log.debug(
+                "Deleted comment {} by user {}",
+                commentId,
+                userId
+        );
     }
 }

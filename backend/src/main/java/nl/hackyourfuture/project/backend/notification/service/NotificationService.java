@@ -119,9 +119,16 @@ public class NotificationService {
                         userId,
                         includeNewFeedback
                 ))
-                .orElseThrow(() -> new NotificationNotFoundException(
-                        "Notification not found: " + notificationId
-                ));
+                .orElseThrow(() -> {
+                    log.warn(
+                            "Notification {} not found for user {}",
+                            notificationId,
+                            userId
+                    );
+                    return new NotificationNotFoundException(
+                            "Notification not found: " + notificationId
+                    );
+                });
 
         return NotificationResponse.from(notification);
     }

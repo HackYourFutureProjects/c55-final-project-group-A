@@ -4,7 +4,8 @@
 
 This is our final project for the [HackYourFuture program](https://hackyourfuture.net/program), built as a
 team with three roles — frontend, backend, and data engineering. We worked in an agile way, in short
-sprints, supported by a group of mentors: a Product Manager and a a Tech Lead. The project is open source and available on GitHub.
+sprints, supported by a group of mentors: a Product Manager and a a Tech Lead. The project is open source and available
+on GitHub.
 
 ### 🌐 [Live demo](https://your-app.example.com)
 
@@ -30,7 +31,7 @@ sprints, supported by a group of mentors: a Product Manager and a a Tech Lead. T
 
 ## About the project
 
-> **TODO: a short description about your app.** 
+> **TODO: a short description about your app.**
 > What problem does it solve? Who is it for? What
 > makes it interesting? Write it for someone who has never heard of the project.
 
@@ -53,11 +54,11 @@ sprints, supported by a group of mentors: a Product Manager and a a Tech Lead. T
 
 ## Tech stack
 
-| Layer | Technologies |
-| --- | --- |
-| **Frontend** | Next.js, React, TypeScript, Biome |
-| **Backend** | Java 25, Spring Boot, PostgreSQL, Flyway, Maven |
-| **Data** | Python, SQL, dbt, PostgreSQL, Databricks, Airflow |
+| Layer              | Technologies                                                      |
+|--------------------|-------------------------------------------------------------------|
+| **Frontend**       | Next.js, React, TypeScript, Biome                                 |
+| **Backend**        | Java 25, Spring Boot, PostgreSQL, Flyway, Maven                   |
+| **Data**           | Python, SQL, dbt, PostgreSQL, Databricks, Airflow                 |
 | **Infrastructure** | Docker, Docker Compose, GitHub Actions, GitHub Container Registry |
 
 ## High-level Architecture
@@ -136,34 +137,36 @@ get wrong:
 
 ## Documentation
 
-| What | Where |
-| --- | --- |
-| Frontend guide | [`frontend/README.md`](frontend/README.md) |
-| Backend guide | [`backend/README.md`](backend/README.md) |
-| Data pipeline guide | [`data/README.md`](data/README.md) |
-| Live API reference (Scalar) | http://server-host/api/docs |
-
+| What                        | Where                                                                  |
+|-----------------------------|------------------------------------------------------------------------|
+| Frontend guide              | [`frontend/README.md`](frontend/README.md)                             |
+| Backend guide               | [`backend/README.md`](backend/README.md)                               |
+| Data pipeline guide         | [`data/README.md`](data/README.md)                                     |
+| Event similarity            | [`backend/docs/event-similarity.md`](backend/docs/event-similarity.md) |
+| Notifications               | [`backend/docs/notifications.md`](backend/docs/notifications.md)       |
+| Event list & detail         | [`backend/docs/events.md`](backend/docs/events.md)                     |
+| Live API reference (Scalar) | http://server-host/api/docs                                            |
 
 ## CI/CD
 
 Two GitHub Actions workflows run automatically:
 
-| Workflow | Triggers on | What it does |
-| --- | --- | --- |
-| [Backend CI/CD](.github/workflows/backend-ci-cd.yaml) | changes under `backend/**` | Checkstyle, tests, Docker build; pushes the image to GHCR on `main` |
-| [Frontend CI/CD](.github/workflows/frontend-ci-cd.yaml) | changes under `frontend/**` | Lint, build, Docker build; pushes the image to GHCR on `main` |
+| Workflow                                                | Triggers on                 | What it does                                                        |
+|---------------------------------------------------------|-----------------------------|---------------------------------------------------------------------|
+| [Backend CI/CD](.github/workflows/backend-ci-cd.yaml)   | changes under `backend/**`  | Checkstyle, tests, Docker build; pushes the image to GHCR on `main` |
+| [Frontend CI/CD](.github/workflows/frontend-ci-cd.yaml) | changes under `frontend/**` | Lint, build, Docker build; pushes the image to GHCR on `main`       |
 
 Pull requests are only merged when their checks pass.
 
-
 ## Team
 
-> **(Optional) TODO: Fill in your team.** It's nice to give credit to the people who worked on the project. Make sure to ask for permission before you put anyone's name on the internet.
+> **(Optional) TODO: Fill in your team.** It's nice to give credit to the people who worked on the project. Make sure to
+> ask for permission before you put anyone's name on the internet.
 
-| Name | Role | GitHub |
-| --- | --- | --- |
-| Name | Frontend | [@username](https://github.com/username) |
-| Name | Backend | [@username](https://github.com/username) |
+| Name | Role             | GitHub                                   |
+|------|------------------|------------------------------------------|
+| Name | Frontend         | [@username](https://github.com/username) |
+| Name | Backend          | [@username](https://github.com/username) |
 | Name | Data engineering | [@username](https://github.com/username) |
 
 ## Roadmap

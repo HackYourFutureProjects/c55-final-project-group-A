@@ -9,5 +9,6 @@ spring:
 logging:
   level:
     root: INFO
+    nl.hackyourfuture.project.backend: DEBUG
 
 # Add any additional configuration for the production environment

@@ -39,6 +39,11 @@ public class NotificationReminderService {
                 );
 
         if (candidates.isEmpty()) {
+            log.info(
+                    "EVENT_REMINDER scan found nothing in window [{}, {}]",
+                    windowStart,
+                    windowEnd
+            );
             return;
         }
 

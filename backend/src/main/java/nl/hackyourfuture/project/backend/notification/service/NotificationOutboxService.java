@@ -36,7 +36,7 @@ public class NotificationOutboxService {
     private final UserRepository userRepository;
 
     public NotificationOutbox enqueueEventCancelled(UUID eventId, OutboxPayload payload) {
-        log.debug("Enqueueing EVENT_CANCELLED outbox entry for event {}", eventId);
+        log.info("Enqueueing EVENT_CANCELLED outbox entry for event {}", eventId);
 
         return notificationOutboxRepository.insertOutboxEntry(
                 NotificationType.EVENT_CANCELLED,
@@ -46,7 +46,7 @@ public class NotificationOutboxService {
     }
 
     public NotificationOutbox enqueueEventUpdated(UUID eventId, OutboxPayload payload) {
-        log.debug("Enqueueing EVENT_UPDATED outbox entry for event {}", eventId);
+        log.info("Enqueueing EVENT_UPDATED outbox entry for event {}", eventId);
 
         return notificationOutboxRepository.insertOutboxEntry(
                 NotificationType.EVENT_UPDATED,
@@ -56,7 +56,7 @@ public class NotificationOutboxService {
     }
 
     public NotificationOutbox enqueueCommentReply(UUID commentId, OutboxPayload payload) {
-        log.debug("Enqueueing COMMENT_REPLY outbox entry for comment {}", commentId);
+        log.info("Enqueueing COMMENT_REPLY outbox entry for comment {}", commentId);
 
         return notificationOutboxRepository.insertOutboxEntry(
                 NotificationType.COMMENT_REPLY,
@@ -113,7 +113,17 @@ public class NotificationOutboxService {
         );
 
         for (NotificationOutbox entry : pendingEntries) {
-            processEntry(entry);
+            try {
+                processEntry(entry);
+            } catch (Exception exception) {
+                log.warn(
+                        "Failed to process outbox entry {} type={} resourceId={}",
+                        entry.id(),
+                        entry.type(),
+                        entry.resourceId(),
+                        exception
+                );
+            }
         }
     }
 
