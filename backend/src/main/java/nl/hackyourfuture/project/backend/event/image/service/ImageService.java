@@ -5,6 +5,7 @@ import io.imagekit.errors.ImageKitException;
 import io.imagekit.models.files.FileUploadParams;
 import io.imagekit.models.files.FileUploadResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import nl.hackyourfuture.project.backend.event.image.exceptions.ImageUploadException;
 import nl.hackyourfuture.project.backend.event.image.repository.EventImageRepository;
 import nl.hackyourfuture.project.backend.user.exceptions.BadRequestException;
@@ -16,6 +17,7 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageService {
@@ -73,14 +75,27 @@ public class ImageService {
             FileUploadResponse response = imageKitClient.files().upload(params);
 
             String imageUrl = response.url()
-                    .orElseThrow(() -> new ImageUploadException(
-                            "Image upload did not return a URL"
-                    ));
+                    .orElseThrow(() -> {
+                        log.error(
+                                "ImageKit upload returned no URL for event {}",
+                                eventId
+                        );
+                        return new ImageUploadException(
+                                "Image upload did not return a URL"
+                        );
+                    });
 
             eventImageRepository.save(eventId, imageUrl, contentType);
 
+            log.info("Uploaded image for event {}", eventId);
+
             return imageUrl;
         } catch (IOException | ImageKitException exception) {
+            log.error(
+                    "ImageKit upload failed for event {}",
+                    eventId,
+                    exception
+            );
             throw new ImageUploadException(
                     "Unable to upload the image",
                     exception
