@@ -5,7 +5,6 @@ import nl.hackyourfuture.project.backend.feedback.dto.FeedbackPageResponse;
 import nl.hackyourfuture.project.backend.feedback.dto.FeedbackResponse;
 import nl.hackyourfuture.project.backend.feedback.dto.PatchFeedbackRequest;
 import nl.hackyourfuture.project.backend.feedback.dto.PostFeedbackRequest;
-import nl.hackyourfuture.project.backend.notification.service.NotificationOutboxService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
