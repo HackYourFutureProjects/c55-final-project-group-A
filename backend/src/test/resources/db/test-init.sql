@@ -2,6 +2,7 @@ CREATE SCHEMA analytics;
 
 CREATE TABLE analytics.external_events (
     source TEXT NOT NULL,
+    is_published BOOLEAN NOT NULL DEFAULT TRUE,
     external_event_id TEXT NOT NULL,
     source_url TEXT,
     external_venue_id TEXT,
