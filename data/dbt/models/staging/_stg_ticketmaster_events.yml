@@ -46,6 +46,15 @@ models:
           to the first classification when no primary value is marked.
         tests: [not_null]
 
+      - name: event_classifications
+        description: >
+          All Ticketmaster classifications supplied for the event. Each array
+          element contains the primary and family flags together with normalized
+          segment, genre, and subgenre field names. Existing scalar classification
+          columns continue to represent only the selected primary classification.
+        tests:
+          - not_null
+
       - name: city_name
         description: City of the selected venue.
         tests: [not_null]

@@ -110,6 +110,21 @@ with
             selected_classification.type.name as classification_type,
             selected_classification.subtype.name as classification_subtype,
             coalesce(selected_classification.family, false) as is_family,
+            transform(
+                classifications,
+                classification -> named_struct(
+                    'is_primary',
+                    coalesce(classification.primary, false),
+                    'is_family',
+                    coalesce(classification.family, false),
+                    'segment_name',
+                    nullif(trim(classification.segment.name), ''),
+                    'genre_name',
+                    nullif(trim(classification.genre.name), ''),
+                    'subgenre_name',
+                    nullif(trim(classification.subgenre.name), '')
+                )
+            ) as event_classifications,
 
             selected_venue.id as venue_id,
             nullif(trim(selected_venue.name), '') as venue_name,
