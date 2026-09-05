@@ -24,10 +24,10 @@ function formatEventDate(startAt: string) {
 
 export default function EventCard({ event }: EventCardProps) {
   return (
-    <Link href={`/events/${event.id}`} className="block">
-      <div className="overflow-hidden rounded-2xl border border-gray-300 bg-gray-50 shadow-md transition-shadow hover:shadow-lg">
+    <Link href={`/events/${event.id}`} className="block h-full">
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-300 bg-gray-50 shadow-md transition-shadow hover:shadow-lg">
         {/* Photo area — taller now, ~1cm more vertical space */}
-        <div className="relative flex h-52 items-center justify-center bg-orange-50">
+        <div className="relative flex h-52 shrink-0 items-center justify-center bg-orange-50">
           {event.imageUrl ? (
             <img
               src={event.imageUrl}
@@ -41,7 +41,7 @@ export default function EventCard({ event }: EventCardProps) {
           )}
         </div>
 
-        <div className="p-4">
+        <div className="flex flex-1 flex-col p-4">
           <div className="flex flex-wrap gap-2">
             {event.categories.map((category) => (
               <span
@@ -52,7 +52,8 @@ export default function EventCard({ event }: EventCardProps) {
               </span>
             ))}
           </div>
-          <h3 className="mt-1 text-lg font-bold text-gray-900">
+          {/* Clamped so a long title can't make one card taller than its row */}
+          <h3 className="mt-1 line-clamp-2 text-lg font-bold text-gray-900">
             {event.title}
           </h3>
           <p className="mt-1 text-sm text-gray-600">
@@ -60,7 +61,7 @@ export default function EventCard({ event }: EventCardProps) {
           </p>
           <p className="text-sm text-gray-400">{event.cityName}</p>
 
-          <hr className="my-3 border-gray-200" />
+          <hr className="my-3 mt-auto border-gray-200" />
 
           <div className="flex items-center justify-between">
             <span className="font-bold text-gray-900">
