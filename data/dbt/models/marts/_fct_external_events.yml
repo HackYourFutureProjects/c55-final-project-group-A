@@ -78,6 +78,15 @@ models:
                   - Food & Drink
                   - Other
 
+      - name: categories
+        description: >
+          Sorted distinct application categories derived from all Ticketmaster
+          classifications. Other is used only when no specific category can be
+          derived. The scalar category column remains temporarily for backward
+          compatibility with the existing backend contract.
+        tests:
+          - not_null
+
       - name: source_segment
         description: Original Ticketmaster classification segment.
         tests:

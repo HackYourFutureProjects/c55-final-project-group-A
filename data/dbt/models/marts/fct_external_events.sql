@@ -42,6 +42,62 @@ with
 
     ),
 
+    mapped_categories as (
+
+        select
+            *,
+
+            array_distinct(
+                transform(
+                    event_classifications,
+                    classification -> case
+                        when classification.genre_name = 'Family'
+                        then 'Family & Kids'
+                        when classification.genre_name = 'Food & Drink'
+                        then 'Food & Drink'
+                        when classification.genre_name = 'Community/Civic'
+                        then 'Community & Social'
+                        when
+                            classification.genre_name in (
+                                'Theatre',
+                                'Comedy',
+                                'Dance',
+                                'Performance Art',
+                                'Variety'
+                            )
+                        then 'Theatre & Performance'
+                        when classification.genre_name = 'Fine Art'
+                        then 'Arts & Culture'
+                        when classification.segment_name = 'Music'
+                        then 'Music'
+                        when classification.segment_name = 'Sports'
+                        then 'Sports & Fitness'
+                        when classification.segment_name in ('Film', 'Arts & Theatre')
+                        then 'Arts & Culture'
+                        else 'Other'
+                    end
+                )
+            ) as raw_categories
+
+        from effective_prices
+
+    ),
+
+    cleaned_categories as (
+
+        select
+            * except (raw_categories),
+
+            case
+                when size(filter(raw_categories, category -> category <> 'Other')) > 0
+                then sort_array(filter(raw_categories, category -> category <> 'Other'))
+                else array('Other')
+            end as categories
+
+        from mapped_categories
+
+    ),
+
     normalized as (
 
         select
@@ -80,6 +136,7 @@ with
                 then 'Arts & Culture'
                 else 'Other'
             end as category,
+            categories,
 
             -- Preserve the source classification alongside our normalized
             -- category so the original meaning is not lost.
@@ -129,7 +186,7 @@ with
             ingest_date,
             ingested_at
 
-        from effective_prices
+        from cleaned_categories
 
     )
 
