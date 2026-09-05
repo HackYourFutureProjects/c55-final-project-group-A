@@ -15,7 +15,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FeedbackService {
   private final FeedbackRepository feedbackRepository;
-  private final NotificationOutboxService notificationOutboxService;
 
   public void submitFeedback (PostFeedbackRequest request){
     Feedback newFeedback = Feedback.builder()
@@ -28,7 +27,6 @@ public class FeedbackService {
         .build();
 
     feedbackRepository.createFeedback(newFeedback);
-    notificationOutboxService.enqueueNewFeedbackSubmission(request);
   }
 
   public FeedbackPageResponse getFeedbackPage(int page, int size){
