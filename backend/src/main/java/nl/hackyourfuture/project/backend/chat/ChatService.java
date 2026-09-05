@@ -43,7 +43,22 @@ public class ChatService {
                   Event status: %s
       
                   How to answer:
-                  - Respond in the same language the user writes in.
+                  - Respond in the same language as the user's most recent message — judge \
+                  this only by the words in that message itself, never by the event's \
+                  location, city, or any other context. If the user writes in English, \
+                  always reply in English, regardless of where the event takes place.
+                  - Do not form or maintain any belief about "the language of this \
+                  conversation" as a whole. There is no such thing — only the literal \
+                  words of the newest message matter, every single time, independent of \
+                  what language was used in any earlier message, your own earlier \
+                  replies, or corrections the user made previously. Never assume today's \
+                  message matches an earlier language choice; check fresh, every time, \
+                  from zero.
+                  - Ignore any language signal that is not the literal text of the newest \
+                  message — this includes the event's location or city, the user's IP \
+                  address, browser locale, Accept-Language headers, or any other \
+                  technical metadata that may be available to you. These signals must \
+                  never influence your choice of reply language.
                   - Keep answers short — 2 to 4 sentences unless the question genuinely \
                   needs more detail.
                   - Reply in plain text only, no markdown formatting.
@@ -70,13 +85,13 @@ public class ChatService {
   private final EventRepository eventRepository;
   private final WeatherService weatherService;
 
-  public ChatResponse askAboutEvent(UUID eventId, ChatRequest request){
+  public ChatResponse askAboutEvent(UUID eventId, ChatRequest request) {
     EventDetail event = eventRepository.findEventDetailById(eventId)
         .orElseThrow(() -> new EventNotFoundException("Event not found"));
 
     String systemPrompt = buildSystemPrompt(event);
 
-    try{
+    try {
       List<Content> contents = buildConversation(systemPrompt, request.messages());
 
       GenerateContentResponse repsonse = geminiClient.models.generateContent(
@@ -86,12 +101,12 @@ public class ChatService {
       );
 
       return new ChatResponse(repsonse.text());
-    } catch(Exception e){
+    } catch (Exception e) {
       throw new ExternalServiceException("Chat is temporarily unavailable");
     }
   }
 
-  private String buildSystemPrompt(EventDetail event){
+  private String buildSystemPrompt(EventDetail event) {
     WeatherResponse weather = weatherService.getWeather(event.latitude(), event.longitude(), event.startAt());
 
     String weatherInfo = weather.isAvailable()
@@ -112,12 +127,12 @@ public class ChatService {
 
   }
 
-  private String orNotSpecified(String value){
+  private String orNotSpecified(String value) {
     return (value == null || value.isBlank()) ? "Not specified" : value;
   }
 
-  private String joinCategories(List<Category> categories){
-    if(categories == null || categories.isEmpty()){
+  private String joinCategories(List<Category> categories) {
+    if (categories == null || categories.isEmpty()) {
       return "Not specified";
     }
 
@@ -127,14 +142,14 @@ public class ChatService {
         .orElse("Not specified");
   }
 
-  private String formatPrice(BigDecimal price){
-    if(price == null || price.compareTo(BigDecimal.ZERO) == 0){
+  private String formatPrice(BigDecimal price) {
+    if (price == null || price.compareTo(BigDecimal.ZERO) == 0) {
       return "Free";
     }
     return "€" + price;
   }
 
-  private List<Content> buildConversation(String systemPrompt, List<ChatMessageDto> history){
+  private List<Content> buildConversation(String systemPrompt, List<ChatMessageDto> history) {
     List<Content> contents = new ArrayList<>();
     contents.add(Content.fromParts(Part.fromText(systemPrompt)));
     for (ChatMessageDto message : history) {
