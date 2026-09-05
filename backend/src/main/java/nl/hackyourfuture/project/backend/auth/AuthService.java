@@ -48,9 +48,23 @@ public class AuthService {
     User user = userRepository.findUserByEmail(request.email())
         .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
-    if(!passwordEncoder.matches(request.password(), user.getPasswordHash())){
+    if(user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())){
       throw new InvalidCredentialsException("Invalid email or password");
     }
+
+    return createSessionAndBuildResult(user);
+  }
+
+  public AuthResult loginOrRegisterFromGoogle(String email, String name){
+
+    User user = userRepository.findUserByEmail(email)
+        .orElseGet(() -> userRepository.createUser(
+            User.builder()
+                .name(name)
+                .email(email)
+                .passwordHash(null)
+                .build()
+        ));
 
     return createSessionAndBuildResult(user);
   }
@@ -74,6 +88,5 @@ public class AuthService {
 
     return new AuthResult(AuthResponse.from(user), rawAccessToken);
   }
-
 
 }
