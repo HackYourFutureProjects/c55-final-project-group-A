@@ -10,6 +10,7 @@ stay separated.
 """
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -44,7 +45,24 @@ TYPE_MAP: dict[str, LiteralString] = {
 
 def postgres_type(databricks_type: str) -> LiteralString:
     """Translate one column type. LiteralString because psycopg insists."""
-    return TYPE_MAP.get(databricks_type.upper().split("(")[0], "text")
+    normalized = databricks_type.upper().replace(" ", "")
+    if normalized == "ARRAY<STRING>":
+        return "text[]"
+    return TYPE_MAP.get(normalized.split("(")[0], "text")
+
+
+def postgres_value(value, databricks_type: str):
+    """Convert warehouse values that need native Postgres representations."""
+    normalized = databricks_type.upper().replace(" ", "")
+    if normalized != "ARRAY<STRING>" or value is None or isinstance(value, list):
+        return value
+
+    if isinstance(value, str):
+        parsed = json.loads(value)
+        if isinstance(parsed, list) and all(isinstance(item, str) for item in parsed):
+            return parsed
+
+    raise ValueError(f"expected ARRAY<STRING> value, received {value!r}")
 
 
 def read_mart(
@@ -121,6 +139,14 @@ def publish(
     )
     retained_count = 0
 
+    prepared_rows = [
+        [
+            postgres_value(value, type_text)
+            for value, (_, type_text) in zip(row, columns, strict=True)
+        ]
+        for row in rows
+    ]
+
     connection = psycopg.connect(dsn, autocommit=False)
     try:
         with connection.cursor() as cursor:
@@ -132,7 +158,7 @@ def publish(
                     column_names,
                     SQL(", ").join([Placeholder()] * len(columns)),
                 ),
-                rows,
+                prepared_rows,
             )
             # Create only on the first publish. Later runs preserve this table
             # so backend views, grants, and indexes remain attached to it.
@@ -152,6 +178,25 @@ def publish(
                 cursor.execute(
                     SQL("alter table {} alter column {} set not null").format(
                         published, Identifier("is_published")
+                    )
+                )
+            if table == DEFAULT_TABLE and {"category", "categories"} <= available_columns:
+                cursor.execute(
+                    SQL("alter table {} add column if not exists {} text[]").format(
+                        published, Identifier("categories")
+                    )
+                )
+                cursor.execute(
+                    SQL("update {} set {} = array[{}] where {} is null").format(
+                        published,
+                        Identifier("categories"),
+                        Identifier("category"),
+                        Identifier("categories"),
+                    )
+                )
+                cursor.execute(
+                    SQL("alter table {} alter column {} set not null").format(
+                        published, Identifier("categories")
                     )
                 )
             # Carry forward the complete card data for events that disappeared

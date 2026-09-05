@@ -226,19 +226,6 @@ public class AdminEventRepository {
                 .update() == 1;
     }
 
-    public boolean uncancelEvent(UUID eventId) {
-        return jdbcClient
-                .sql("""
-                        UPDATE events
-                        SET is_cancelled = FALSE,
-                            updated_at = now()
-                        WHERE id = :eventId
-                          AND is_cancelled = TRUE
-                        """)
-                .param("eventId", eventId)
-                .update() == 1;
-    }
-
     public Optional<UUID> deleteEventById(UUID eventId) {
         return jdbcClient
                 .sql("""

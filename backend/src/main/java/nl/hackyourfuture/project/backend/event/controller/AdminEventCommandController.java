@@ -196,7 +196,7 @@ public class AdminEventCommandController {
             summary = "Unpublish an event",
             description = """
                     Returns a published event to a private draft.
-                    Cancelled events must be restored first.
+                    Cancelled events cannot be unpublished.
                     """
     )
     @ApiResponse(
@@ -406,51 +406,6 @@ public class AdminEventCommandController {
             @PathVariable UUID eventId
     ) {
         adminEventService.cancel(eventId);
-    }
-
-    @PatchMapping("/{eventId}/uncancel")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(
-            summary = "Restore a cancelled event",
-            description = """
-                    Restores a cancelled published event and makes it active again.
-                    Only upcoming or ongoing events can be restored.
-                    """
-    )
-    @ApiResponse(
-            responseCode = "204",
-            description = "Event restored successfully"
-    )
-    @ApiResponse(
-            responseCode = "400",
-            description = "The event is not cancelled or has already ended",
-            content = @Content(
-                    schema = @Schema(implementation = ProblemDetail.class)
-            )
-    )
-    @ApiResponse(
-            responseCode = "401",
-            description = "Authentication is required"
-    )
-    @ApiResponse(
-            responseCode = "403",
-            description = "Only administrators can restore events"
-    )
-    @ApiResponse(
-            responseCode = "404",
-            description = "The event does not exist",
-            content = @Content(
-                    schema = @Schema(implementation = ProblemDetail.class)
-            )
-    )
-    public void uncancel(
-            @Parameter(
-                    description = "ID of the event to restore",
-                    required = true
-            )
-            @PathVariable UUID eventId
-    ) {
-        adminEventService.uncancel(eventId);
     }
 
     @DeleteMapping("/{eventId}")

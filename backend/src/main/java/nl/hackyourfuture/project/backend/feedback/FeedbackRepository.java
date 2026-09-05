@@ -26,11 +26,12 @@ public class FeedbackRepository {
       .build();
   private final JdbcClient jdbcClient;
 
-  public void createFeedback(Feedback feedback) {
-    jdbcClient
+  public UUID createFeedback(Feedback feedback) {
+    return jdbcClient
         .sql("""
             INSERT INTO feedbacks (topic, event_title, rating, message, sender_name, sender_email)
             VALUES(:topic, :eventTitle, :rating, :message, :senderName, :senderEmail)
+            RETURNING id
             """)
         .param("topic", feedback.getTopic().toDbValue())
         .param("eventTitle", feedback.getEventTitle())
@@ -38,7 +39,8 @@ public class FeedbackRepository {
         .param("message", feedback.getMessage())
         .param("senderName", feedback.getSenderName())
         .param("senderEmail", feedback.getSenderEmail())
-        .update();
+        .query(UUID.class)
+        .single();
   }
 
   public List<Feedback> getAllFeedbacks(int limit, int offset) {

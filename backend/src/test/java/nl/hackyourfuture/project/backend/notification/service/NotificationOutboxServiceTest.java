@@ -6,7 +6,6 @@ import nl.hackyourfuture.project.backend.notification.model.NotificationType;
 import nl.hackyourfuture.project.backend.notification.model.OutboxPayload;
 import nl.hackyourfuture.project.backend.notification.repository.NotificationOutboxRepository;
 import nl.hackyourfuture.project.backend.notification.repository.NotificationRepository;
-import nl.hackyourfuture.project.backend.user.UserRepository;
 import nl.hackyourfuture.project.backend.user.interactions.UserEventRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,9 +36,6 @@ class NotificationOutboxServiceTest {
 
     @Mock
     private EventCommentRepository eventCommentRepository;
-
-    @Mock
-    private UserRepository userRepository;
 
     @InjectMocks
     private NotificationOutboxService notificationOutboxService;

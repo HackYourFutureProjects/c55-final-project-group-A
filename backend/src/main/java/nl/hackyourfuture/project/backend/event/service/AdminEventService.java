@@ -378,7 +378,7 @@ public class AdminEventService {
 
         if (event.cancelled()) {
             throw new BadRequestException(
-                    "Restore the cancelled event before unpublishing it"
+                    "Cancelled events cannot be unpublished"
             );
         }
 
@@ -390,40 +390,6 @@ public class AdminEventService {
 
         log.debug("Unpublished event {}", eventId);
     }
-
-    @Transactional
-    public void uncancel(UUID eventId) {
-        log.debug("Uncancelling event {}", eventId);
-
-        AdminEventDetail event = findAdminEvent(eventId);
-
-        if (!event.cancelled()) {
-            throw new BadRequestException(
-                    "The event is not cancelled"
-            );
-        }
-
-        if (!event.published()) {
-            throw new BadRequestException(
-                    "A draft event cannot be restored"
-            );
-        }
-
-        if (!event.endAt().isAfter(OffsetDateTime.now())) {
-            throw new BadRequestException(
-                    "A past event cannot be restored"
-            );
-        }
-
-        if (!adminEventRepository.uncancelEvent(eventId)) {
-            throw new EventNotFoundException(
-                    "Event not found: " + eventId
-            );
-        }
-
-        log.debug("Uncancelled event {}", eventId);
-    }
-
 
     @Transactional
     public void cancel(UUID eventId) {

@@ -1,7 +1,6 @@
 package nl.hackyourfuture.project.backend.notification.repository;
 
 import lombok.RequiredArgsConstructor;
-import nl.hackyourfuture.project.backend.feedback.Topic;
 import nl.hackyourfuture.project.backend.notification.model.NotificationOutbox;
 import nl.hackyourfuture.project.backend.notification.model.NotificationType;
 import nl.hackyourfuture.project.backend.notification.model.OutboxPayload;
@@ -13,7 +12,6 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -94,51 +92,6 @@ public class NotificationOutboxRepository {
                         """)
                 .param("id", id)
                 .update() == 1;
-    }
-
-    public Optional<UUID> findFeedbackIdBySubmission(
-            Topic topic,
-            String eventTitle,
-            int rating,
-            String message,
-            String senderName,
-            String senderEmail
-    ) {
-        return jdbcClient
-                .sql("""
-                        SELECT id
-                        FROM feedbacks
-                        WHERE topic = :topic
-                          AND rating = :rating
-                          AND message IS NOT DISTINCT FROM :message
-                          AND sender_name IS NOT DISTINCT FROM :senderName
-                          AND sender_email = :senderEmail
-                          AND event_title IS NOT DISTINCT FROM :eventTitle
-                        ORDER BY created_at DESC, id DESC
-                        LIMIT 1
-                        """)
-                .param("topic", topic.toDbValue())
-                .param("eventTitle", eventTitle)
-                .param("rating", rating)
-                .param("message", message)
-                .param("senderName", senderName)
-                .param("senderEmail", senderEmail)
-                .query((rs, _) -> rs.getObject("id", UUID.class))
-                .optional();
-    }
-
-    public boolean feedbackExists(UUID id) {
-        return jdbcClient
-                .sql("""
-                        SELECT EXISTS(
-                            SELECT 1
-                            FROM feedbacks
-                            WHERE id = :id
-                        )
-                        """)
-                .param("id", id)
-                .query(Boolean.class)
-                .single();
     }
 
     private String serializePayload(OutboxPayload payload) {
