@@ -40,7 +40,9 @@ public class EventController {
             summary = "List events",
             description = """
                     Returns one page of active, published, non-cancelled events
-                    ordered by the selected sorting strategy. Results are ordered
+                    ordered by the selected sorting strategy. An event is active
+                    when end_at is still in the future, or when end_at is null
+                    and start_at is still in the future. Results are ordered
                     by start date when no sort parameter is provided.
                     When search is provided, only events with matching titles,
                     descriptions, city names, or category names are returned.

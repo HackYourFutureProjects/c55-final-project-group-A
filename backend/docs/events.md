@@ -6,6 +6,9 @@ Public read APIs for browsing published events and opening a single event by id.
 Both app-created and external events are served from the shared **`event_feed`** view
 (via `EventRepository`). Canceled and past published events remain reachable by id
 on the detail endpoint; the list endpoint only returns active, published, non-canceled events.
+An event is active when `end_at` is still in the future, or when `end_at` is null and
+`start_at` is still in the future. Events with no end time drop off the list as soon as
+they start. Detail status follows the same rule: no `end_at` means `PAST` after start.
 
 ## API
 

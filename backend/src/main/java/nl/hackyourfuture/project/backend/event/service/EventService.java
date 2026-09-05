@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
@@ -133,21 +132,7 @@ public class EventService {
             return EventStatus.UPCOMING;
         }
 
-        if (event.endAt() == null) {
-            LocalDate eventDate = event.startAt()
-                    .atZoneSameInstant(ZoneId.of("Europe/Amsterdam"))
-                    .toLocalDate();
-
-            LocalDate today = now
-                    .atZoneSameInstant(ZoneId.of("Europe/Amsterdam"))
-                    .toLocalDate();
-
-            return eventDate.isBefore(today)
-                    ? EventStatus.PAST
-                    : EventStatus.ONGOING;
-        }
-
-        if (now.isBefore(event.endAt())) {
+        if (event.endAt() != null && now.isBefore(event.endAt())) {
             return EventStatus.ONGOING;
         }
 
