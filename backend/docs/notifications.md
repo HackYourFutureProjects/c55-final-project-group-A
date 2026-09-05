@@ -16,7 +16,7 @@ is no email or push in this version**; the frontend polls the inbox and shows an
 | `EVENT_UPDATED`   | Users who **saved or marked Going** on that event     | Admin updates a published app event               |
 | `EVENT_REMINDER`  | Users who marked **Going only** (Saved is not enough) | Scheduled job, ~24h before event start            |
 | `COMMENT_REPLY`   | The user who wrote the comment                        | Admin creates the **first** reply on that comment |
-| `NEW_FEEDBACK`    | Admin                                                 | Someone submits feedback via `POST /api/feedback` |
+| `NEW_FEEDBACK`    | Admin                                                 | Scheduled job, ~10s after feedback is submitted   |
 
 **Important:** a regular user does **not** get every notification type. They only get rows that apply to them — e.g.
 event alerts only for events they saved or are going to, comment reply only on their own comment. Admin is the only one
@@ -42,16 +42,17 @@ marked Going on that event.
 
 ### 1. Something happens (write path)
 
-Business action runs first (cancel event, submit feedback, etc.). In the same request, the backend inserts a row into *
+Business action runs first (cancel event, admin reply, etc.). In the same request, the backend inserts a row into *
 *`notification_outbox`** with:
 
 - `type` (e.g. `EVENT_CANCELLED`)
-- `resource_id` (event id, comment id, feedback id)
+- `resource_id` (event id, comment id)
 - `payload` JSON (`eventTitle`, `linkPath`)
 
-The HTTP response succeeds .
+The HTTP response succeeds.
 
-**Exception:** `EVENT_REMINDER` does not use the outbox. A scheduled job writes directly to `notifications`.
+**Exception:** `EVENT_REMINDER` and `NEW_FEEDBACK` do not use the outbox. Scheduled jobs write directly to
+`notifications`.
 
 ### 2. Outbox workflow (background)
 
@@ -79,15 +80,15 @@ Opening another user’s notification returns 404.
 
 ---
 
-## Triggers (where outbox is enqueued)
+## Triggers (how each type is created)
 
-| Action                        | Service                                      | Notification      |
-|-------------------------------|----------------------------------------------|-------------------|
-| Admin cancels event           | `AdminEventService.cancel`                   | `EVENT_CANCELLED` |
-| Admin updates published event | `AdminEventService.updateEvent`              | `EVENT_UPDATED`   |
-| Admin first reply on comment  | `AdminEventCommentService.createAdminReply`  | `COMMENT_REPLY`   |
-| Public feedback submit        | `FeedbackService.submitFeedback`             | `NEW_FEEDBACK`    |
-| ~24h before start             | `NotificationReminderService` (every 15 min) | `EVENT_REMINDER`  |
+| Action                        | Service                                        | Notification      |
+|-------------------------------|------------------------------------------------|-------------------|
+| Admin cancels event           | `AdminEventService.cancel`                     | `EVENT_CANCELLED` |
+| Admin updates published event | `AdminEventService.updateEvent`                | `EVENT_UPDATED`   |
+| Admin first reply on comment  | `AdminEventCommentService.createAdminReply`    | `COMMENT_REPLY`   |
+| Feedback submitted            | `NotificationFeedbackScanService` (every ~10s) | `NEW_FEEDBACK`    |
+| ~24h before start             | `NotificationReminderService` (every 15 min)   | `EVENT_REMINDER`  |
 
 When event **start time** changes, existing `EVENT_REMINDER` rows for that event are deleted so a new reminder can be
 scheduled for the new time.
