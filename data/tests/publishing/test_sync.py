@@ -16,6 +16,8 @@ COLUMNS = [
     ("is_published", "BOOLEAN"),
     ("title", "STRING"),
     ("source_url", "STRING"),
+    ("category", "STRING"),
+    ("categories", "ARRAY<STRING>"),
     ("external_venue_id", "STRING"),
     ("start_date", "DATE"),
     ("start_at", "TIMESTAMP"),
@@ -32,6 +34,8 @@ ROWS = [
         True,
         "Example event",
         "https://www.ticketmaster.nl/event/example/123",
+        "Music",
+        ["Music", "Arts & Culture"],
         "venue-1",
         "2026-09-01",
         "2026-09-01T18:00:00Z",
@@ -96,12 +100,25 @@ def test_type_mapping():
     assert sync.postgres_type("BIGINT") == "bigint"
     assert sync.postgres_type("DECIMAL(5,1)") == "numeric"
     assert sync.postgres_type("TIMESTAMP") == "timestamptz"
+    assert sync.postgres_type("ARRAY<STRING>") == "text[]"
+
+
+def test_array_string_value_is_prepared_for_postgres():
+    assert sync.postgres_value(
+        '["Music", "Arts & Culture"]',
+        "ARRAY<STRING>",
+    ) == ["Music", "Arts & Culture"]
+
+
+def test_native_array_string_value_is_preserved():
+    categories = ["Music", "Arts & Culture"]
+
+    assert sync.postgres_value(categories, "ARRAY<STRING>") is categories
 
 
 def test_unknown_type_becomes_text():
     """Keeping the value beats guessing at it. A column nobody thought about
     should not fail the run."""
-    assert sync.postgres_type("ARRAY<STRING>") == "text"
     assert sync.postgres_type("MAP<STRING,INT>") == "text"
 
 
@@ -140,6 +157,19 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
         statements,
         'alter table "analytics"."external_events" ' 'alter column "is_published" set not null',
     )
+    categories_added = index_of(
+        statements,
+        'alter table "analytics"."external_events" ' 'add column if not exists "categories" text[]',
+    )
+    categories_backfilled = index_of(
+        statements,
+        'update "analytics"."external_events" '
+        'set "categories" = array["category"] where "categories" is null',
+    )
+    categories_required = index_of(
+        statements,
+        'alter table "analytics"."external_events" ' 'alter column "categories" set not null',
+    )
     referenced_rows_retained = index_of(
         statements,
         'insert into "analytics"."external_events__staging"',
@@ -155,11 +185,16 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
         < publication_flag_added
         < publication_flag_defaulted
         < publication_flag_required
+        < categories_added
+        < categories_backfilled
+        < categories_required
         < referenced_rows_retained
         < truncated
         < refreshed
         < staging_dropped
     )
+    retained_statement = statements[referenced_rows_retained]
+    assert 'previous."categories"' in retained_statement
     assert connection.committed
 
 
