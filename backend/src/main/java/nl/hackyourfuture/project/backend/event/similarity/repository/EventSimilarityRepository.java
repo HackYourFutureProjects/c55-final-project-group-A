@@ -184,8 +184,7 @@ public class EventSimilarityRepository {
                       e.end_at > now()
                       OR (
                           e.end_at IS NULL
-                          AND (e.start_at AT TIME ZONE 'Europe/Amsterdam')::date
-                              >= (now() AT TIME ZONE 'Europe/Amsterdam')::date
+                          AND e.start_at > now()
                       )
                   )
             )

@@ -10,6 +10,7 @@ CREATE TABLE analytics.external_events (
     title TEXT NOT NULL,
     description TEXT,
     category TEXT,
+    categories TEXT[],
     start_at TIMESTAMPTZ NOT NULL,
     end_at TIMESTAMPTZ,
     price_min NUMERIC,

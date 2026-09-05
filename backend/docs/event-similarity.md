@@ -31,8 +31,8 @@ event_feed) → EventSummaryResponse (score discarded)
 
 **Source:** must be published in `event_feed`.
 
-**Candidates:** different id, published, not cancelled, still upcoming
-(`end_at > now()`, or null `end_at` and start date ≥ today in `Europe/Amsterdam`).
+**Candidates:** different id, published, not cancelled, still active
+(`end_at > now()`, or null `end_at` and `start_at > now()`).
 
 ## Scoring (max 100)
 
