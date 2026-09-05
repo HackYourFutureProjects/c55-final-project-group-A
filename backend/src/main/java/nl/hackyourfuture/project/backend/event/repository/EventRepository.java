@@ -369,7 +369,7 @@ public class EventRepository {
                        e.is_cancelled
                 FROM event_feed e
                 WHERE e.id = :eventId
-                  AND e.is_published = TRUE
+                  AND (e.is_published = TRUE OR e.source <> 'app')
                 """;
 
         return jdbcClient
