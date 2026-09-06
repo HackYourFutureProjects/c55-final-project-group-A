@@ -2,17 +2,26 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type SubmitEvent, useRef, useState } from "react";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/context/AuthContext";
 import { login, register } from "@/lib/api";
 
 type AuthTab = "login" | "register";
+
+const errorMessages: Record<string, string> = {
+  invalid_state:
+    "Your sign-in session expired or is invalid. Please try again.",
+  google_auth_failed: "Google sign-in didn't complete. Please try again.",
+  unexpected_error:
+    "Something went wrong signing in with Google. Please try again.",
+};
 
 export function AuthForm() {
   const searchParams = useSearchParams();
   const initialTab: AuthTab =
     searchParams.get("tab") === "register" ? "register" : "login";
   const [tab, setTab] = useState<AuthTab>(initialTab);
-
+  const errorCode = searchParams.get("error");
   const router = useRouter();
   const { refresh } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +107,20 @@ export function AuthForm() {
               </p>
             </>
           )}
+          {errorCode && (
+            <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+              {errorMessages[errorCode] ??
+                "Something went wrong. Please try again."}
+            </p>
+          )}
 
+          <GoogleSignInButton />
+
+          <div className="my-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs text-gray-400">or</span>
+            <div className="h-px flex-1 bg-gray-200" />
+          </div>
           <form
             ref={formRef}
             onSubmit={handleSubmit}
