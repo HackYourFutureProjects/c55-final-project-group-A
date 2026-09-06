@@ -195,6 +195,39 @@ public class EventRepository {
             WHERE fallback.name = 'Other'
             """;
 
+    private static final String SKINNY_POPULARITY_SOURCE = """
+            SELECT e.id,
+                   e.title,
+                   e.description,
+                   e.category_ids,
+                   e.category_names,
+                   e.start_at,
+                   e.end_at,
+                   e.price,
+                   e.city_name,
+                   e.latitude,
+                   e.longitude,
+                   e.is_cancelled,
+                   e.is_published,
+                   (
+                       3 * COALESCE(going.going_count, 0)
+                       + COALESCE(saved.save_count, 0)
+                   ) AS popularity_score
+            FROM (
+            """ + SKINNY_COUNT_SOURCE + """
+            ) e
+            LEFT JOIN (
+                SELECT event_id, COUNT(*)::bigint AS going_count
+                FROM event_attendees
+                GROUP BY event_id
+            ) going ON going.event_id = e.id
+            LEFT JOIN (
+                SELECT event_id, COUNT(*)::bigint AS save_count
+                FROM saved_events
+                GROUP BY event_id
+            ) saved ON saved.event_id = e.id
+            """;
+
     private static String buildFilterClauses(EventQueryCriteria criteria) {
         String sql = """
                 WHERE e.is_published = TRUE
@@ -344,10 +377,9 @@ public class EventRepository {
             int limit,
             int offset
     ) {
-        if (criteria.sort() == EventSort.POPULARITY_DESC) {
-            return findEventSummariesFromEventFeed(criteria, limit, offset);
-        }
-
+        String skinnySource = criteria.sort() == EventSort.POPULARITY_DESC
+                ? SKINNY_POPULARITY_SOURCE
+                : SKINNY_COUNT_SOURCE;
         String orderBy = orderByClause(criteria.sort());
 
         String sql = """
@@ -367,62 +399,18 @@ public class EventRepository {
                        e.longitude,
                        e.image_url,
                        e.going_count,
-                       e.popularity_score,
                        e.is_cancelled
-                FROM event_feed e
-                INNER JOIN (
+                FROM (
                     SELECT e.id
                     FROM (
-                """ + SKINNY_COUNT_SOURCE + """
+                """ + skinnySource + """
                 ) e
                 """ + buildFilterClauses(criteria) + orderBy + """
                     LIMIT :limit
                     OFFSET :offset
-                ) page ON page.id = e.id
+                ) page
+                INNER JOIN event_feed e ON e.id = page.id
                 """ + orderBy;
-
-        var statement = jdbcClient
-                .sql(sql)
-                .param("limit", limit)
-                .param("offset", offset);
-
-        statement = bindCriteriaParameters(statement, criteria);
-        return statement
-                .query(EVENT_SUMMARY_ROW_MAPPER)
-                .list();
-    }
-
-    private List<EventSummary> findEventSummariesFromEventFeed(
-            EventQueryCriteria criteria,
-            int limit,
-            int offset
-    ) {
-        String orderBy = orderByClause(criteria.sort());
-
-        String sql = """
-                SELECT e.id,
-                       e.title,
-                       e.category_ids,
-                       e.category_names,
-                       e.start_at,
-                       e.end_at,
-                       e.price,
-                       e.street,
-                       e.house_number,
-                       e.postal_code,
-                       e.city_name,
-                       e.province,
-                       e.latitude,
-                       e.longitude,
-                       e.image_url,
-                       e.going_count,
-                       e.popularity_score,
-                       e.is_cancelled
-                FROM event_feed e
-                """ + buildFilterClauses(criteria) + orderBy + """
-                LIMIT :limit
-                OFFSET :offset
-                """;
 
         var statement = jdbcClient
                 .sql(sql)
