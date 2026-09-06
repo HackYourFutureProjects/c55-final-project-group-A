@@ -10,8 +10,8 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-8">
-      <div className="flex items-center gap-8">
+    <header className="flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-8">
+      <div className="flex items-center gap-3 sm:gap-8">
         <div className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-600 text-white">
             📍
@@ -19,8 +19,8 @@ export function Navbar() {
           <span className="text-lg font-bold">Loc</span>
         </div>
 
-        <nav className="flex items-center gap-6 text-lg font-medium text-neutral-600">
-          |
+        <nav className="flex items-center gap-3 text-base font-medium text-neutral-600 sm:gap-6 sm:text-lg">
+          <span className="hidden sm:inline">|</span>
           <Link
             href="/"
             className={
@@ -31,7 +31,7 @@ export function Navbar() {
           >
             Home
           </Link>
-          |
+          <span className="hidden sm:inline">|</span>
           <Link
             href="/feedback"
             className={
@@ -42,23 +42,26 @@ export function Navbar() {
           >
             Feedback
           </Link>
-          |{/* Only admins see the link back into the admin area */}
+          {/* Only admins see the link back into the admin area */}
           {user?.role === "admin" && (
-            <Link
-              href="/admin"
-              className={
-                pathname.startsWith("/admin")
-                  ? "font-semibold text-orange-600"
-                  : "hover:text-orange-600"
-              }
-            >
-              Dashboard
-            </Link>
+            <>
+              <span className="hidden sm:inline">|</span>
+              <Link
+                href="/admin"
+                className={
+                  pathname.startsWith("/admin")
+                    ? "font-semibold text-orange-600"
+                    : "hover:text-orange-600"
+                }
+              >
+                Dashboard
+              </Link>
+            </>
           )}
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {user ? (
           <>
             <NotificationBell />
@@ -71,7 +74,7 @@ export function Navbar() {
                   ? "A"
                   : user.name.charAt(0).toUpperCase()}
               </span>
-              <span className="text-sm font-semibold text-neutral-700">
+              <span className="hidden text-sm font-semibold text-neutral-700 sm:inline">
                 {user.name.split(" ")[0]}
               </span>
             </Link>
@@ -80,13 +83,13 @@ export function Navbar() {
           <>
             <Link
               href="/login"
-              className="text-sm font-semibold text-neutral-700 hover:text-orange-600"
+              className="whitespace-nowrap text-sm font-semibold text-neutral-700 hover:text-orange-600"
             >
               Log in
             </Link>
             <Link
               href="/login?tab=register"
-              className="rounded-full bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700"
+              className="whitespace-nowrap rounded-full bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700 sm:px-4"
             >
               Sign up
             </Link>
