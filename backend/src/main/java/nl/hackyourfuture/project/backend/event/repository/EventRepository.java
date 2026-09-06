@@ -25,6 +25,18 @@ public class EventRepository {
 
     private final JdbcClient jdbcClient;
 
+    private static final String SEARCH_FILTER_CLAUSE = """
+                  AND (
+                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR e.city_name ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM unnest(e.category_names) AS category_name(name)
+                          WHERE category_name.name ILIKE '%' || COALESCE(:search, '') || '%'
+                      )
+                  )
+            """;
     private static final String CATEGORY_FILTER_CLAUSE = """
               AND EXISTS (
                   SELECT 1
@@ -119,6 +131,103 @@ public class EventRepository {
               END IN (:timesOfDay)
             """;
 
+    private static final String SKINNY_COUNT_SOURCE = """
+            SELECT e.id,
+                   e.title,
+                   e.description,
+                   ARRAY(
+                           SELECT c.id
+                           FROM event_categories ec
+                                    JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                   ) AS category_ids,
+                   ARRAY(
+                           SELECT c.name
+                           FROM event_categories ec
+                                    JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                   ) AS category_names,
+                   e.start_at,
+                   e.end_at,
+                   e.price,
+                   a.city_name,
+                   a.latitude,
+                   a.longitude,
+                   e.is_cancelled,
+                   e.is_published
+            FROM events e
+                     JOIN addresses a ON a.id = e.address_id
+            UNION ALL
+            SELECT canonical_event_uuid(
+                              build_stable_key(
+                                  ext.source,
+                                  ext.source_url,
+                                  ext.external_event_id,
+                                  ext.external_venue_id,
+                                  ext.start_date
+                              )
+                          ) AS id,
+                          ext.title,
+                   ext.description,
+                   COALESCE(matched.category_ids, ARRAY [fallback.id])
+                       AS category_ids,
+                   COALESCE(matched.category_names, ARRAY ['Other'])
+                       AS category_names,
+                   ext.start_at,
+                   ext.end_at,
+                   ext.price_min AS price,
+                   ext.city_name,
+                   ext.latitude::NUMERIC(9, 6) AS latitude,
+                   ext.longitude::NUMERIC(9, 6) AS longitude,
+                   ext.is_cancelled,
+                   ext.is_published
+            FROM analytics.external_events ext
+                     CROSS JOIN categories fallback
+                     CROSS JOIN LATERAL (
+                SELECT ARRAY_AGG(c.id ORDER BY c.name)   AS category_ids,
+                       ARRAY_AGG(c.name ORDER BY c.name) AS category_names
+                FROM unnest(COALESCE(ext.categories, ARRAY [ext.category]))
+                         AS category_name(name)
+                         JOIN categories c ON c.name = category_name.name
+            ) matched
+            WHERE fallback.name = 'Other'
+            """;
+
+    private static final String SKINNY_POPULARITY_SOURCE = """
+            SELECT e.id,
+                   e.title,
+                   e.description,
+                   e.category_ids,
+                   e.category_names,
+                   e.start_at,
+                   e.end_at,
+                   e.price,
+                   e.city_name,
+                   e.latitude,
+                   e.longitude,
+                   e.is_cancelled,
+                   e.is_published,
+                   (
+                       3 * COALESCE(going.going_count, 0)
+                       + COALESCE(saved.save_count, 0)
+                   ) AS popularity_score
+            FROM (
+            """ + SKINNY_COUNT_SOURCE + """
+            ) e
+            LEFT JOIN (
+                SELECT event_id, COUNT(*)::bigint AS going_count
+                FROM event_attendees
+                GROUP BY event_id
+            ) going ON going.event_id = e.id
+            LEFT JOIN (
+                SELECT event_id, COUNT(*)::bigint AS save_count
+                FROM saved_events
+                GROUP BY event_id
+            ) saved ON saved.event_id = e.id
+            """;
+
     private static String buildFilterClauses(EventQueryCriteria criteria) {
         String sql = """
                 WHERE e.is_published = TRUE
@@ -130,17 +239,11 @@ public class EventRepository {
                           AND e.start_at > now()
                       )
                   )
-                  AND (
-                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR e.city_name ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR EXISTS (
-                          SELECT 1
-                          FROM unnest(e.category_names) AS category_name(name)
-                          WHERE category_name.name ILIKE '%' || COALESCE(:search, '') || '%'
-                      )
-                  )
                 """;
+
+        if (criteria.hasSearch()) {
+            sql += SEARCH_FILTER_CLAUSE;
+        }
 
         if (criteria.hasCategoryFilter()) {
             sql += CATEGORY_FILTER_CLAUSE;
@@ -165,7 +268,9 @@ public class EventRepository {
             JdbcClient.StatementSpec statement,
             EventQueryCriteria criteria
     ) {
-        statement = statement.param("search", criteria.search());
+        if (criteria.hasSearch()) {
+            statement = statement.param("search", criteria.search());
+        }
 
         if (criteria.hasCategoryFilter()) {
             statement = statement.param(
@@ -272,6 +377,9 @@ public class EventRepository {
             int limit,
             int offset
     ) {
+        String skinnySource = criteria.sort() == EventSort.POPULARITY_DESC
+                ? SKINNY_POPULARITY_SOURCE
+                : SKINNY_COUNT_SOURCE;
         String orderBy = orderByClause(criteria.sort());
 
         String sql = """
@@ -291,13 +399,19 @@ public class EventRepository {
                        e.longitude,
                        e.image_url,
                        e.going_count,
-                       e.popularity_score,
                        e.is_cancelled
-                FROM event_feed e
+                FROM (
+                    SELECT e.id
+                    FROM (
+                """ + skinnySource + """
+                ) e
                 """ + buildFilterClauses(criteria) + orderBy + """
-                LIMIT :limit
-                OFFSET :offset
-                """;
+                    LIMIT :limit
+                    OFFSET :offset
+                ) page
+                INNER JOIN event_feed e ON e.id = page.id
+                """ + orderBy;
+
         var statement = jdbcClient
                 .sql(sql)
                 .param("limit", limit)
@@ -312,7 +426,9 @@ public class EventRepository {
     public long countEvents(EventQueryCriteria criteria) {
         String sql = """
                 SELECT COUNT(*)
-                FROM event_feed e
+                FROM (
+                """ + SKINNY_COUNT_SOURCE + """
+                ) e
                 """ + buildFilterClauses(criteria);
 
         var statement = jdbcClient.sql(sql);

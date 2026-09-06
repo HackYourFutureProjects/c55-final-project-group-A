@@ -26,14 +26,14 @@ public record EventQueryCriteria(
         categoryIds = categoryIds == null
                 ? List.of()
                 : categoryIds.stream()
-                        .distinct()
-                        .toList();
+                .distinct()
+                .toList();
 
         timesOfDay = timesOfDay == null
                 ? List.of()
                 : timesOfDay.stream()
-                        .distinct()
-                        .toList();
+                .distinct()
+                .toList();
 
         sort = sort == null
                 ? EventSort.START_TIME_ASC
@@ -70,5 +70,9 @@ public record EventQueryCriteria(
 
     public boolean hasTimeOfDayFilter() {
         return !timesOfDay.isEmpty();
+    }
+
+    public boolean hasSearch() {
+        return search != null;
     }
 }
