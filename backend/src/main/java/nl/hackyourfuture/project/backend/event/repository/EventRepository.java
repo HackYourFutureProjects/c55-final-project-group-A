@@ -25,6 +25,18 @@ public class EventRepository {
 
     private final JdbcClient jdbcClient;
 
+    private static final String SEARCH_FILTER_CLAUSE = """
+                  AND (
+                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR e.city_name ILIKE '%' || COALESCE(:search, '') || '%'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM unnest(e.category_names) AS category_name(name)
+                          WHERE category_name.name ILIKE '%' || COALESCE(:search, '') || '%'
+                      )
+                  )
+            """;
     private static final String CATEGORY_FILTER_CLAUSE = """
               AND EXISTS (
                   SELECT 1
@@ -130,17 +142,11 @@ public class EventRepository {
                           AND e.start_at > now()
                       )
                   )
-                  AND (
-                      e.title ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR COALESCE(e.description, '') ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR e.city_name ILIKE '%' || COALESCE(:search, '') || '%'
-                      OR EXISTS (
-                          SELECT 1
-                          FROM unnest(e.category_names) AS category_name(name)
-                          WHERE category_name.name ILIKE '%' || COALESCE(:search, '') || '%'
-                      )
-                  )
                 """;
+
+        if (criteria.hasSearch()) {
+            sql += SEARCH_FILTER_CLAUSE;
+        }
 
         if (criteria.hasCategoryFilter()) {
             sql += CATEGORY_FILTER_CLAUSE;
@@ -165,7 +171,9 @@ public class EventRepository {
             JdbcClient.StatementSpec statement,
             EventQueryCriteria criteria
     ) {
-        statement = statement.param("search", criteria.search());
+        if (criteria.hasSearch()) {
+            statement = statement.param("search", criteria.search());
+        }
 
         if (criteria.hasCategoryFilter()) {
             statement = statement.param(
