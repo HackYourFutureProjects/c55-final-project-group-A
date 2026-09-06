@@ -66,35 +66,41 @@ function ProfileContent() {
   });
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-8">
-      <div className="mb-8 flex items-center gap-6 rounded-2xl border border-neutral-200 bg-white p-6">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-purple-100 font-semibold text-2xl text-purple-700">
-          {initials}
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-6 sm:flex-row sm:items-center sm:gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-purple-100 font-semibold text-2xl text-purple-700">
+            {initials}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <h1 className="font-bold text-2xl text-neutral-900 sm:text-3xl">
+              {user.name}
+            </h1>
+            <p className="mt-1 text-neutral-500 text-sm sm:text-base">
+              {user.email} · {user.location ?? "No location set"} · joined{" "}
+              {joined}
+            </p>
+          </div>
         </div>
 
-        <div className="min-w-0 flex-1">
-          <h1 className="font-bold text-3xl text-neutral-900">{user.name}</h1>
-          <p className="mt-1 text-neutral-500">
-            {user.email} · {user.location ?? "No location set"} · joined{" "}
-            {joined}
-          </p>
+        <div className="flex shrink-0 gap-3 sm:ml-auto">
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="whitespace-nowrap rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
+          >
+            Edit profile
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsLogoutOpen(true)}
+            className="whitespace-nowrap rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
+          >
+            Log out
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setIsEditing(true)}
-          className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
-        >
-          Edit profile
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsLogoutOpen(true)}
-          className="rounded-full border border-neutral-200 px-5 py-2 font-semibold text-sm hover:bg-neutral-50"
-        >
-          Log out
-        </button>
       </div>
 
       {user.role === "admin" ? (

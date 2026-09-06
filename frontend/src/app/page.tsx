@@ -58,9 +58,9 @@ export default async function Home({ searchParams }: HomeProps) {
   ]);
 
   return (
-    <main className="mx-auto w-full max-w-10xl px-6 py-8">
+    <main className="mx-auto w-full max-w-10xl px-4 py-8 sm:px-6">
       <HomeBanner eventCount={page.totalElements} />
-      <div className="mt-10 flex items-start gap-8">
+      <div className="mt-10 flex flex-col items-stretch gap-8 lg:flex-row lg:items-start">
         <FilterSidebar categories={categories} />
         <div className="flex-1">
           <EventList events={page.events} />

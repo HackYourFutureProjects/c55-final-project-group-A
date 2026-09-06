@@ -184,7 +184,7 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
   }
 
   return (
-    <aside className="w-72 shrink-0 self-start space-y-6 rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
+    <aside className="w-full shrink-0 space-y-6 rounded-2xl border border-orange-100 bg-white p-6 shadow-sm lg:w-72 lg:self-start">
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-lg">Filters</h2>
         {hasFilters && (

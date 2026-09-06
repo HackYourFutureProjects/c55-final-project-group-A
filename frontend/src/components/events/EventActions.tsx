@@ -29,6 +29,12 @@ export default function EventActions({
   const [isGoing, setIsGoing] = useState(initialIsGoing);
   const [goingCount, setGoingCount] = useState(initialGoingCount);
 
+  // Admins don't get Save/Going — their profile has no Saved/Going tabs,
+  // so the action would have nowhere to show up.
+  if (user?.role === "admin") {
+    return null;
+  }
+
   async function handleSaveClick() {
     if (!user) {
       router.push("/login");
