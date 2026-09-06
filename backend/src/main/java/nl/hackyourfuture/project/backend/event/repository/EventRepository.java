@@ -132,7 +132,8 @@ public class EventRepository {
             """;
 
     private static final String SKINNY_COUNT_SOURCE = """
-            SELECT e.title,
+            SELECT e.id,
+                   e.title,
                    e.description,
                    ARRAY(
                            SELECT c.id
@@ -159,7 +160,16 @@ public class EventRepository {
             FROM events e
                      JOIN addresses a ON a.id = e.address_id
             UNION ALL
-            SELECT ext.title,
+            SELECT canonical_event_uuid(
+                              build_stable_key(
+                                  ext.source,
+                                  ext.source_url,
+                                  ext.external_event_id,
+                                  ext.external_venue_id,
+                                  ext.start_date
+                              )
+                          ) AS id,
+                          ext.title,
                    ext.description,
                    COALESCE(matched.category_ids, ARRAY [fallback.id])
                        AS category_ids,
@@ -334,6 +344,59 @@ public class EventRepository {
             int limit,
             int offset
     ) {
+        if (criteria.sort() == EventSort.POPULARITY_DESC) {
+            return findEventSummariesFromEventFeed(criteria, limit, offset);
+        }
+
+        String orderBy = orderByClause(criteria.sort());
+
+        String sql = """
+                SELECT e.id,
+                       e.title,
+                       e.category_ids,
+                       e.category_names,
+                       e.start_at,
+                       e.end_at,
+                       e.price,
+                       e.street,
+                       e.house_number,
+                       e.postal_code,
+                       e.city_name,
+                       e.province,
+                       e.latitude,
+                       e.longitude,
+                       e.image_url,
+                       e.going_count,
+                       e.popularity_score,
+                       e.is_cancelled
+                FROM event_feed e
+                INNER JOIN (
+                    SELECT e.id
+                    FROM (
+                """ + SKINNY_COUNT_SOURCE + """
+                ) e
+                """ + buildFilterClauses(criteria) + orderBy + """
+                    LIMIT :limit
+                    OFFSET :offset
+                ) page ON page.id = e.id
+                """ + orderBy;
+
+        var statement = jdbcClient
+                .sql(sql)
+                .param("limit", limit)
+                .param("offset", offset);
+
+        statement = bindCriteriaParameters(statement, criteria);
+        return statement
+                .query(EVENT_SUMMARY_ROW_MAPPER)
+                .list();
+    }
+
+    private List<EventSummary> findEventSummariesFromEventFeed(
+            EventQueryCriteria criteria,
+            int limit,
+            int offset
+    ) {
         String orderBy = orderByClause(criteria.sort());
 
         String sql = """
@@ -360,6 +423,7 @@ public class EventRepository {
                 LIMIT :limit
                 OFFSET :offset
                 """;
+
         var statement = jdbcClient
                 .sql(sql)
                 .param("limit", limit)
