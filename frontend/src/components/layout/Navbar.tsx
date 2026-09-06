@@ -48,11 +48,11 @@ export function Navbar() {
               <span className="hidden sm:inline">|</span>
               <Link
                 href="/admin"
-                className={
+                className={`hidden sm:inline ${
                   pathname.startsWith("/admin")
                     ? "font-semibold text-orange-600"
                     : "hover:text-orange-600"
-                }
+                }`}
               >
                 Dashboard
               </Link>
