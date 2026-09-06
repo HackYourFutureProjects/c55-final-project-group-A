@@ -131,6 +131,60 @@ public class EventRepository {
               END IN (:timesOfDay)
             """;
 
+    private static final String SKINNY_COUNT_SOURCE = """
+            SELECT e.title,
+                   e.description,
+                   ARRAY(
+                           SELECT c.id
+                           FROM event_categories ec
+                                    JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                   ) AS category_ids,
+                   ARRAY(
+                           SELECT c.name
+                           FROM event_categories ec
+                                    JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                   ) AS category_names,
+                   e.start_at,
+                   e.end_at,
+                   e.price,
+                   a.city_name,
+                   a.latitude,
+                   a.longitude,
+                   e.is_cancelled,
+                   e.is_published
+            FROM events e
+                     JOIN addresses a ON a.id = e.address_id
+            UNION ALL
+            SELECT ext.title,
+                   ext.description,
+                   COALESCE(matched.category_ids, ARRAY [fallback.id])
+                       AS category_ids,
+                   COALESCE(matched.category_names, ARRAY ['Other'])
+                       AS category_names,
+                   ext.start_at,
+                   ext.end_at,
+                   ext.price_min AS price,
+                   ext.city_name,
+                   ext.latitude::NUMERIC(9, 6) AS latitude,
+                   ext.longitude::NUMERIC(9, 6) AS longitude,
+                   ext.is_cancelled,
+                   ext.is_published
+            FROM analytics.external_events ext
+                     CROSS JOIN categories fallback
+                     CROSS JOIN LATERAL (
+                SELECT ARRAY_AGG(c.id ORDER BY c.name)   AS category_ids,
+                       ARRAY_AGG(c.name ORDER BY c.name) AS category_names
+                FROM unnest(COALESCE(ext.categories, ARRAY [ext.category]))
+                         AS category_name(name)
+                         JOIN categories c ON c.name = category_name.name
+            ) matched
+            WHERE fallback.name = 'Other'
+            """;
+
     private static String buildFilterClauses(EventQueryCriteria criteria) {
         String sql = """
                 WHERE e.is_published = TRUE
@@ -320,7 +374,9 @@ public class EventRepository {
     public long countEvents(EventQueryCriteria criteria) {
         String sql = """
                 SELECT COUNT(*)
-                FROM event_feed e
+                FROM (
+                """ + SKINNY_COUNT_SOURCE + """
+                ) e
                 """ + buildFilterClauses(criteria);
 
         var statement = jdbcClient.sql(sql);
