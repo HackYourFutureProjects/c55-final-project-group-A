@@ -60,7 +60,7 @@ public class AuthService {
     User user = userRepository.findUserByEmail(email)
         .orElseGet(() -> userRepository.createUser(
             User.builder()
-                .name(name)
+                .name(name != null && !name.isBlank()? name : email.split("@")[0])
                 .email(email)
                 .passwordHash(null)
                 .build()
