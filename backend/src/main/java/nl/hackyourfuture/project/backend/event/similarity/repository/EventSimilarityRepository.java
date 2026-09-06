@@ -91,9 +91,24 @@ public class EventSimilarityRepository {
         String sql = """
                 SELECT EXISTS (
                     SELECT 1
-                    FROM event_feed
-                    WHERE id = :eventId
-                      AND is_published = TRUE
+                    FROM events e
+                             JOIN addresses a ON a.id = e.address_id
+                    WHERE e.id = :eventId
+                      AND e.is_published = TRUE
+                )
+                OR EXISTS (
+                    SELECT 1
+                    FROM analytics.external_events ext
+                    WHERE canonical_event_uuid(
+                              build_stable_key(
+                                  ext.source,
+                                  ext.source_url,
+                                  ext.external_event_id,
+                                  ext.external_venue_id,
+                                  ext.start_date
+                              )
+                          ) = :eventId
+                      AND ext.is_published = TRUE
                 )
                 """;
 
@@ -103,6 +118,52 @@ public class EventSimilarityRepository {
                 .query(Boolean.class)
                 .single();
     }
+
+    private static final String SKINNY_SIMILAR_SOURCE = """
+            SELECT e.id,
+                   a.city_name,
+                   e.start_at,
+                   e.end_at,
+                   ARRAY(
+                           SELECT c.id
+                           FROM event_categories ec
+                                    JOIN categories c ON c.id = ec.category_id
+                           WHERE ec.event_id = e.id
+                           ORDER BY c.name
+                   ) AS category_ids,
+                   e.price,
+                   e.is_cancelled,
+                   e.is_published
+            FROM events e
+                     JOIN addresses a ON a.id = e.address_id
+            UNION ALL
+            SELECT canonical_event_uuid(
+                       build_stable_key(
+                           ext.source,
+                           ext.source_url,
+                           ext.external_event_id,
+                           ext.external_venue_id,
+                           ext.start_date
+                       )
+                   ) AS id,
+                   ext.city_name,
+                   ext.start_at,
+                   ext.end_at,
+                   COALESCE(matched.category_ids, ARRAY [fallback.id])
+                       AS category_ids,
+                   ext.price_min AS price,
+                   ext.is_cancelled,
+                   ext.is_published
+            FROM analytics.external_events ext
+                     CROSS JOIN categories fallback
+                     CROSS JOIN LATERAL (
+                SELECT ARRAY_AGG(c.id ORDER BY c.name) AS category_ids
+                FROM unnest(COALESCE(ext.categories, ARRAY [ext.category]))
+                         AS category_name(name)
+                         JOIN categories c ON c.name = category_name.name
+            ) matched
+            WHERE fallback.name = 'Other'
+            """;
 
     private static final String SOURCE_EVENT_CTE = """
             source_event AS (
@@ -136,7 +197,9 @@ public class EventSimilarityRepository {
                            WHEN e.price = 0 THEN 'FREE'
                            ELSE 'PAID'
                        END AS price_bucket
-                FROM event_feed e
+                FROM (
+            """ + SKINNY_SIMILAR_SOURCE + """
+                ) e
                 WHERE e.id = :eventId
                   AND e.is_published = TRUE
             )
@@ -148,8 +211,6 @@ public class EventSimilarityRepository {
                        e.city_name,
                        e.start_at,
                        e.category_ids AS candidate_category_ids,
-                       e.going_count,
-                       e.popularity_score,
                        CASE
                            WHEN (
                                e.start_at AT TIME ZONE 'Europe/Amsterdam'
@@ -176,9 +237,11 @@ public class EventSimilarityRepository {
                            WHEN e.price = 0 THEN 'FREE'
                            ELSE 'PAID'
                        END AS price_bucket
-                FROM event_feed e
-                WHERE e.id <> :eventId
-                  AND e.is_published = TRUE
+               FROM (
+            """ + SKINNY_SIMILAR_SOURCE + """
+               ) e
+               WHERE e.id <> :eventId
+                 AND e.is_published = TRUE
                   AND e.is_cancelled = FALSE
                   AND (
                       e.end_at > now()
@@ -264,7 +327,6 @@ public class EventSimilarityRepository {
                 SELECT *
                 FROM scored_candidates
                 ORDER BY similarity_score DESC,
-                         popularity_score DESC,
                          start_at ASC,
                          candidate_id ASC
                 LIMIT :limit
@@ -293,13 +355,12 @@ public class EventSimilarityRepository {
                    e.latitude,
                    e.longitude,
                    e.image_url,
-                   rc.going_count,
+                   e.going_count,
                    e.is_cancelled,
                    rc.similarity_score
             FROM ranked_candidates rc
             JOIN event_feed e ON e.id = rc.candidate_id
             ORDER BY rc.similarity_score DESC,
-                     rc.popularity_score DESC,
                      e.start_at ASC,
                      e.id ASC
             """.formatted(

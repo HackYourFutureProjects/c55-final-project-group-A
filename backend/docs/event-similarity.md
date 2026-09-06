@@ -6,30 +6,33 @@ Content-based recommendations for the event detail page: find other events that 
 city, time of day, weekday, and price type.
 
 - No AI, collaborative filtering, or personal data.
-- App-created and external events both participate via the shared **`event_feed`** view.
+- App-created and external events both participate. Ranking uses skinny rows from `events` and
+  `analytics.external_events` (id, city, start, categories, price). Card fields for the five winners
+  are loaded from **`event_feed`**.
 - Similarity is scored in SQL; the numeric score is used only for ranking and is **not** returned in the API response.
 
 ## API
 
-| Item          | Value                                            |
-|---------------|--------------------------------------------------|
-| Method / path | `GET /api/events/{eventId}/similar`              |
-| Auth          | Public                                           |
-| Path param    | `eventId` — UUID of the source event             |
-| Query params  | None (limit fixed at 5)                          |
-| Success       | `200` — JSON array of `EventSummaryResponse`     |
-| Empty result  | `200` with `[]`                                  |
-| Not found     | `404` if no **published** source in `event_feed` |
-| Bad request   | `400` if `eventId` is not a valid UUID           |
+| Item          | Value                                                                                               |
+|---------------|-----------------------------------------------------------------------------------------------------|
+| Method / path | `GET /api/events/{eventId}/similar`                                                                 |
+| Auth          | Public                                                                                              |
+| Path param    | `eventId` — UUID of the source event                                                                |
+| Query params  | None (limit fixed at 5)                                                                             |
+| Success       | `200` — JSON array of `EventSummaryResponse`                                                        |
+| Empty result  | `200` with `[]`                                                                                     |
+| Not found     | `404` if no **published** source (app `events` + address, or mart row with the same canonical UUID) |
+| Bad request   | `400` if `eventId` is not a valid UUID                                                              |
 
 ## Architecture
 
-EventSimilarityController → EventSimilarityService.findSimilarEvents(eventId, 5) → EventSimilarityRepository (SQL on
-event_feed) → EventSummaryResponse (score discarded)
+EventSimilarityController → EventSimilarityService.findSimilarEvents(eventId, 5) → EventSimilarityRepository
+(skinny rank, then `event_feed` for five cards) → EventSummaryResponse (score discarded)
 
 ## Eligibility
 
-**Source:** must be published in `event_feed`.
+**Source:** must be published (same identity as `event_feed`: app event with an address, or Ticketmaster canonical
+UUID).
 
 **Candidates:** different id, published, not cancelled, still active
 (`end_at > now()`, or null `end_at` and `start_at > now()`).
@@ -59,9 +62,8 @@ No minimum score — weak matches can appear if few better ones exist.
 ## Ranking
 
 1. similarity score DESC
-2. popularity DESC (`3 × going + saved`) — tie-breaker only
-3. `start_at` ASC
-4. id ASC
+2. `start_at` ASC
+3. id ASC
 
 Then `LIMIT 5`.
 
