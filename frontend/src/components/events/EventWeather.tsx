@@ -94,7 +94,7 @@ export default async function EventWeather({
           <div className="rounded-lg bg-white/70 p-3">
             <p className="text-gray-500 text-sm">Wind</p>
             <p className="font-bold text-gray-900 text-lg">
-              {weather.windSpeed} m/s
+              {weather.windSpeed} km/h
             </p>
           </div>
         )}

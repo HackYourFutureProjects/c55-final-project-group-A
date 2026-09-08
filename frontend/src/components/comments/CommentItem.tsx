@@ -217,7 +217,7 @@ export default function CommentItem({ comment, onChanged }: CommentItemProps) {
               onChange={(event) => setReplyText(event.target.value)}
               maxLength={500}
               rows={3}
-              placeholder="Reply as organizer..."
+              placeholder="Reply as admin..."
               className={TEXTAREA}
             />
             <div className="mt-2 flex items-center justify-end gap-3">
@@ -246,7 +246,7 @@ export default function CommentItem({ comment, onChanged }: CommentItemProps) {
         {comment.adminReply && !isReplying && (
           <div className="mt-3 rounded-xl bg-neutral-100 p-4">
             <p className="font-semibold text-neutral-700 text-xs uppercase tracking-wide">
-              Organizer
+              Admin
             </p>
             <p className="mt-1 whitespace-pre-line text-neutral-700">
               {comment.adminReply}
