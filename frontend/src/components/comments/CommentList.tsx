@@ -50,7 +50,7 @@ export default function CommentList({ eventId }: CommentListProps) {
         Comments · {data?.totalComments ?? 0}
       </h2>
 
-      {user ? (
+      {user?.role === "admin" ? null : user ? (
         <div className="mt-4">
           <textarea
             value={newComment}
