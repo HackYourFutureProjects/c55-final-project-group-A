@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import CommentList from "@/components/comments/CommentList";
 import EventActions from "@/components/events/EventActions";
 import EventChat from "@/components/events/EventChat";
@@ -82,13 +83,13 @@ export default async function EventDetailPage({
 
   return (
     <main className="relative mx-auto max-w-6xl overflow-hidden px-6 py-8">
+      <BackButton />
       {/* Decorative blurred blobs behind the content — purely visual, no layout impact */}
       <div className="pointer-events-none absolute -left-32 top-40 h-112 w-150 rounded-full bg-purple-200 opacity-60 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 top-96 h-72 w-172 rounded-full bg-orange-200 opacity-60 blur-3xl" />
 
       {/* z-10 keeps all real content above the decorative blobs */}
       <div className="relative z-10">
-        {/* Breadcrumb navigation */}
         <p className="mb-4 text-sm text-gray-500">
           Home · {event.categories.map((c) => c.name).join(", ")} ·{" "}
           <span className="font-medium text-gray-700">{event.title}</span>
