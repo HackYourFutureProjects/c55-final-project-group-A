@@ -2,6 +2,7 @@ package nl.hackyourfuture.project.backend.config;
 
 import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsException;
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
+import nl.hackyourfuture.project.backend.auth.passwordreset.InvalidResetTokenException;
 import nl.hackyourfuture.project.backend.event.comment.exceptions.AdminReplyAlreadyExistsException;
 import nl.hackyourfuture.project.backend.event.comment.exceptions.AdminReplyNotFoundException;
 import nl.hackyourfuture.project.backend.event.comment.exceptions.CommentNotFoundException;
@@ -248,6 +249,14 @@ public class GlobalExceptionHandler {
         problem.setTitle("Notification not found");
         problem.setDetail(ex.getMessage());
 
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidResetTokenException.class)
+    public ProblemDetail handleInvalidResetToken(InvalidResetTokenException ex) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setTitle("Invalid reset token");
+        problem.setDetail(ex.getMessage());
         return problem;
     }
 
