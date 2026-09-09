@@ -31,11 +31,13 @@ public class EmailService {
     String htmlContent = """
             <!DOCTYPE html>
             <html>
-            <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, Segoe UI, Roboto, sans-serif;">
+            <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, Segoe UI, \
+            Roboto, sans-serif;">
                 <table width="100%%" cellpadding="0" cellspacing="0" style="padding: 40px 0;">
                     <tr>
                         <td align="center">
-                            <table width="480" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                            <table width="480" cellpadding="0" cellspacing="0" style="background-color: #ffffff; \
+                            border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                                 <tr>
                                     <td style="padding: 32px 40px 0 40px;" align="center">
                                         <img src="cid:logo" alt="Logo" width="56" height="56" style="border-radius: 12px;" />
@@ -45,12 +47,14 @@ public class EmailService {
                                     <td style="padding: 24px 40px 24px 40px;">
                                         <h1 style="margin: 0 0 16px 0; font-size: 20px; color: #1a1a1a;">Reset your password</h1>
                                         <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.5; color: #4a4a4a;">
-                                            We received a request to reset your password. Click the button below to choose a new one. This link expires in 15 minutes.
+                                            We received a request to reset your password. Click the button below to choose a \
+                                            new one. This link expires in 15 minutes.
                                         </p>
                                         <table cellpadding="0" cellspacing="0">
                                             <tr>
                                                 <td style="border-radius: 8px; background-color: #EA580C;">
-                                                    <a href="%s" style="display: inline-block; padding: 12px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">
+                                                    <a href="%s" style="display: inline-block; padding: 12px 28px; \
+                                                    font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">
                                                         Reset password
                                                     </a>
                                                 </td>
