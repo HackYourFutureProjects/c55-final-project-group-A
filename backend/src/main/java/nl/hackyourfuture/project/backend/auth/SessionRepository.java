@@ -55,4 +55,15 @@ public class SessionRepository {
         .update();
   }
 
+  public void deleteAllSessionsBuUserIdExceptCurrent(UUID userId, String currentAccessTokenHash){
+    jdbcClient
+        .sql("""
+            DELETE FROM sessions
+            WHERE user_id = :userID AND access_token_hash != :currentAccessTokenHash
+            """)
+        .param("userId", userId)
+        .param("access_token_hash", currentAccessTokenHash)
+        .update();
+  }
+
 }

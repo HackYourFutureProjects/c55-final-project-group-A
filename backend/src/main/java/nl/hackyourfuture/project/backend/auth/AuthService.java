@@ -9,12 +9,14 @@ import nl.hackyourfuture.project.backend.auth.exceptions.EmailAlreadyExistsExcep
 import nl.hackyourfuture.project.backend.auth.exceptions.InvalidCredentialsException;
 import nl.hackyourfuture.project.backend.user.User;
 import nl.hackyourfuture.project.backend.user.UserRepository;
+import nl.hackyourfuture.project.backend.user.exceptions.UserNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -72,6 +74,21 @@ public class AuthService {
   public void logout(String rawAccessToken){
     String hashedAccessToken = tokenService.hashToken(rawAccessToken);
     sessionRepository.deleteSessionByAccessTokenHash(hashedAccessToken);
+  }
+
+  @Transactional
+  public void changePassword(UUID userId, String currentSessionTokenHash, String currentPassword, String newPassword){
+User user = userRepository.findUserById(userId)
+    .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+if(user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())){
+  throw new InvalidCredentialsException("Current password is incorrect");
+}
+
+String newHashedPassword = passwordEncoder.encode(newPassword);
+userRepository.updateUserPassword(user.getId(), newHashedPassword);
+
+sessionRepository.deleteAllSessionsBuUserIdExceptCurrent(user.getId(), currentSessionTokenHash);
   }
 
   private AuthResult createSessionAndBuildResult(User user){
