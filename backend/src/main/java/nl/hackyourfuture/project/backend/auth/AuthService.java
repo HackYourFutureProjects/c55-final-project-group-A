@@ -74,7 +74,7 @@ public class AuthService {
     sessionRepository.deleteSessionByAccessTokenHash(hashedAccessToken);
   }
 
-  private AuthResult createSessionAndBuildResult(User user){
+  public AuthResult createSessionAndBuildResult(User user){
     String rawAccessToken = tokenService.generateToken();
     String hashedAccessToken = tokenService.hashToken(rawAccessToken);
 
