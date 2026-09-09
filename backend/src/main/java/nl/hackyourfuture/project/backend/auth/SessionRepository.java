@@ -68,10 +68,10 @@ public class SessionRepository {
     jdbcClient
         .sql("""
             DELETE FROM sessions
-            WHERE user_id = :userID AND access_token_hash != :currentAccessTokenHash
+            WHERE user_id = :userId AND access_token_hash != :currentAccessTokenHash
             """)
         .param("userId", userId)
-        .param("access_token_hash", currentAccessTokenHash)
+        .param("currentAccessTokenHash", currentAccessTokenHash)
         .update();
   }
 
