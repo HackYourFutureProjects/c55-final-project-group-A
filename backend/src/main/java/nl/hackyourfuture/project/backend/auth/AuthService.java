@@ -28,8 +28,8 @@ public class AuthService {
   private TokenService tokenService;
 
   @Transactional
-  public AuthResult register(RegisterRequest request){
-    if(userRepository.findUserByEmail(request.email()).isPresent()){
+  public AuthResult register(RegisterRequest request) {
+    if (userRepository.findUserByEmail(request.email()).isPresent()) {
       throw new EmailAlreadyExistsException("This email already exist");
     }
 
@@ -46,23 +46,23 @@ public class AuthService {
     return createSessionAndBuildResult(created);
   }
 
-  public AuthResult login(LoginRequest request){
+  public AuthResult login(LoginRequest request) {
     User user = userRepository.findUserByEmail(request.email())
         .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
-    if(user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())){
+    if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
       throw new InvalidCredentialsException("Invalid email or password");
     }
 
     return createSessionAndBuildResult(user);
   }
 
-  public AuthResult loginOrRegisterFromGoogle(String email, String name){
+  public AuthResult loginOrRegisterFromGoogle(String email, String name) {
 
     User user = userRepository.findUserByEmail(email)
         .orElseGet(() -> userRepository.createUser(
             User.builder()
-                .name(name != null && !name.isBlank()? name : email.split("@")[0])
+                .name(name != null && !name.isBlank() ? name : email.split("@")[0])
                 .email(email)
                 .passwordHash(null)
                 .build()
@@ -71,27 +71,27 @@ public class AuthService {
     return createSessionAndBuildResult(user);
   }
 
-  public void logout(String rawAccessToken){
+  public void logout(String rawAccessToken) {
     String hashedAccessToken = tokenService.hashToken(rawAccessToken);
     sessionRepository.deleteSessionByAccessTokenHash(hashedAccessToken);
   }
 
   @Transactional
-  public void changePassword(UUID userId, String currentSessionTokenHash, String currentPassword, String newPassword){
-User user = userRepository.findUserById(userId)
-    .orElseThrow(() -> new UserNotFoundException("User not found"));
+  public void changePassword(UUID userId, String currentSessionTokenHash, String currentPassword, String newPassword) {
+    User user = userRepository.findUserById(userId)
+        .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-if(user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())){
-  throw new InvalidCredentialsException("Current password is incorrect");
-}
+    if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+      throw new InvalidCredentialsException("Current password is incorrect");
+    }
 
-String newHashedPassword = passwordEncoder.encode(newPassword);
-userRepository.updateUserPassword(user.getId(), newHashedPassword);
+    String newHashedPassword = passwordEncoder.encode(newPassword);
+    userRepository.updateUserPassword(user.getId(), newHashedPassword);
 
-sessionRepository.deleteAllSessionsBuUserIdExceptCurrent(user.getId(), currentSessionTokenHash);
+    sessionRepository.deleteAllSessionsByUserIdExceptCurrent(user.getId(), currentSessionTokenHash);
   }
 
-  private AuthResult createSessionAndBuildResult(User user){
+  public AuthResult createSessionAndBuildResult(User user) {
     String rawAccessToken = tokenService.generateToken();
     String hashedAccessToken = tokenService.hashToken(rawAccessToken);
 
