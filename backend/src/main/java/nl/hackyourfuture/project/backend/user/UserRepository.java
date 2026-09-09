@@ -77,6 +77,16 @@ public class UserRepository {
 
   }
 
+  public void updateUserPassword(UUID userId, String newPasswordHash){
+    jdbcClient
+        .sql("""
+            UPDATE users SET password_hash = :passwordHash WHERE id = :id
+            """)
+        .param("passwordHash", newPasswordHash)
+        .param("id", userId)
+        .update();
+  }
+
   public void deleteUserById(UUID id) {
     jdbcClient
         .sql("DELETE FROM users WHERE id = :id")

@@ -11,6 +11,17 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 6MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: 8080
@@ -36,4 +47,6 @@ google:
   redirect-uri: ${GOOGLE_REDIRECT_URI:}
 frontend:
   base-url: ${FRONTEND_BASE_URL:}
+
+
 
