@@ -55,4 +55,12 @@ public class SessionRepository {
         .update();
   }
 
+  public void deleteAllSessionsByUserId(UUID userId){
+    jdbcClient
+        .sql("""
+            DELETE FROM sessions WHERE user_id = :userId
+            """)
+        .param("userId", userId)
+        .update();
+  }
 }
