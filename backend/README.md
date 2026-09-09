@@ -222,6 +222,22 @@ to expose, the input and output shapes differ (the client sends an email but nev
 column without breaking the frontend. `UserRequest` carries the validation rules; `UserResponse` has a `from(User)`
 factory.
 
+### Members vs admin
+
+There are two app roles: **member** (`user`) and **admin**. Admin is `ROLE_ADMIN` only — it does not also have
+`ROLE_USER`.
+
+| Who    | Can do                                                                           | Inbox                                       |
+|--------|----------------------------------------------------------------------------------|---------------------------------------------|
+| Member | Save, Going, member comments, and `GET /api/users/me/saved` + `/going`           | Event cancel/update/reminder, comment reply |
+| Admin  | Admin APIs (events, admin replies, feedback). Not Save / Going / member comments | `NEW_FEEDBACK` only                         |
+
+`UserEventService` and `EventCommentService` refuse admin even if a route is only `.authenticated()`, so those
+member actions still return 403. Cancel/update recipients and 24h reminders skip `users.role = 'admin'`, so leftover
+staff Save/Going rows do not create event notifications.
+
+See [`docs/notifications.md`](docs/notifications.md) and [`docs/events.md`](docs/events.md).
+
 ### The `config` folder
 
 **[`SecurityConfig`](src/main/java/nl/hackyourfuture/project/backend/config/SecurityConfig.java)** — the filter chain
