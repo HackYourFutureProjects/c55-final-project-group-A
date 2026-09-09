@@ -10,20 +10,21 @@ is no email or push in this version**; the frontend polls the inbox and shows an
 
 ## Notification types
 
-| Type              | Who receives it                                       | When it is created                                |
-|-------------------|-------------------------------------------------------|---------------------------------------------------|
-| `EVENT_CANCELLED` | Users who **saved or marked Going** on that event     | Admin cancels a published app event               |
-| `EVENT_UPDATED`   | Users who **saved or marked Going** on that event     | Admin updates a published app event               |
-| `EVENT_REMINDER`  | Users who marked **Going only** (Saved is not enough) | Scheduled job, ~24h before event start            |
-| `COMMENT_REPLY`   | The user who wrote the comment                        | Admin creates the **first** reply on that comment |
-| `NEW_FEEDBACK`    | Admin                                                 | Scheduled job, ~10s after feedback is submitted   |
+| Type              | Who receives it                                             | When it is created                                |
+|-------------------|-------------------------------------------------------------|---------------------------------------------------|
+| `EVENT_CANCELLED` | **Members** who **saved or marked Going** on that event     | Admin cancels a published app event               |
+| `EVENT_UPDATED`   | **Members** who **saved or marked Going** on that event     | Admin updates a published app event               |
+| `EVENT_REMINDER`  | **Members** who marked **Going only** (Saved is not enough) | Scheduled job, ~24h before event start            |
+| `COMMENT_REPLY`   | The **member** who wrote the comment                        | Admin creates the **first** reply on that comment |
+| `NEW_FEEDBACK`    | Admin                                                       | Scheduled job, ~10s after feedback is submitted   |
 
 **Important:** a regular user does **not** get every notification type. They only get rows that apply to them — e.g.
 event alerts only for events they saved or are going to, comment reply only on their own comment. Admin is the only one
 who gets `NEW_FEEDBACK`.
 
-Admin is treated like any other user for event notifications: they only get cancel/update/reminder if they also saved or
-marked Going on that event.
+Admin never receives event cancel, update, reminder, or comment-reply notifications. Recipient queries skip
+`users.role = 'admin'`. The admin inbox is **`NEW_FEEDBACK` only** — leftover cancel/update/reminder/comment-reply
+rows for an admin account are hidden on list, unread-count, open, and mark-all-read.
 
 ---
 
@@ -34,7 +35,7 @@ marked Going on that event.
 | Regular user A | yes                | no                   | no                    | cancel + update on Jazz Night; **no** reminder for Rock Fest |
 | Regular user B | no                 | yes                  | no                    | cancel + update + reminder on Rock Fest                      |
 | Regular user C | no                 | no                   | yes (on TM event)     | comment reply only when admin replies                        |
-| Admin          | no                 | no                   | —                     | new feedback only (unless they also saved/going somewhere)   |
+| Admin          | leftover or none   | leftover or none     | —                     | **new feedback only** (event rows are never shown)           |
 
 ---
 
@@ -75,8 +76,8 @@ Copy (`title`, `body`) is built in Java when processing.
 | POST   | `/api/notifications/{id}/open`    | Mark one as read, return it                         |
 | POST   | `/api/notifications/read-all`     | Mark all as read for that user                      |
 
-Queries are scoped to `user_id = current user`. Non-admins also filter out `NEW_FEEDBACK` on read (extra safety).
-Opening another user’s notification returns 404.
+Queries are scoped to `user_id = current user`. **Members** never see `NEW_FEEDBACK`. **Admin** only sees
+`NEW_FEEDBACK` (other types on that account stay hidden). Opening another user’s notification returns 404.
 
 ---
 
@@ -97,15 +98,15 @@ scheduled for the new time.
 
 ## Recipients for event notifications
 
-send to each interested user uses **Saved UNION Going**:
+send to each interested **member** uses **Saved UNION Going**, excluding `role = admin`:
 
 - `event_attendees` (Going)
 - `saved_events` (Saved)
 
-When an event is canceled or updated, the backend creates a notification for each user who saved or marked Going on that
-event.
+When an event is canceled or updated, the backend creates a notification for each member who saved or marked Going on
+that event. Staff rows in those tables are ignored.
 
-For Reminders, it only notifies users who marked Going.
+For Reminders, it only notifies members who marked Going.
 
 ---
 
@@ -124,7 +125,6 @@ Each notification includes:
 
 - **Ticketmaster cancel/update** — no scan of external API; only admin actions on events in our app feed enqueue
   cancel/update.
-- **Skip notifying admin on their own comment reply** — not implemented(admin will notify it too)
 - **Poison outbox row** — one failing entry can retry in the same batch; per-row error handling deferred.
 
 ---

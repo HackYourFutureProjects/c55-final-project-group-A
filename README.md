@@ -1,16 +1,15 @@
-# HackYourFuture Final Project
+# Loc Events — HackYourFuture Final Project
 
-> **Using this template?** Everything marked **TODO** is yours to fill in or delete.
+Built by Class 55, Group A.
 
 This is our final project for the [HackYourFuture program](https://hackyourfuture.net/program), built as a
-team with three roles — frontend, backend, and data engineering. We worked in an agile way, in short
-sprints, supported by a group of mentors: a Product Manager and a a Tech Lead. The project is open source and available
+team with three roles: frontend, backend, and data engineering. We worked in an agile way, in short
+sprints, supported by a group of mentors: a Product Manager and Tech Leads. The project is open source and available
 on GitHub.
 
-### 🌐 [Live demo](https://your-app.example.com)
+### 🌐 [Live demo](https://c55a.hyf.dev)
 
-> **TODO: Point the link above at your deployed app,** or remove this section if the project is not
-> deployed. A visitor who can click through to a working app is worth more than any description.
+Demo video: coming soon.
 
 ---
 
@@ -31,26 +30,60 @@ on GitHub.
 
 ## About the project
 
-> **TODO: a short description about your app.**
-> What problem does it solve? Who is it for? What
-> makes it interesting? Write it for someone who has never heard of the project.
+**Loc Events** is a web app for finding something to do in the Netherlands. Ticketmaster events and events created by
+admins land in one feed, so you do not have to check several sites.
+
+Anyone can browse what is on. Signed-in users can save events, mark Going, and get reminded. Admins add and manage
+events in the same product.
+
+---
 
 ## Screenshots
 
-> **TODO: Replace the placeholder below with real screenshots of your app.** Put the image files in
-> the [`screenshots/`](screenshots) folder. Two or three shots of the most important screens work
-> better than ten of everything.
+Two or three shots of the most important screens. Image files live in [`screenshots/`](screenshots).
 
-![The main page of the application](screenshots/screenshot.png)
+![The main page of the application](screenshots/home.png)
+
+![Event page — save, join, and location](screenshots/event-detail.png)
+
+![Profile — saved events](screenshots/profile.png)
+
+![Admin dashboard — create an event](screenshots/admin.png)
+
+---
 
 ## Features
 
-> **TODO: List what your app can actually do.** Describe features from the user's point of view
-> (e.g.: "Search for recipes by ingredient").
+**Discover events**
 
-- Feature 1
-- Feature 2
-- Feature 3
+- Search by title, description, city, or category
+- Filter by category, date range, distance, free/paid, and time of day
+- Sort by soonest, popularity, or price
+
+**Event page**
+
+- Description, or a link to the organizer for imported events
+- Date, price, and how many people are going
+- Map of the address
+- Weather at start time
+- Similar events
+- Comments
+- Ask-a-question chat (what it is, the weather, how to get there)
+- Save an event or mark Going (signed in)
+
+**Notifications**
+
+- Reminder about a day before an event you marked Going
+- Cancel and update alerts for events you saved or are going to
+- Notice when an admin replies to your comment
+
+**Accounts and admin**
+
+- Sign in with email or Google
+- Profile with Saved and Going
+- Admins create, edit, and cancel events, and read feedback
+
+---
 
 ## Tech stack
 
@@ -108,8 +141,7 @@ The application database holds two schemas. **`analytics`** is written by the
 data pipeline and read by the backend. **`app`** holds accounts, saved items and
 anything the application's own admins create, and only the backend writes it.
 
-Three rules are worth reading off that picture, because they are the ones teams
-get wrong:
+The architecture follows three principles:
 
 - **The two schemas have two owners.** The data pipeline writes `analytics` and
   nothing else. The backend writes `app` and nothing else. Neither side has
@@ -145,7 +177,7 @@ get wrong:
 | Event similarity            | [`backend/docs/event-similarity.md`](backend/docs/event-similarity.md) |
 | Notifications               | [`backend/docs/notifications.md`](backend/docs/notifications.md)       |
 | Event list & detail         | [`backend/docs/events.md`](backend/docs/events.md)                     |
-| Live API reference (Scalar) | http://server-host/api/docs                                            |
+| Live API reference (Scalar) | https://c55a.hyf.dev/api/docs                                          |
 
 ## CI/CD
 
@@ -160,20 +192,30 @@ Pull requests are only merged when their checks pass.
 
 ## Team
 
-> **(Optional) TODO: Fill in your team.** It's nice to give credit to the people who worked on the project. Make sure to
-> ask for permission before you put anyone's name on the internet.
+| Name             | Role             | GitHub                                                         |
+|------------------|------------------|----------------------------------------------------------------|
+| Diana Chukhrai   | Frontend         | [@dianadenwik](https://github.com/dianadenwik)                 |
+| Shadi Abedinpour | Backend          | [@shmoonwalker](https://github.com/shmoonwalker)               |
+| Yana Pechenenko  | Backend          | [@YanaP1312](https://github.com/YanaP1312)                     |
+| Pavel Tisner     | Data engineering | [@pavel-tisner](https://github.com/pavel-tisner)               |
+| Mohammed Alfakih | Data engineering | [@mohammedalfakih-dev](https://github.com/mohammedalfakih-dev) |
 
-| Name | Role             | GitHub                                   |
-|------|------------------|------------------------------------------|
-| Name | Frontend         | [@username](https://github.com/username) |
-| Name | Backend          | [@username](https://github.com/username) |
-| Name | Data engineering | [@username](https://github.com/username) |
+**Mentors**
+
+| Name           | Role                 |
+|----------------|----------------------|
+| Dickson Chu    | Product Manager      |
+| Sami Haddad    | Tech Lead — frontend |
+| Stas Seldin    | Tech Lead — backend  |
+| Lasse Benninga | Tech Lead — data     |
 
 ## Roadmap
 
-> **TODO: What is next?** An honest list of what is not built yet shows the reader you understand
-> your own project.
+- [ ] More event sources besides Ticketmaster
+- [ ] Recommendations based on what you saved or marked Going, not only similar events
+- [ ] A clearer admin role, with tighter app logic and design
 
-- [ ] Planned improvement 1
-- [ ] Planned improvement 2
+---
 
+Thanks to [HackYourFuture](https://hackyourfuture.net/program) for the programme, the mentors, and the space to build
+this.
