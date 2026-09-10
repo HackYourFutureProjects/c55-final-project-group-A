@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type SubmitEvent, useRef, useState } from "react";
+import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/context/AuthContext";
 import { login, register } from "@/lib/api";
@@ -26,6 +27,7 @@ export function AuthForm() {
   const { refresh } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   function switchTab(nextTab: AuthTab) {
@@ -180,6 +182,17 @@ export function AuthForm() {
                   placeholder="••••••••"
                   className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 outline-none focus:border-orange-500"
                 />
+                {tab === "login" && (
+                  <div className="mt-1 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPasswordOpen(true)}
+                      className="text-sm text-orange-600 hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
                 {tab === "register" && (
                   <p className="mt-1 text-sm text-neutral-500">
                     At least 8 characters
@@ -212,6 +225,10 @@ export function AuthForm() {
           priority
         />
       </div>
+
+      {isForgotPasswordOpen && (
+        <ForgotPasswordModal onClose={() => setIsForgotPasswordOpen(false)} />
+      )}
     </div>
   );
 }
