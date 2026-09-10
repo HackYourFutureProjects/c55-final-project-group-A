@@ -4,13 +4,15 @@ The ordering test is the one that matters: staging must be complete before the
 published table is refreshed, and the published table must never be dropped.
 """
 
+from uuid import UUID
+
 import pytest
 from conftest import FakeWarehouse
 
 from src.publishing import sync
 
 COLUMNS = [
-    ("external_event_key", "STRING"),
+    ("logical_event_id", "STRING"),
     ("external_event_id", "STRING"),
     ("source", "STRING"),
     ("is_published", "BOOLEAN"),
@@ -28,7 +30,7 @@ COLUMNS = [
 ]
 ROWS = [
     [
-        "ticketmaster:a1",
+        "00000000-0000-0000-0000-000000000001",
         "a1",
         "ticketmaster",
         True,
@@ -103,6 +105,16 @@ def test_type_mapping():
     assert sync.postgres_type("ARRAY<STRING>") == "text[]"
 
 
+def test_logical_event_id_uses_native_postgres_uuid():
+    assert sync.postgres_type("STRING", "logical_event_id") == "uuid"
+
+
+def test_logical_event_id_value_is_prepared_for_postgres():
+    value = "00000000-0000-0000-0000-000000000001"
+
+    assert sync.postgres_value(value, "STRING", "logical_event_id") == UUID(value)
+
+
 def test_array_string_value_is_prepared_for_postgres():
     assert sync.postgres_value(
         '["Music", "Arts & Culture"]',
@@ -170,6 +182,19 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
         statements,
         'alter table "analytics"."external_events" ' 'alter column "categories" set not null',
     )
+    logical_event_id_added = index_of(
+        statements,
+        'alter table "analytics"."external_events" '
+        'add column if not exists "logical_event_id" uuid',
+    )
+    identity_backfilled = index_of(
+        statements,
+        'update "analytics"."external_events" ' 'set "logical_event_id" = app.canonical_event_uuid',
+    )
+    logical_event_id_required = index_of(
+        statements,
+        'alter table "analytics"."external_events" ' 'alter column "logical_event_id" set not null',
+    )
     referenced_rows_retained = index_of(
         statements,
         'insert into "analytics"."external_events__staging"',
@@ -188,6 +213,9 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
         < categories_added
         < categories_backfilled
         < categories_required
+        < logical_event_id_added
+        < identity_backfilled
+        < logical_event_id_required
         < referenced_rows_retained
         < truncated
         < refreshed
@@ -195,6 +223,7 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
     )
     retained_statement = statements[referenced_rows_retained]
     assert 'previous."categories"' in retained_statement
+    assert 'previous."logical_event_id"' in retained_statement
     assert connection.committed
 
 
@@ -212,7 +241,8 @@ def test_publish_retains_referenced_external_events(connection):
     assert "from app.event_registry as registry" in statement
     assert "from app.saved_events as saved" in statement
     assert "from app.event_attendees as attendee" in statement
-    assert "registry.external_event_key = app.build_stable_key" in statement
+    assert "registry.id = previous.logical_event_id" in statement
+    assert "current.logical_event_id = previous.logical_event_id" in statement
     assert "and not exists" in statement
 
 
