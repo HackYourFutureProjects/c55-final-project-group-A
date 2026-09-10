@@ -90,15 +90,20 @@ def load_event_stats() -> dict[str, object]:
     query = sql.SQL(
         """
         select
-            coalesce(sum(occurrence_count), 0) as source_occurrences,
+            coalesce(
+                sum(occurrence_count) filter (where is_published is true),
+                0
+            ) as source_occurrences,
             count(*) as total_events,
             count(*) filter (where is_published is true) as current_events,
             count(*) filter (where is_published is false) as retained_events,
             count(*) filter (
-                where coalesce(cardinality(categories), 0) > 0
+                where is_published is true
+                    and coalesce(cardinality(categories), 0) > 0
             ) as categorized_events,
             count(*) filter (
-                where coalesce(cardinality(categories), 0) > 1
+                where is_published is true
+                    and coalesce(cardinality(categories), 0) > 1
             ) as multiple_category_events,
             count(*) filter (
                 where is_published is true and is_price_known is true
@@ -132,6 +137,7 @@ def load_category_distribution() -> list[tuple[str, int]]:
             select distinct category
             from unnest(events.categories) as categories_by_event(category)
         ) as expanded
+        where events.is_published is true
         group by expanded.category
         order by event_count desc, expanded.category
         """
@@ -209,15 +215,15 @@ if event_stats is None:
 else:
     categorized = int(event_stats["categorized_events"])
     multiple_category = int(event_stats["multiple_category_events"])
-    category_coverage = (categorized / total * 100) if total else 0
-    multiple_category_share = (multiple_category / total * 100) if total else 0
-    coverage_label = "100%" if total and categorized == total else f"{category_coverage:.1f}%"
+    category_coverage = (categorized / current * 100) if current else 0
+    multiple_category_share = (multiple_category / current * 100) if current else 0
+    coverage_label = "100%" if current and categorized == current else f"{category_coverage:.1f}%"
 
     category_columns = st.columns(3)
     category_columns[0].metric("LOC categories", f"{len(LOC_CATEGORIES)}")
     category_columns[1].metric("Categorized", coverage_label)
     category_columns[2].metric("Multiple categories", f"{multiple_category:,}")
-    category_columns[2].caption(f"{multiple_category_share:.1f}% of Total stored")
+    category_columns[2].caption(f"{multiple_category_share:.1f}% of current published events")
 
     try:
         category_counts = dict(load_category_distribution())
@@ -243,8 +249,8 @@ else:
         st.error(f"Cannot read the category distribution ({type(error).__name__}).")
 
     st.caption(
-        "Category counts may add up to more than Total stored because one event "
-        "can have multiple categories."
+        "Category counts may add up to more than Current events because one "
+        "published event can have multiple categories."
     )
 
 st.subheader("Price coverage")
