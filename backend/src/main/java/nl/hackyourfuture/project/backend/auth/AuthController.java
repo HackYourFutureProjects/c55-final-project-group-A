@@ -11,14 +11,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import nl.hackyourfuture.project.backend.auth.dto.AuthResponse;
-import nl.hackyourfuture.project.backend.auth.dto.AuthResult;
-import nl.hackyourfuture.project.backend.auth.dto.LoginRequest;
-import nl.hackyourfuture.project.backend.auth.dto.RegisterRequest;
+import nl.hackyourfuture.project.backend.auth.dto.*;
 import nl.hackyourfuture.project.backend.auth.helpers.CookieUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("api/auth")
@@ -28,6 +28,7 @@ public class AuthController {
 
   private final AuthService authService;
   private final CookieUtils cookieUtils;
+  private final TokenService tokenService;
 
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
@@ -86,6 +87,32 @@ public class AuthController {
       authService.logout(rawAccessToken);
     }
     cookieUtils.clearSessionCookie(response);
+  }
+
+  @PutMapping("/password")
+  @Operation(
+      summary = "Change password",
+      description = """
+                Changes the current user's password. Requires the current \
+                password to be correct. Invalidates all other active sessions \
+                (other devices), but keeps the current session active.
+                """
+  )
+  @ApiResponse(responseCode = "204", description = "Password changed successfully")
+  @ApiResponse(
+      responseCode = "400",
+      description = "The current password is incorrect or the new password is invalid",
+      content = @Content(schema = @Schema(implementation = ProblemDetail.class))
+  )
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void changePassword(
+      @Valid @RequestBody ChangePasswordRequest request,
+      Authentication authentication,
+      HttpServletRequest httpRequest
+  ) {
+    UUID userId = (UUID) authentication.getPrincipal();
+    String currentTokenHash = tokenService.hashToken(cookieUtils.extractToken(httpRequest));
+    authService.changePassword(userId, currentTokenHash, request.currentPassword(), request.newPassword());
   }
 
 }

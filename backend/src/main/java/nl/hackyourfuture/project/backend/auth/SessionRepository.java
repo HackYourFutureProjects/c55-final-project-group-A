@@ -55,7 +55,7 @@ public class SessionRepository {
         .update();
   }
 
-  public void deleteAllSessionsByUserId(UUID userId){
+  public void deleteAllSessionsByUserId(UUID userId) {
     jdbcClient
         .sql("""
             DELETE FROM sessions WHERE user_id = :userId
@@ -63,4 +63,16 @@ public class SessionRepository {
         .param("userId", userId)
         .update();
   }
+
+  public void deleteAllSessionsByUserIdExceptCurrent(UUID userId, String currentAccessTokenHash) {
+    jdbcClient
+        .sql("""
+            DELETE FROM sessions
+            WHERE user_id = :userId AND access_token_hash != :currentAccessTokenHash
+            """)
+        .param("userId", userId)
+        .param("currentAccessTokenHash", currentAccessTokenHash)
+        .update();
+  }
+
 }
