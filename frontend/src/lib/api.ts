@@ -194,7 +194,9 @@ export async function resetPassword(data: ResetPasswordRequest): Promise<void> {
   }
 }
 
-export async function changePassword(data: ChangePasswordRequest): Promise<void> {
+export async function changePassword(
+  data: ChangePasswordRequest,
+): Promise<void> {
   const response = await fetch(apiUrl("/api/auth/password"), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -204,7 +206,9 @@ export async function changePassword(data: ChangePasswordRequest): Promise<void>
 
   if (!response.ok) {
     const problem = await response.json().catch(() => null);
-    throw new Error(problem?.detail ?? `Failed to change password: ${response.status}`);
+    throw new Error(
+      problem?.detail ?? `Failed to change password: ${response.status}`,
+    );
   }
 }
 

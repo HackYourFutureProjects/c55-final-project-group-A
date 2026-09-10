@@ -9,7 +9,6 @@ export interface LoginRequest {
   password: string;
 }
 
-
 export interface ForgotPasswordRequest {
   email: string;
 }
