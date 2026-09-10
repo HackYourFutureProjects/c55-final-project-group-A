@@ -3,7 +3,14 @@ import type {
   AdminEventPage,
   CreateEventRequest,
 } from "@/types/admin";
-import type { LoginRequest, RegisterRequest } from "@/types/auth";
+import type {
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
+  LoginRequest,
+  RegisterRequest,
+  ResetPasswordRequest,
+  ValidateResetTokenResponse,
+} from "@/types/auth";
 import type { ChatMessage, ChatReply } from "@/types/chat";
 import type { Comment, CommentPage, CommentRequest } from "@/types/comment";
 import type {
@@ -139,6 +146,65 @@ export async function logout(): Promise<void> {
   });
   if (!response.ok) {
     throw new Error(`Failed to logout: ${response.status}`);
+  }
+}
+
+export async function forgotPassword(
+  data: ForgotPasswordRequest,
+): Promise<void> {
+  const response = await fetch(apiUrl("/api/auth/forgot-password"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to send reset email: ${response.status}`);
+  }
+}
+
+export async function validateResetToken(
+  token: string,
+): Promise<ValidateResetTokenResponse> {
+  const response = await fetch(
+    apiUrl(
+      `/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`,
+    ),
+    { credentials: "include" },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to validate reset token: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function resetPassword(data: ResetPasswordRequest): Promise<void> {
+  const response = await fetch(apiUrl("/api/auth/reset-password"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const problem = await response.json().catch(() => null);
+    throw new Error(
+      problem?.detail ?? `Failed to reset password: ${response.status}`,
+    );
+  }
+}
+
+export async function changePassword(data: ChangePasswordRequest): Promise<void> {
+  const response = await fetch(apiUrl("/api/auth/password"), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const problem = await response.json().catch(() => null);
+    throw new Error(problem?.detail ?? `Failed to change password: ${response.status}`);
   }
 }
 
