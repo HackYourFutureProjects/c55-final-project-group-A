@@ -134,6 +134,7 @@ class NotificationScopeIntegrationTests {
         jdbcClient
                 .sql("""
                         INSERT INTO analytics.external_events (
+                            logical_event_id,
                             source,
                             external_event_id,
                             source_url,
@@ -145,6 +146,15 @@ class NotificationScopeIntegrationTests {
                             is_cancelled
                         )
                         VALUES (
+                            canonical_event_uuid(
+                                build_stable_key(
+                                    'ticketmaster',
+                                    :sourceUrl,
+                                    :externalEventId,
+                                    'notification-test-venue',
+                                    :startDate
+                                )
+                            ),
                             'ticketmaster',
                             :externalEventId,
                             :sourceUrl,
