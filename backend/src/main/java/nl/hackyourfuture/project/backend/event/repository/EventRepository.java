@@ -160,15 +160,7 @@ public class EventRepository {
             FROM events e
                      JOIN addresses a ON a.id = e.address_id
             UNION ALL
-            SELECT canonical_event_uuid(
-                              build_stable_key(
-                                  ext.source,
-                                  ext.source_url,
-                                  ext.external_event_id,
-                                  ext.external_venue_id,
-                                  ext.start_date
-                              )
-                          ) AS id,
+            SELECT ext.logical_event_id AS id,
                           ext.title,
                    ext.description,
                    COALESCE(matched.category_ids, ARRAY [fallback.id])
