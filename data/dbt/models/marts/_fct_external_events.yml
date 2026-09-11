@@ -9,10 +9,11 @@ models:
       Renaming, removing or changing the type of a column must be agreed with
       the backend team.
     columns:
-      - name: external_event_key
+      - name: logical_event_id
         description: >
-          Source-qualified Ticketmaster ID of the earliest occurrence selected to
-          represent the logical daily event.
+          Stable UUID of the logical event represented by this row. It exactly
+          reproduces the backend canonical event UUID so existing Saved, Going,
+          and comment references remain valid.
         tests:
           - unique
           - not_null

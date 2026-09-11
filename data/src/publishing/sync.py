@@ -16,6 +16,7 @@ import os
 import sys
 from datetime import UTC, datetime
 from typing import LiteralString
+from uuid import UUID
 
 import psycopg
 from psycopg.sql import SQL, Identifier, Literal, Placeholder
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_MART = "fct_external_events"
 DEFAULT_TABLE = "external_events"
+UUID_COLUMNS = {"logical_event_id"}
 
 # What a Databricks column becomes in Postgres. Anything not listed becomes
 # text: keeping the value beats guessing at it.
@@ -43,16 +45,29 @@ TYPE_MAP: dict[str, LiteralString] = {
 }
 
 
-def postgres_type(databricks_type: str) -> LiteralString:
-    """Translate one column type. LiteralString because psycopg insists."""
+def postgres_type(
+    databricks_type: str,
+    column_name: str | None = None,
+) -> LiteralString:
+    """Translate one Databricks column type into its Postgres type."""
+    if column_name in UUID_COLUMNS:
+        return "uuid"
+
     normalized = databricks_type.upper().replace(" ", "")
     if normalized == "ARRAY<STRING>":
         return "text[]"
     return TYPE_MAP.get(normalized.split("(")[0], "text")
 
 
-def postgres_value(value, databricks_type: str):
+def postgres_value(
+    value,
+    databricks_type: str,
+    column_name: str | None = None,
+):
     """Convert warehouse values that need native Postgres representations."""
+    if column_name in UUID_COLUMNS:
+        return None if value is None else UUID(str(value))
+
     normalized = databricks_type.upper().replace(" ", "")
     if normalized != "ARRAY<STRING>" or value is None or isinstance(value, list):
         return value
@@ -120,12 +135,16 @@ def publish(
     staging = Identifier(schema, f"{table}__staging")
     published = Identifier(schema, table)
     definition = SQL(", ").join(
-        SQL("{} {}").format(Identifier(name), SQL(postgres_type(type_text)))
+        SQL("{} {}").format(
+            Identifier(name),
+            SQL(postgres_type(type_text, name)),
+        )
         for name, type_text in columns
     )
     column_names = SQL(", ").join(Identifier(name) for name, _ in columns)
     available_columns = {name for name, _ in columns}
     retention_columns = {
+        "logical_event_id",
         "source",
         "source_url",
         "external_event_id",
@@ -141,8 +160,8 @@ def publish(
 
     prepared_rows = [
         [
-            postgres_value(value, type_text)
-            for value, (_, type_text) in zip(row, columns, strict=True)
+            postgres_value(value, type_text, name)
+            for value, (name, type_text) in zip(row, columns, strict=True)
         ]
         for row in rows
     ]
@@ -199,6 +218,40 @@ def publish(
                         published, Identifier("categories")
                     )
                 )
+            if table == DEFAULT_TABLE and "logical_event_id" in available_columns:
+                cursor.execute(
+                    SQL("alter table {} add column if not exists {} uuid").format(
+                        published,
+                        Identifier("logical_event_id"),
+                    )
+                )
+                cursor.execute(
+                    SQL(
+                        """
+                        update {}
+                        set {} = app.canonical_event_uuid(
+                            app.build_stable_key(
+                                source,
+                                source_url,
+                                external_event_id,
+                                external_venue_id,
+                                start_date
+                            )
+                        )
+                        where {} is null
+                        """
+                    ).format(
+                        published,
+                        Identifier("logical_event_id"),
+                        Identifier("logical_event_id"),
+                    )
+                )
+                cursor.execute(
+                    SQL("alter table {} alter column {} set not null").format(
+                        published,
+                        Identifier("logical_event_id"),
+                    )
+                )
             # Carry forward the complete card data for events that disappeared
             # from the current mart but still have active Saved or Going
             # references. Current mart rows always take precedence.
@@ -212,13 +265,7 @@ def publish(
                         where exists (
                             select 1
                             from app.event_registry as registry
-                            where registry.external_event_key = app.build_stable_key(
-                                previous.source,
-                                previous.source_url,
-                                previous.external_event_id,
-                                previous.external_venue_id,
-                                previous.start_date
-                            )
+                            where registry.id = previous.logical_event_id
                             and (
                                 exists (
                                     select 1
@@ -235,19 +282,7 @@ def publish(
                         and not exists (
                             select 1
                             from {} as current
-                            where app.build_stable_key(
-                                current.source,
-                                current.source_url,
-                                current.external_event_id,
-                                current.external_venue_id,
-                                current.start_date
-                            ) = app.build_stable_key(
-                                previous.source,
-                                previous.source_url,
-                                previous.external_event_id,
-                                previous.external_venue_id,
-                                previous.start_date
-                            )
+                            where current.logical_event_id = previous.logical_event_id
                         )
                         """
                     ).format(

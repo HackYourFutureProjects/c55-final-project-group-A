@@ -1,6 +1,6 @@
 -- The backend must receive a non-empty, sorted and distinct category array.
 -- `Other` is a fallback and must not accompany a more specific category.
-select external_event_key, categories
+select logical_event_id, categories
 from {{ ref("fct_external_events") }}
 where
     categories is null

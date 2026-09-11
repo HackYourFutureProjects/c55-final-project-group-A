@@ -98,13 +98,57 @@ with
 
     ),
 
+    event_identity_inputs as (
+
+        select
+            *,
+
+            concat(
+                source,
+                '|',
+                coalesce(
+                    nullif(substring_index(trim(event_url), '?', 1), ''),
+                    concat('event-id:', event_id)
+                ),
+                '|',
+                coalesce(venue_id, ''),
+                '|',
+                cast(start_date as string)
+            ) as logical_event_identity_input
+
+        from cleaned_categories
+
+    ),
+
+    event_identities as (
+
+        select
+            *,
+            md5(
+                concat('hyf-event-v1|', logical_event_identity_input)
+            ) as logical_event_id_hex
+
+        from event_identity_inputs
+
+    ),
+
     normalized as (
 
         select
-            -- The earliest occurrence keeps its original Ticketmaster ID. Prefixing
-            -- prevents collisions if another external source uses the same ID, while
-            -- the backend maintains its own internal UUID.
-            concat(source, ':', event_id) as external_event_key,
+            concat(
+                substring(logical_event_id_hex, 1, 8),
+                '-',
+                substring(logical_event_id_hex, 9, 4),
+                '-',
+                substring(logical_event_id_hex, 13, 4),
+                '-',
+                substring(logical_event_id_hex, 17, 4),
+                '-',
+                substring(logical_event_id_hex, 21, 12)
+            ) as logical_event_id,
+
+            -- Keep the Ticketmaster ID of the earliest occurrence selected to
+            -- represent this logical daily event.
             event_id as external_event_id,
             source,
             true as is_published,
@@ -186,7 +230,7 @@ with
             ingest_date,
             ingested_at
 
-        from cleaned_categories
+        from event_identities
 
     )
 
