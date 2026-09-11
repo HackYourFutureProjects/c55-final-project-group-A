@@ -25,7 +25,7 @@ from ..common.warehouse import Queryable, Warehouse
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MART = "fct_external_events"
+DEFAULT_MART = "fct_external_events_enriched"
 DEFAULT_TABLE = "external_events"
 UUID_COLUMNS = {"logical_event_id"}
 
@@ -252,6 +252,28 @@ def publish(
                         Identifier("logical_event_id"),
                     )
                 )
+
+            if table == DEFAULT_TABLE and "venue_setting" in available_columns:
+                cursor.execute(
+                    SQL("alter table {} add column if not exists {} text").format(
+                        published,
+                        Identifier("venue_setting"),
+                    )
+                )
+                cursor.execute(
+                    SQL("update {} set {} = 'unknown' where {} is null").format(
+                        published,
+                        Identifier("venue_setting"),
+                        Identifier("venue_setting"),
+                    )
+                )
+                cursor.execute(
+                    SQL("alter table {} alter column {} set not null").format(
+                        published,
+                        Identifier("venue_setting"),
+                    )
+                )
+
             # Carry forward the complete card data for events that disappeared
             # from the current mart but still have active Saved or Going
             # references. Current mart rows always take precedence.

@@ -54,3 +54,8 @@ models:
 
     marts:
       +materialized: table
+
+      fct_event_attributes:
+        +enabled: true
+        +secret_scope: team_a
+        +llm_model: cheap
