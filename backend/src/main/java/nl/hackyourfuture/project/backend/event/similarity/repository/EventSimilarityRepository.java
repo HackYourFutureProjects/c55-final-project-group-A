@@ -99,15 +99,7 @@ public class EventSimilarityRepository {
                 OR EXISTS (
                     SELECT 1
                     FROM analytics.external_events ext
-                    WHERE canonical_event_uuid(
-                              build_stable_key(
-                                  ext.source,
-                                  ext.source_url,
-                                  ext.external_event_id,
-                                  ext.external_venue_id,
-                                  ext.start_date
-                              )
-                          ) = :eventId
+                    WHERE ext.logical_event_id = :eventId
                       AND ext.is_published = TRUE
                 )
                 """;
@@ -137,15 +129,7 @@ public class EventSimilarityRepository {
             FROM events e
                      JOIN addresses a ON a.id = e.address_id
             UNION ALL
-            SELECT canonical_event_uuid(
-                       build_stable_key(
-                           ext.source,
-                           ext.source_url,
-                           ext.external_event_id,
-                           ext.external_venue_id,
-                           ext.start_date
-                       )
-                   ) AS id,
+            SELECT ext.logical_event_id AS id,
                    ext.city_name,
                    ext.start_at,
                    ext.end_at,
