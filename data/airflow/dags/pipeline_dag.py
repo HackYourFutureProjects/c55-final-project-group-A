@@ -274,25 +274,45 @@ def make_pipeline(profile: PipelineProfile):
 
         @task
         def dbt_build() -> str:
-            """Build the models and run the tests."""
+            """Build required data and allow venue-enrichment fallback."""
+            import shlex
             import subprocess
 
-            result = subprocess.run(
-                dbt_command(),
-                shell=True,
-                check=False,
-                env={**os.environ, **databricks_environment(profile)},
-                text=True,
-                capture_output=True,
-                timeout=1800,
-            )
-            print(result.stdout[-8000:])
-            if result.returncode != 0:
-                print(result.stderr[-4000:])
-                raise RuntimeError(f"dbt build exited {result.returncode}")
+            from alerts import post
 
-            summary = [line for line in result.stdout.splitlines() if "PASS=" in line]
-            return summary[-1].strip() if summary else "dbt build finished"
+            from src.common.venue_enrichment_build import (
+                DbtBuildError,
+                build_with_optional_venue_enrichment,
+            )
+
+            command = shlex.split(dbt_command())
+            environment = {
+                **os.environ,
+                **databricks_environment(profile),
+            }
+
+            def run(arguments: list[str]) -> None:
+                result = subprocess.run(
+                    [*command, *arguments],
+                    check=False,
+                    env=environment,
+                    text=True,
+                    capture_output=True,
+                    timeout=1800,
+                )
+
+                print(result.stdout[-8000:])
+
+                if result.returncode != 0:
+                    print(result.stderr[-4000:])
+                    raise DbtBuildError(
+                        f"dbt exited {result.returncode}; " f"arguments: {arguments}"
+                    )
+
+            def notify(message: str) -> None:
+                post(f":warning: *{profile.dag_id}*\n{message}")
+
+            return build_with_optional_venue_enrichment(run, notify)
 
         @task
         def publish_to_backend() -> int:

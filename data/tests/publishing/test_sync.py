@@ -27,6 +27,7 @@ COLUMNS = [
     ("occurrence_count", "BIGINT"),
     ("price_min", "DECIMAL(10,2)"),
     ("is_cancelled", "BOOLEAN"),
+    ("venue_setting", "STRING"),
 ]
 ROWS = [
     [
@@ -45,12 +46,13 @@ ROWS = [
         1,
         25.00,
         False,
+        "indoor",
     ]
 ]
 
 
 def test_ticketmaster_event_publish_defaults():
-    assert sync.DEFAULT_MART == "fct_external_events"
+    assert sync.DEFAULT_MART == "fct_external_events_enriched"
     assert sync.DEFAULT_TABLE == "external_events"
 
 
@@ -195,6 +197,20 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
         statements,
         'alter table "analytics"."external_events" ' 'alter column "logical_event_id" set not null',
     )
+    venue_setting_added = index_of(
+        statements,
+        'alter table "analytics"."external_events" '
+        'add column if not exists "venue_setting" text',
+    )
+    venue_setting_backfilled = index_of(
+        statements,
+        'update "analytics"."external_events" '
+        """set "venue_setting" = 'unknown' where "venue_setting" is null""",
+    )
+    venue_setting_required = index_of(
+        statements,
+        'alter table "analytics"."external_events" ' 'alter column "venue_setting" set not null',
+    )
     referenced_rows_retained = index_of(
         statements,
         'insert into "analytics"."external_events__staging"',
@@ -216,6 +232,9 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
         < logical_event_id_added
         < identity_backfilled
         < logical_event_id_required
+        < venue_setting_added
+        < venue_setting_backfilled
+        < venue_setting_required
         < referenced_rows_retained
         < truncated
         < refreshed
@@ -224,6 +243,7 @@ def test_publish_refreshes_existing_table_in_the_right_order(connection):
     retained_statement = statements[referenced_rows_retained]
     assert 'previous."categories"' in retained_statement
     assert 'previous."logical_event_id"' in retained_statement
+    assert 'previous."venue_setting"' in retained_statement
     assert connection.committed
 
 
@@ -285,7 +305,7 @@ def test_publishing_zero_rows_is_refused(connection):
 def test_reading_an_empty_mart_is_refused():
     warehouse = FakeWarehouse()
     with pytest.raises(ValueError, match="no rows"):
-        sync.read_mart(warehouse, "main", "fct_external_events")
+        sync.read_mart(warehouse, "main", sync.DEFAULT_MART)
 
 
 def test_the_source_schema_is_stamped_on_the_table(connection):
