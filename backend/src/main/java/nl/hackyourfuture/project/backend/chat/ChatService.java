@@ -111,6 +111,8 @@ public class ChatService {
 
     String weatherInfo = weather.isAvailable()
         ? weather.temperature() + "°C, " + weather.condition()
+          + ", " + weather.precipitationChance() + "% chance of rain, wind "
+          + weather.windSpeed() + " km/h"
         : "Not available yet";
 
     return SYSTEM_PROMPT_TEMPLATE.formatted(
