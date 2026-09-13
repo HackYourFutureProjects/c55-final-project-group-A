@@ -33,7 +33,7 @@ public record WeatherResponse(
     )
     Integer precipitationChance,
     @Schema(
-        description = "Wind speed in meters per second",
+        description = "Wind speed in kilometers per hour",
         example = "9",
         nullable = true
     )
