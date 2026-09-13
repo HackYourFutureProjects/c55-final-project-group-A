@@ -63,11 +63,19 @@ Change a controller, restart, refresh — your endpoint is there.
 
 ### Feature docs
 
-| Topic               | Doc                                                    |
-|---------------------|--------------------------------------------------------|
-| Event similarity    | [`docs/event-similarity.md`](docs/event-similarity.md) |
-| Notifications       | [`docs/notifications.md`](docs/notifications.md)       |
-| Event list & detail | [`docs/events.md`](docs/events.md)                     |
+| Topic                      | Doc                                                    |
+|----------------------------|--------------------------------------------------------|
+| Event similarity           | [`docs/event-similarity.md`](docs/event-similarity.md) |
+| Notifications              | [`docs/notifications.md`](docs/notifications.md)       |
+| Event list & detail        | [`docs/events.md`](docs/events.md)                     |
+| Authentication             | [`docs/auth.md`](docs/auth.md) |
+| Google Sign-In             | [`docs/auth-google.md`](docs/auth-google.md) |
+| Password Recovery & Change | [`docs/auth-password-reset.md`](docs/auth-password-reset.md) |
+| Personal Account           | [`docs/personal-account.md`](docs/personal-account.md) |
+| Feedback                   | [`docs/feedback.md`](docs/feedback.md) |
+| Location Autocomplete      | [`docs/location.md`](docs/location.md) |
+| Weather Forecast           | [`docs/weather.md`](docs/weather.md) |
+| AI Event Assistant         | [`docs/event-chat.md`](docs/event-chat.md) |
 
 ---
 
