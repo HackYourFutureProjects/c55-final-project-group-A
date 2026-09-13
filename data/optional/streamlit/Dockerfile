@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir \
     azure-storage-blob==12.30.0 \
     "psycopg[binary]==3.3.4" \
     python-dotenv==1.2.2 \
+    altair==6.2.2 \
     streamlit==1.61.1
 
 COPY app.py .

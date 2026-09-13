@@ -26,10 +26,11 @@ def test_success_builds_base_then_attributes_then_final_mart():
     )
 
     assert len(calls) == 3
-    assert calls[0][:3] == [
+    assert calls[0][:4] == [
         "--exclude",
         "fct_event_attributes+",
         "fct_external_events_enriched",
+        "agg_event_processing_metrics",
     ]
     assert calls[1][:2] == ["--select", "fct_event_attributes"]
     assert calls[2][:2] == ["--select", "fct_external_events_enriched"]

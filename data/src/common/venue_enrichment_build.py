@@ -23,6 +23,7 @@ def build_with_optional_venue_enrichment(
             "--exclude",
             "fct_event_attributes+",
             "fct_external_events_enriched",
+            "agg_event_processing_metrics",
             "--vars",
             '{"venue_enrichment_available": false}',
         ]

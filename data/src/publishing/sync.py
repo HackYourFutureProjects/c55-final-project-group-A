@@ -16,12 +16,13 @@ import os
 import sys
 from datetime import UTC, datetime
 from typing import LiteralString
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg
 from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
 from ..common.warehouse import Queryable, Warehouse
+from . import health_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +115,7 @@ def publish(
     columns: list[tuple[str, str]],
     rows: list[list],
     source: str | None = None,
+    publication_id: str | None = None,
 ) -> int:
     """Refresh the backend's table in place, return the total row count written.
 
@@ -129,6 +131,9 @@ def publish(
     """
     if not rows:
         raise ValueError("refusing to publish zero rows over an existing table")
+
+    if publication_id is not None:
+        publication_id = str(UUID(publication_id))
 
     # Names are composed with psycopg's SQL objects, not pasted into an
     # f-string: a table name cannot be a query parameter.
@@ -323,13 +328,16 @@ def publish(
                 )
             )
             cursor.execute(SQL("drop table {}").format(staging))
-            if source:
-                # A comment, not a column: it describes the table rather than
-                # every row in it without widening what the backend selects.
+            if source or publication_id:
                 stamp = datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%MZ")
+                comment = f"from {source or 'unspecified'} at {stamp}"
+                if publication_id:
+                    comment += f"; publication_id={publication_id}"
+
                 cursor.execute(
                     SQL("comment on table {} is {}").format(
-                        published, Literal(f"from {source} at {stamp}")
+                        published,
+                        Literal(comment),
                     )
                 )
         connection.commit()
@@ -364,12 +372,59 @@ def dsn_from_env() -> str:
     )
 
 
-def run(mart: str = DEFAULT_MART, table: str = DEFAULT_TABLE, schema: str | None = None) -> int:
-    """Read one mart out of the warehouse and refresh the backend's copy."""
+def run(
+    mart: str = DEFAULT_MART,
+    table: str = DEFAULT_TABLE,
+    schema: str | None = None,
+) -> int:
+    """Publish events first, then attempt optional processing metrics."""
     warehouse_schema = os.environ["DBT_SCHEMA"]
-    columns, rows = read_mart(Warehouse.from_env(), warehouse_schema, mart)
+    warehouse = Warehouse.from_env()
+    columns, rows = read_mart(warehouse, warehouse_schema, mart)
     target_schema = schema or os.environ.get("BACKEND_PG_PUBLISH_SCHEMA", "analytics")
-    return publish(dsn_from_env(), target_schema, table, columns, rows, source=warehouse_schema)
+    publication_id = str(uuid4())
+    dsn = dsn_from_env()
+
+    published_count = publish(
+        dsn,
+        target_schema,
+        table,
+        columns,
+        rows,
+        source=warehouse_schema,
+        publication_id=publication_id,
+    )
+
+    # publish() has committed the events before optional work starts.
+    if mart == DEFAULT_MART and table == DEFAULT_TABLE:
+        try:
+            metrics = health_metrics.read_optional_metrics(
+                warehouse,
+                warehouse_schema,
+                columns,
+                rows,
+                available=os.getenv("HEALTH_METRICS_AVAILABLE", "").lower() == "true",
+                build_id=os.getenv("HEALTH_METRICS_BUILD_ID", ""),
+            )
+            metrics_written = health_metrics.write_optional_metrics(
+                dsn,
+                target_schema,
+                table,
+                publication_id,
+                metrics,
+            )
+        except Exception:
+            logger.exception("Unexpected failure in optional Health Page metrics")
+            metrics_written = False
+
+        if not metrics_written:
+            logger.warning(
+                "Events were published, but processing metrics are unavailable "
+                "for publication %s",
+                publication_id,
+            )
+
+    return published_count
 
 
 if __name__ == "__main__":

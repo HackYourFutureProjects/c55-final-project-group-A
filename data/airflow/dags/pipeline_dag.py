@@ -273,13 +273,15 @@ def make_pipeline(profile: PipelineProfile):
             return len(rows)
 
         @task
-        def dbt_build() -> str:
+        def dbt_build() -> dict:
             """Build required data and allow venue-enrichment fallback."""
             import shlex
             import subprocess
+            from uuid import uuid4
 
             from alerts import post
 
+            from src.common.health_metrics_build import build_optional_health_metrics
             from src.common.venue_enrichment_build import (
                 DbtBuildError,
                 build_with_optional_venue_enrichment,
@@ -312,10 +314,22 @@ def make_pipeline(profile: PipelineProfile):
             def notify(message: str) -> None:
                 post(f":warning: *{profile.dag_id}*\n{message}")
 
-            return build_with_optional_venue_enrichment(run, notify)
+            summary = build_with_optional_venue_enrichment(run, notify)
+            health_metrics_build_id = str(uuid4())
+            health_metrics_available = build_optional_health_metrics(
+                run,
+                notify,
+                build_id=health_metrics_build_id,
+            )
+
+            return {
+                "summary": summary,
+                "health_metrics_available": health_metrics_available,
+                "health_metrics_build_id": health_metrics_build_id,
+            }
 
         @task
-        def publish_to_backend() -> int:
+        def publish_to_backend(build_result: dict) -> int:
             """Copy allowlisted marts into the backend's database, atomically."""
             from src.publishing import sync
 
@@ -345,9 +359,19 @@ def make_pipeline(profile: PipelineProfile):
                 ) or profile.backend_pg_secret_fallback(team)
                 os.environ["BACKEND_PG_PASSWORD"] = secret("BACKEND_PG_PASSWORD", secret_name)
 
+            os.environ["HEALTH_METRICS_AVAILABLE"] = (
+                "true" if build_result.get("health_metrics_available") is True else "false"
+            )
+
+            os.environ["HEALTH_METRICS_BUILD_ID"] = (
+                build_result.get("health_metrics_build_id") or ""
+            )
+
             return sync.run()
 
-        ingest() >> list_landing_files() >> dbt_build() >> publish_to_backend()
+        build_result = dbt_build()
+        ingest() >> list_landing_files() >> build_result
+        publish_to_backend(build_result)
 
     return pipeline()
 
