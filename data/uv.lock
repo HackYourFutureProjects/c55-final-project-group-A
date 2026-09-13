@@ -105,6 +105,20 @@ wheels = [
 ]
 
 [[package]]
+name = "azure-keyvault-secrets"
+version = "4.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-core" },
+    { name = "isodate" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/51/53/188681c8b7ec49b6945605efdb91ec9a86ebfa77f8eab8b9a50f458c504a/azure_keyvault_secrets-4.9.0.tar.gz", hash = "sha256:2a03bb2ffd9a0d6c8ad1c330d9d0310113985a9de06607ece378fd72a5889fe1", size = 97722, upload-time = "2024-10-17T23:27:40.825Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bf/ad/e5dd4c09ed80196b1b35f107502b12e32d06eb2d965adf4673df0d5cf85e/azure_keyvault_secrets-4.9.0-py3-none-any.whl", hash = "sha256:33c7e2aca2cc2092cebc8c6e96eca36a5cc30c767e16ea429c5fa21270e9fba6", size = 87006, upload-time = "2024-10-17T23:27:42.846Z" },
+]
+
+[[package]]
 name = "azure-storage-blob"
 version = "12.30.0"
 source = { registry = "https://pypi.org/simple" }
@@ -598,6 +612,8 @@ dependencies = [
 
 [package.optional-dependencies]
 dashboard = [
+    { name = "altair" },
+    { name = "azure-keyvault-secrets" },
     { name = "pandas" },
     { name = "psycopg", extra = ["binary"] },
     { name = "streamlit" },
@@ -621,7 +637,9 @@ sync = [
 
 [package.metadata]
 requires-dist = [
+    { name = "altair", marker = "extra == 'dashboard'", specifier = "==6.2.2" },
     { name = "azure-identity", specifier = ">=1.19.0" },
+    { name = "azure-keyvault-secrets", marker = "extra == 'dashboard'", specifier = "==4.9.0" },
     { name = "azure-storage-blob", specifier = ">=12.23.0" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=24.8.0" },
     { name = "databricks-sql-connector", marker = "extra == 'sync'", specifier = ">=3.4.0" },
@@ -637,7 +655,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6.0" },
     { name = "shandy-sqlfmt", marker = "extra == 'dev'", specifier = ">=0.23.0" },
     { name = "sqlfluff", marker = "extra == 'dev'", specifier = ">=4.3.0" },
-    { name = "streamlit", marker = "extra == 'dashboard'", specifier = ">=1.39.0" },
+    { name = "streamlit", marker = "extra == 'dashboard'", specifier = "==1.61.1" },
     { name = "ty", marker = "extra == 'dev'", specifier = ">=0.0.1a1" },
 ]
 provides-extras = ["sync", "dbt", "dashboard", "dev"]

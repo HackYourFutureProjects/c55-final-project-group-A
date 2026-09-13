@@ -4,6 +4,7 @@ The ordering test is the one that matters: staging must be complete before the
 published table is refreshed, and the published table must never be dropped.
 """
 
+from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
@@ -332,3 +333,106 @@ def test_no_source_means_no_comment(connection):
     misleading stamp, and an unstamped table is better than a wrong one."""
     sync.publish("dsn", "analytics", "external_events", COLUMNS, ROWS)
     assert not any("comment on table" in statement for statement in connection.log)
+
+
+def test_publication_id_is_recorded_with_events(connection):
+    publication_id = "00000000-0000-0000-0000-000000000010"
+
+    sync.publish(
+        "dsn",
+        "analytics",
+        "external_events",
+        COLUMNS,
+        ROWS,
+        source="dev_test",
+        publication_id=publication_id,
+    )
+
+    comment = connection.log[index_of(connection.log, "comment on table")]
+    assert f"publication_id={publication_id}" in comment
+    assert index_of(connection.log, 'insert into "analytics"."external_events"') < index_of(
+        connection.log, "comment on table"
+    )
+    assert connection.committed
+
+
+def test_invalid_publication_id_is_rejected_before_writes(connection):
+    with pytest.raises(ValueError):
+        sync.publish(
+            "dsn",
+            "analytics",
+            "external_events",
+            COLUMNS,
+            ROWS,
+            publication_id="not-a-uuid",
+        )
+
+    assert connection.log == []
+
+
+@pytest.fixture
+def run_dependencies(monkeypatch):
+    warehouse = MagicMock()
+    monkeypatch.setenv("DBT_SCHEMA", "dev_test")
+    monkeypatch.setenv("BACKEND_PG_PUBLISH_SCHEMA", "analytics_dev")
+    monkeypatch.setenv("HEALTH_METRICS_AVAILABLE", "true")
+    monkeypatch.setenv(
+        "HEALTH_METRICS_BUILD_ID",
+        "00000000-0000-0000-0000-000000000010",
+    )
+    monkeypatch.setattr(sync.Warehouse, "from_env", lambda: warehouse)
+    monkeypatch.setattr(sync, "read_mart", lambda *args: (COLUMNS, ROWS))
+    monkeypatch.setattr(sync, "dsn_from_env", lambda: "dsn")
+
+    calls = MagicMock()
+    calls.attach_mock(MagicMock(return_value=1), "publish")
+    calls.attach_mock(MagicMock(return_value={"example": "metrics"}), "read_metrics")
+    calls.attach_mock(MagicMock(return_value=True), "write_metrics")
+
+    monkeypatch.setattr(sync, "publish", calls.publish)
+    monkeypatch.setattr(sync.health_metrics, "read_optional_metrics", calls.read_metrics)
+    monkeypatch.setattr(sync.health_metrics, "write_optional_metrics", calls.write_metrics)
+    return calls
+
+
+def test_events_are_published_before_optional_metrics(run_dependencies):
+    calls = run_dependencies
+
+    assert sync.run() == 1
+    assert [call[0] for call in calls.mock_calls] == [
+        "publish",
+        "read_metrics",
+        "write_metrics",
+    ]
+
+    publication_id = calls.publish.call_args.kwargs["publication_id"]
+    assert calls.write_metrics.call_args.args[3] == publication_id
+
+
+def test_event_publication_failure_stops_metrics(run_dependencies):
+    calls = run_dependencies
+    calls.publish.side_effect = RuntimeError("Event publication failed")
+
+    with pytest.raises(RuntimeError, match="Event publication failed"):
+        sync.run()
+
+    calls.read_metrics.assert_not_called()
+    calls.write_metrics.assert_not_called()
+
+
+def test_metrics_write_failure_preserves_publish_result(run_dependencies, caplog):
+    calls = run_dependencies
+    calls.write_metrics.return_value = False
+
+    assert sync.run() == 1
+    calls.publish.assert_called_once()
+    assert "processing metrics are unavailable" in caplog.text
+
+
+def test_unexpected_metrics_error_preserves_publish_result(run_dependencies):
+    calls = run_dependencies
+    calls.read_metrics.side_effect = RuntimeError("Unexpected metrics failure")
+
+    assert sync.run() == 1
+    calls.publish.assert_called_once()
+    calls.write_metrics.assert_not_called()

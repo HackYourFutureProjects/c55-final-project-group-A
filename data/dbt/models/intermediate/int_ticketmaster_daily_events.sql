@@ -5,62 +5,17 @@
 -- consumed by the backend and collapses multiple booking slots into one
 -- logical daily event.
 with
-    ticketmaster_events as (select * from {{ ref("stg_ticketmaster_events") }}),
+    ticketmaster_events as (select * from {{ ref("int_ticketmaster_event_checks") }}),
     price_enrichment as (select * from {{ ref("int_event_price_enrichment") }}),
 
     eligible_events as (
-
-        -- The initial backend contract requires an exact start timestamp.
-        -- Events from previous calendar days and statuses that should not be
-        -- displayed are excluded. Cancelled and postponed events remain so the
-        -- backend can handle them explicitly.
-        select *
-        from ticketmaster_events
-        where
-            start_at is not null
-            and start_date >= current_date()
-            and status_code not in ('offsale', 'rescheduled')
-
+        select * from ticketmaster_events where passes_date_status_checks
     ),
 
-    non_parking_events as (
-
-        -- Ticketmaster may expose parking permits as events with their own
-        -- event IDs. They are purchasable products, but they are not events
-        -- that should appear in the backend event catalogue.
-        select *
-        from eligible_events
-        where not lower(event_name) rlike '(parking|parkeer|parkeren)'
-
-    ),
+    non_parking_events as (select * from eligible_events where passes_parking_check),
 
     non_auxiliary_listing_events as (
-
-        -- Ticketmaster also exposes upgrades, premium packages, accessibility
-        -- tickets and hospitality add-ons as separate event records. These are
-        -- purchasable products associated with an event, not standalone events
-        -- for the backend catalogue.
-        select *
-        from non_parking_events
-        where
-            not lower(event_name) rlike (
-                'venue premium packages?'
-                || '|premium seats'
-                || '|vip packages?'
-                || '|vinyl room upgrades?'
-                || '|vinyl room package'
-                || '|ticket not included'
-                || '|arrangement strandclub'
-                || '|strandclub arrangement'
-                || '|comfort seats'
-                || '|vip upgrades?'
-                || '|accessible tickets'
-                || '|rolstoel[[:space:]]*/?[[:space:]]*begeleider'
-                || '|after-show meet & greet'
-                || '|[|][[:space:]]*vip[[:space:]]*$'
-                || '|[|][[:space:]]*sky lounge[[:space:]]*$'
-            )
-
+        select * from non_parking_events where passes_ticket_extras_check
     ),
 
     parsed_addresses as (
